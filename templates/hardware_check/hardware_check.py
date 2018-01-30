@@ -2,6 +2,8 @@ from js9 import j
 
 from zerorobot.template.base import TemplateBase
 
+from http.client import HTTPSConnection
+
 
 class HardwareCheck(TemplateBase):
 
@@ -18,13 +20,10 @@ class HardwareCheck(TemplateBase):
                 raise ValueError("parameter '%s' not valid: %s",
                                  str(self.data[param]))
 
-    def check(self, addr, nodeid, jwt):
-        from zeroos.core0.client import Client
-        from http.client import HTTPSConnection
-
+    def check(self, node_name):
         ssd_count = 0
         hdd_count = 0
-        cl = Client(addr, password=jwt)
+        cl = j.clients.zero_os.get(instance=node_name)
 
         conn = HTTPSConnection('api.telegram.org')
         botid = self.data['botid']
@@ -88,10 +87,10 @@ class HardwareCheck(TemplateBase):
 
             self.logger.info("Hardware check succeeded")
             message = "Node with id {} has completed the hardwarecheck successfully.".format(
-                nodeid)
+                node_name)
         except Exception as err:
             message = "Node with id {} has failed the hardwarecheck: {}".format(
-                nodeid, str(err))
+                node_name, str(err))
             raise j.exceptions.RuntimeError(message)
         finally:
             url = "/bot{}/sendMessage?chat_id={}&text={}".format(
