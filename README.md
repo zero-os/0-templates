@@ -13,7 +13,7 @@ Upcomming releases:
   - Add automated tests.
   - Add README.md for each template.
 
-- [0.x]
+- 0.x
   - Kubernetes template:
     - Deploys kubernetes master cluster with x workers.
     - Workers get raw storage volumes or work with qcow files.
