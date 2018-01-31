@@ -1,4 +1,4 @@
-all: test test-ui
+all: test
 
 test:
 	pytest --cov=./ templates
