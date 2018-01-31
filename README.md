@@ -1,4 +1,5 @@
-## 0-Templates
+## 0-Templates [![Build Status](https://travis-ci.org/zero-os/0-templates.svg?branch=master)](https://travis-ci.org/zero-os/0-templates) [![codecov](https://codecov.io/gh/zero-os/0-templates/branch/master/graph/badge.svg)](https://codecov.io/gh/zero-os/0-templates)
+
 
 This repo contains zero-os templates that can be managed by [0-robot](https://github.com/Jumpscale/0-robot).
 
