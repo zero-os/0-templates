@@ -4,15 +4,15 @@
 This template is responsible for deploying a 0-metadatastor (see: [0-metadata](https://github.com/zero-os/0-metadata))
 
 ### Schema:
-    **node**: node to install the 0-metadata on 
-    **port**: port for 0-metadata to run on
-    **ardb.cluster**: service guid of ARDB cluster
-    
+ - **node**: node to install the 0-metadata on 
+ - **port**: port for 0-metadata to run on
+ - **ardb.cluster**: service guid of ARDB cluster
+
 ### Actions:
-    **install**: installs 0-metadata on configured node
-    **configure**: configures 0-metadata to connect to ARDB cluster
-    **start**: starts 0-metadata on configured port
-    **stop**: stops 0-metadata 
+ - **install**: installs 0-metadata on configured node
+ - **configure**: configures 0-metadata to connect to ARDB cluster
+ - **start**: starts 0-metadata on configured port
+ - **stop**: stops 0-metadata 
 
 ### Blueprint example:
 ```yaml
