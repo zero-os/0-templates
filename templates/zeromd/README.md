@@ -17,6 +17,12 @@ This template is responsible for deploying a 0-metadatastor (see: [0-metadata](h
 ### Blueprint example:
 ```yaml
 services:
+    - github.com/jumpscale/0-robot/ardb_cluster/0.0.1__ardbcluster:
+        ardbs:
+          - ardb1
+          - ardb2
+          - ardb3
+
     - github.com/jumpscale/0-robot/node/0.0.1__node:
         id: '00:00:00:00' # mac address of the mngt network card
         hostname: 'hostnode'
