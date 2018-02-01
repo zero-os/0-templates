@@ -40,7 +40,7 @@ class Vm(TemplateBase):
         return self._hypervisor
 
     def install(self):
-        HV_TEMPLATE = 'github.com/jumpscale/0-robot/hypervisor/0.0.1'
+        HV_TEMPLATE = 'github.com/zero-os/0-templates/hypervisor/0.0.1'
         data = {
             'node': self.node.name,
             'vm': self.name,

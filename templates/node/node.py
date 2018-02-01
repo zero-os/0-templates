@@ -8,8 +8,8 @@ from zerorobot.service_collection import ServiceConflictError
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.decorator import retry
 
-CONTAINER_TEMPLATE_UID = "github.com/jumpscale/0-robot/container/0.0.1"
-VM_TEMPLATE_UID = "github.com/jumpscale/0-robot/vm/0.0.1"
+CONTAINER_TEMPLATE_UID = "github.com/zero-os/0-templates/container/0.0.1"
+VM_TEMPLATE_UID = "github.com/zero-os/0-templates/vm/0.0.1"
 
 
 class Node(TemplateBase):

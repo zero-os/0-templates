@@ -3,7 +3,7 @@ from gevent import sleep
 from js9 import j
 from zerorobot.template.base import TemplateBase
 
-NODE_TEMPLATE_UID = "github.com/jumpscale/0-robot/node/0.0.1"
+NODE_TEMPLATE_UID = "github.com/zero-os/0-templates/node/0.0.1"
 
 
 class ZeroosBootstrap(TemplateBase):
