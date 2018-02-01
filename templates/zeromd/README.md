@@ -40,6 +40,5 @@ services:
 
 
 actions:
-    template: github.com/jumpscale/0-robot/zeromd/0.0.1
     actions: ['install', 'start']
 ```
