@@ -24,3 +24,9 @@ Upcomming releases:
     - Self-heals a namespace.
   - Minio template:
     - Deploys minio S3 over x nodes with zero-stor backend.
+
+
+
+Contribution:
+
+Please check the [contribution](./docs/contribution.md) guidelines before contributing to this repo.

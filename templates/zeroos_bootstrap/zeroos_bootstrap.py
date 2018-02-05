@@ -3,7 +3,9 @@ from gevent import sleep
 from js9 import j
 from zerorobot.template.base import TemplateBase
 
-NODE_TEMPLATE_UID = "github.com/zero-os/0-templates/node/0.0.1"
+NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
+ERP_TEMPLATE_UID = 'github.com/zero-os/0-templates/erp_registeration/0.0.1'
+HARDWARE_CHECK_TEMPLATE_UID = 'github.com/zero-os/0-templates/hardware_check/0.0.1'
 
 
 class ZeroosBootstrap(TemplateBase):
@@ -14,10 +16,10 @@ class ZeroosBootstrap(TemplateBase):
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-        if not self.data['zerotierInstance']:
+        if not self.data['zerotierClient']:
             raise RuntimeError("no zerotier instance specified")
 
-        self.zt = j.clients.zerotier.get(self.data['zerotierInstance'])
+        self.zt = j.clients.zerotier.get(self.data['zerotierClient'])
         # start recurring action
         self.recurring_action('bootstrap', 10)
 
@@ -60,10 +62,16 @@ class ZeroosBootstrap(TemplateBase):
 
         resp = self.zt.client.network.getMember(member['nodeId'], netid)
         member = resp.json()
-        while len(member['config']['ipAssignments']) <= 0:
+
+        for _ in range(20):
+            if len(member['config']['ipAssignments']):
+                break
             sleep(1)
             resp = self.zt.client.network.getMember(member['nodeId'], netid)
             member = resp.json()
+        else:
+            raise RuntimeError('Node %s did not get an ip assigned' % (member['nodeId']))
+
         zerotier_ip = member['config']['ipAssignments'][0]
         return zerotier_ip
 
@@ -87,9 +95,9 @@ class ZeroosBootstrap(TemplateBase):
             die=True)
         cl.config._data.update(data)
         cl.config.save()
+
         # get a node object from the zero-os SAL
-        node = j.clients.zero_os.sal.node_get("bootstrap")
-        return node
+        return j.clients.zero_os.sal.node_get("bootstrap")
 
     def _add_node(self, member):
         if not member['online'] or member['config']['authorized']:
@@ -103,14 +111,11 @@ class ZeroosBootstrap(TemplateBase):
         # get assigned ip of this member
         zerotier_ip = self._wait_member_ip(member)
 
-        # do hardwarechecks -  NOT IMPLEMENTED YET
-        # for prod in service.producers.get('hardwarecheck', []):
-        #     prod.executeAction('check', args={'ipaddr': zerotier_ip,
-        #                                       'node_id': member['nodeId'],
-        #                                       'jwt': get_jwt_token(service.aysrepo)})
-
         # create client configuration for that node
-        node = self._get_node_sal(zerotier_ip)
+        node_sal = self._get_node_sal(zerotier_ip)
+
+        for hw_check in self.api.services.find(template_uid=HARDWARE_CHECK_TEMPLATE_UID):
+            hw_check.schedule_action('register', args={'node_name': node_sal.name}).wait()
 
         # test if we can connect to the new member
         # node_client = j.clients.zero_os._get_manual(host=zerotier_ip, timeout=30, testConnectionAttempts=0)  # , password=get_jwt_token(service.aysrepo))
@@ -125,9 +130,9 @@ class ZeroosBootstrap(TemplateBase):
             raise RuntimeError("can't connect, unauthorize member IP: {}".format(zerotier_ip))
 
         # connection succeeded, set the hostname of the node to zerotier member
-        name = node.name
+        name = node_sal.name
         member['name'] = name
-        member['description'] = node.client.info.os().get('hostname', '')
+        member['description'] = node_sal.client.info.os().get('hostname', '')
         member['config']['authorized'] = True  # make sure we don't unauthorize
         self.zt.client.network.updateMember(member, member['nodeId'], netid)
 
@@ -141,32 +146,31 @@ class ZeroosBootstrap(TemplateBase):
             return
 
         # create and install the node.zero-os service
-        if self.data['wipedisks']:
+        if self.data['wipeDisks']:
             self.logger.info("wipe disk")
-            node.wipedisks()
+            node_sal.wipedisks()
 
         # NETWORK NOT IMPLEMENTED YET
         # networks = [n.name for n in service.producers.get('network', [])]
 
-        hostname = node.client.info.os()['hostname']
+        hostname = node_sal.client.info.os()['hostname']
         if hostname == 'zero-os':
             hostname = 'zero-os-%s' % name
 
         data = {
-            'id': name,
             'status': 'running',
             # 'networks': networks,
             'hostname': hostname,
             'redisAddr': zerotier_ip,
         }
         self.logger.info("create node.zero-os service {}".format(name))
-        node_service = self.api.services.create(NODE_TEMPLATE_UID, name, data=data)
-        task_install = node_service.schedule_action('install')
+        node = self.api.services.create(NODE_TEMPLATE_UID, name, data=data)
+        task_install = node.schedule_action('install')
 
         # TODO: improve this flow
         def cleanup():
             # node_service.schedule_action('delete').wait(60)
-            node_service.delete()
+            node.delete()
 
         try:
             task_install.wait(60)
@@ -178,9 +182,8 @@ class ZeroosBootstrap(TemplateBase):
             cleanup()
             raise RuntimeError("unexpected error during installation of node %s: %s" % (name, task_install.eco.errormessage))
 
-            # do ERP registrations - NOT IMPLEMENTED YET
-            # for prod in service.producers.get('erp_registration', []):
-            #     prod.executeAction('register', args={'node_id': name, 'zerotier_address': member['nodeId']})
+        for erp in self.api.services.find(template_uid=ERP_TEMPLATE_UID):
+            erp.schedule_action('register', args={'node_name': name}).wait()
 
     def delete_node(self, redis_addr):
         """

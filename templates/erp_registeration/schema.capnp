@@ -6,8 +6,8 @@ struct Schema {
   db @1: Text; # name of the Odoo database
   username @2: Text; # credentials for the Odoo server
   password @3: Text;
-  productid @4: UInt32; # id of the product to couple the node to in Odoo
-  botid @5: Text; # id of the telegram bot
-  chatid @6: Text; # id of the telegram groupchat
+  productId @4: UInt32; # id of the product to couple the node to in Odoo
+  botToken @5: Text; # token of the telegram bot
+  chatId @6: Text; # id of the telegram groupchat
 
 }

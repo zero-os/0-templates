@@ -1,73 +1,31 @@
-# template: github.com/zero-os/0-templates/hypervisor/0.0.1
+## template: github.com/zero-os/0-templates/hypervisor/0.0.1
 
-## Description:
+### Description:
 This template is responsible for managing a zero-os kvm hypervisor.
 
-## Schema:
+### Schema:
 
-- node: the name of the node the hypervisor is on
-- vm: the name of the vm
-
-
-## Actions
-
-#### Create
-Creates a hypervisor on a zeroos node
-
-Arguments:
-- media:
-- flist:
-- cpu:
-- memory:
-- nics:
-- port: 
-- mount:
-- tags
-
-#### Destroy
-destroys the hypervisor 
-
-#### Shutdown
-Shuts down the hypervisor
-
-#### Pause
-Pause the hypervisor
-
-#### Resume
-Resume the hypervisor
-
-#### Reboot
-Reboot the hypervisor
-
-#### Reset
-Reset the hypervisor
+- `node`: the name of the node the hypervisor is on
+- `vm`: the name of the vm
 
 
-## Example for installing a node
-```yaml
-github.com/zero-os/0-templates/node/0.0.1__525400123456:
-  redisAddr: 172.17.0.1
-  redisPort: 6379
-  hostname: "myzeros"
+### Actions
 
-actions:
-  action: ['install']
-```
+- `create`: creates a hypervisor on a zeroos node
 
-## Example for uninstalling a node
+    Arguments:
+    - `media`:
+    - `flist`:
+    - `cpu`:
+    - `memory`:
+    - `nics`:
+    - `port`: 
+    - `mount`:
+    - `tags`
 
-```yaml
-actions:
-  template: github.com/zero-os/0-templates/node/0.0.1
-  name: 525400123456
-  actions: ['uninstall']
-```
-
-## Example for rebooting a node
-
-```yaml
-actions:
-  template: github.com/zero-os/0-templates/node/0.0.1
-  name: 525400123456
-  actions: ['reboot']
-```
+- `destroy`: destroys the hypervisor  
+- `shutdown`': shuts down the hypervisor
+- `pause`: pause the hypervisor 
+- `resume`: resume the hypervisor
+- `reboot`: reboot the hypervisor
+- `reset`: reset the hypervisor

@@ -21,7 +21,7 @@ struct Schema {
     }
 
     struct DiskLink {
-      vdiskid @0: Text;
+      vdiskId @0: Text;
       maxIOps @1: UInt32;
     }
 

@@ -1,33 +1,35 @@
-# template: github.com/zero-os/0-templates/hardware_check/0.0.1
+## template: github.com/zero-os/0-templates/hardware_check/0.0.1
 
-## Description:
+### Description:
 This template is responsible for checking if the hardware specs of a node matches the expected specs and sending a message to a telegram chat with the result of the check.
 
-## Schema:
-- numhdd: expected number of hdds
-- numssd: expected number of ssds
-- ram: expected amount of ram (in mibi bytes - MiB)
-- cpu: model name of expected cpu
-- bot_token: token of the telegram bot to be use to send the telegram message
-- chat_id: id of the telegram groupchat to send the message to
+### Schema:
+- `supported`: a list of HWCombo
+- `botToken`: token of the telegram bot to be use to send the telegram message
+- `chatId`: id of the telegram groupchat to send the message to
 
+HWCombo:
+- `hddCount`: expected number of hdds
+- `ssdCount`: expected number of ssds
+- `ram`: expected amount of ram (in mibi bytes - MiB)
+- `cpu`: model name of expected cpu
+- `name`: name of this hardware combination
 
-### Check
-Checks the hardware specs of a specific node and the message accordingly.
+### Actions:
+- `check`: checks the hardware specs of a specific node and the message accordingly.
 
-Arguments:
-- node_name: the name of the node service.
+    Arguments:
+    - `node_name`: the name of the node service.
 
-## Example to check hardware specs of node node1
 
 ```python
 args = {
-    'numhdd': 2,
-    'numssd': 2,
+    'hddCount': 2,
+    'ssdCount': 2,
     'ram': 7150,
     'cpu': 'intel',
-    'bot_token': 'thisisabottoken',
-    'chat_id': '1823737123',
+    'botToken': 'thisisabottoken',
+    'chatId': '1823737123',
 }
 hw_check= self.api.services.create('github.com/zero-os/0-templates/hardware_check/0.0.1', 'hw_check', args)
 hw_check.schedule_action('check', args={'node_name':'node1'})

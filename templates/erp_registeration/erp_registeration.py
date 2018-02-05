@@ -16,7 +16,7 @@ class ErpRegisteration(TemplateBase):
         j.tools.prefab.local.bash.executor.execute('pip install erppeek')
 
     def _validate_input(self):
-        for param in ['url', 'db', 'username', 'password', 'productid', 'botid', 'chatid']:
+        for param in ['url', 'db', 'username', 'password', 'productId', 'botToken', 'chatId']:
             if not self.data[param]:
                 raise ValueError("parameter '%s' not valid: %s",
                                  str(self.data[param]))
@@ -43,7 +43,7 @@ class ErpRegisteration(TemplateBase):
 
     def _get_bot_client(self):
         data = {
-            'bot_token_': self.data['botid'],
+            'bot_token_': self.data['botId'],
         }
         # make sure the config exists
         cl = j.clients.telegram_bot.get(
@@ -58,25 +58,23 @@ class ErpRegisteration(TemplateBase):
 
         return cl
 
-    def register(self, node_id, zerotier_address):
-        productid = self.data['productid']
-        message = "Node with id {} and zerotier address {} is successfully registered in Odoo.".format(
-            node_id, zerotier_address)
+    def register(self, node_name):
+        product_id = self.data['productId']
+        message = 'Node with name {} is successfully registered in Odoo.'.format(node_name)
         # do registration
         try:
             cl = self._get_erp_client()
 
             # check if not yet registered
             model_name = 'stock.production.lot'
-            if cl.count_records(model_name, [['name', '=', node_id]]) == 0:
-                cl.create_record(model_name, {'name': node_id, 'product_id': productid})
-                self.logger.info("Odoo registration succeeded")
+            if cl.count_records(model_name, [['name', '=', node_name]]) == 0:
+                cl.create_record(model_name, {'name': node_name, 'product_id': product_id})
+                self.logger.info('Odoo registration succeeded')
             else:
-                self.logger.info("Odoo registration: node already registered")
+                self.logger.info('Odoo registration: node already registered')
 
         except Exception as err:
-            message = "Node with id {} and zerotier address {} has failed the Odoo registration: {}".format(
-                node_id, zerotier_address, str(err))
+            message = 'Node with name {} has failed the Odoo registration: {}'.format(node_name, str(err))
             raise j.exceptions.RuntimeError(message)
         finally:
             bot_cl = self._get_bot_client()
