@@ -29,7 +29,7 @@ class Node(TemplateBase):
     def _validate_input(self):
         for param in ['redisAddr', 'redisPort']:
             if not self.data[param]:
-                raise ValueError("parameter '%s' not valid: %s", str(self.data[param]))
+                raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
     def _ensure_client_config(self):
         data = {

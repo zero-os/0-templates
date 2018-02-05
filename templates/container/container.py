@@ -12,17 +12,18 @@ class Container(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self._validate_input()
         self._node = None
 
     def _validate_input(self):
-        for param in ['node', 'name', 'flist']:
+        for param in ['node', 'flist']:
             if not self.data[param]:
-                raise ValueError("parameter '%s' not valid: %s", str(self.data[param]))
+                raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
     @property
     def node_sal(self):
         if self._node is None:
-            self._node = j.clients.zero_os.sal.node_get(self.parent.name)
+            self._node = j.clients.zero_os.sal.node_get(self.data['node'])
         return self._node
 
     @property
@@ -47,7 +48,7 @@ class Container(TemplateBase):
                                                         mounts=None, nics=None, host_network=False,
                                                         ports=None, storage=None, init_processes=None,
                                                         privileged=False, env=None)
-        self.state.set('actions', 'installed', 'ok')
+        self.state.set('actions', 'install', 'ok')
         return container_sal
 
     def start(self, node_name=None):
@@ -57,13 +58,13 @@ class Container(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         print('starting %s' % self.name)
         self.container_sal.start()
-        self.state.set('actions', 'started', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def stop(self, node_name=None):
         if node_name and self.data['node'] != node_name:
             return
 
-        self.state.check('actions', 'started', 'ok')
+        self.state.check('actions', 'start', 'ok')
         print('stopping %s' % self.name)
         self.container_sal.stop()
-        self.state.delete('actions', 'started')
+        self.state.delete('actions', 'start')
