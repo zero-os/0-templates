@@ -49,6 +49,7 @@ class Container(TemplateBase):
                                         init_processes=self.data['initProcesses'],
                                         privileged=self.data['privileged'], env=None)
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def start(self, node_name=None):
         if node_name and self.data['node'] != node_name:
