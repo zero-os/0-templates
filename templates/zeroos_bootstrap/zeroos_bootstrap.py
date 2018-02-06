@@ -98,6 +98,16 @@ class ZeroosBootstrap(TemplateBase):
         return j.clients.zero_os.sal.node_get("bootstrap")
 
     @timeout(60, error_message="can't connect, unauthorizing member")
+    def _ping_node(self, node_sal, zerotier_ip):
+        while True:
+            try:
+                self.logger.info("connection to g8os with IP: %s", zerotier_ip)
+                node_sal.client.ping()
+                break
+            except Exception as e:
+                self.logger.error(str(e))
+                continue
+
     def _add_node(self, member):
         if not member['online'] or member['config']['authorized']:
             return
@@ -113,19 +123,10 @@ class ZeroosBootstrap(TemplateBase):
         # create client configuration for that node
         node_sal = self._get_node_sal(zerotier_ip)
 
+        self._ping_node(node_sal, zerotier_ip)
+
         for hw_check in self.api.services.find(template_uid=HARDWARE_CHECK_TEMPLATE_UID):
             hw_check.schedule_action('register', args={'node_name': node_sal.name}).wait()
-
-        # test if we can connect to the new member
-        # node_client = j.clients.zero_os._get_manual(host=zerotier_ip, timeout=30, testConnectionAttempts=0)  # , password=get_jwt_token(service.aysrepo))
-        while True:
-            try:
-                self.logger.info("connection to g8os with IP: %s", zerotier_ip)
-                node_sal.client.ping()
-                break
-            except Exception as e:
-                self.logger.error(str(e))
-                continue
 
         # connection succeeded, set the hostname of the node to zerotier member
         name = node_sal.name
