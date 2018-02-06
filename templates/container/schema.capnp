@@ -14,7 +14,7 @@ struct Schema {
     storage @7 :Text;
     mounts @8: List(Mount); # List mount points mapping to the container
     bridges @9 :List(Text); # comsumed bridges, automaticly filled don't pass in blueprint
-    zerotiernodeid @10:Text;
+    zerotierNetwork @10:Text; # node's zerotier network id
     privileged @11 :Bool;
     identity @12 :Text;
 

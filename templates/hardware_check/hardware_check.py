@@ -15,14 +15,18 @@ class HardwareCheck(TemplateBase):
         self._validate_input()
 
     def _validate_input(self):
-        for param in ['numhdd', 'numssd', 'ram', 'cpu', 'botid', 'chatid']:
+        for param in ['botToken', 'chatId', 'supported']:
             if not self.data[param]:
-                raise ValueError("parameter '%s' not valid: %s",
-                                 str(self.data[param]))
+                raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
+
+        for supported in self.data['supported']:
+            for param in ['ssdCount', 'hddCount', 'ram', 'cpu', 'name']:
+                if not supported[param]:
+                    raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
     def _get_bot_client(self):
         data = {
-            'bot_token_': self.data['botid'],
+            'bot_token_': self.data['botToken'],
         }
         # make sure the config exists
         cl = j.clients.telegram_bot.get(
@@ -37,7 +41,7 @@ class HardwareCheck(TemplateBase):
 
         return cl
 
-    def _check_disk(self, cl):
+    def _disk(self, cl):
         ssd_count = 0
         hdd_count = 0
 
@@ -70,31 +74,16 @@ class HardwareCheck(TemplateBase):
                     raise j.exceptions.RuntimeError(
                         "Hardwaretest drive /dev/{} failed.".format(name))
 
-        ssd_num = self.data['numssd']
-        if ssd_count != ssd_num:
-            raise j.exceptions.RuntimeError(
-                "Number of ssds is not as expected. Found {} ssd(s) instead of {}".format(ssd_count, ssd_num))
+        return hdd_count, ssd_count
 
-        hdd_num = self.data['numhdd']
-        if hdd_count != hdd_num:
-            raise j.exceptions.RuntimeError(
-                "Number of hdds is not as expected. Found {} hdd(s) instead of {}".format(hdd_count, hdd_num))
-
-    def _check_ram(self, cl):
+    def _ram(self, cl):
         ram = cl.info.mem().get('total')
         ram_mib = ram // 1024 // 1024
-        exp_ram_mib = self.data['ram']
-        if ram_mib < exp_ram_mib - 5:
-            raise j.exceptions.RuntimeError(
-                "The total amount of ram is not as expected. Found {} MiB instead of more than {} MiB".format(
-                    ram_mib, exp_ram_mib))
+        return ram_mib
 
-    def _check_cpu(self, cl):
+    def _cpu(self, cl):
         cpu = cl.info.cpu()[0].get('modelName').split()[2]
-        exp_cpu = self.data['cpu']
-        if cpu != exp_cpu:
-            raise j.exceptions.RuntimeError(
-                "The cpu is not as expected. Found {} instead of {}".format(cpu, exp_cpu))
+        return cpu
 
     def check(self, node_name):
         cl = j.clients.zero_os.get(instance=node_name)
@@ -102,9 +91,26 @@ class HardwareCheck(TemplateBase):
             node_name)
 
         try:
-            self._check_disk(cl)
-            self._check_ram(cl)
-            self._check_cpu(cl)
+            hdd, ssd = self._disk(cl)
+            ram = self._ram(cl)
+            cpu = self._cpu(cl)
+
+            for supported in self.data['supported']:
+                if ram < supported['ram'] - 5:
+                    continue
+
+                if cpu != supported['cpu']:
+                    continue
+
+                if hdd != supported['hddCount']:
+                    continue
+
+                if ssd != supported['ssdCount']:
+                    continue
+                break
+            else:
+                raise j.exceptions.RuntimeError(
+                    "No supported hardware combination for ram={}MiB ssd={} hdd={} cpu={}".format(ram, ssd, hdd, cpu))
 
             self.logger.info("Hardware check succeeded")
         except Exception as err:
@@ -113,4 +119,4 @@ class HardwareCheck(TemplateBase):
             raise j.exceptions.RuntimeError(message)
         finally:
             bot_cl = self._get_bot_client()
-            bot_cl.send_message(self.data['chatid'], message)
+            bot_cl.send_message(self.data['chatId'], message)

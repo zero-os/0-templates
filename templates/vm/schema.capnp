@@ -4,14 +4,13 @@
 
 struct Schema {
     node @0: Text; # pointer to the parent service
-    id @1: Text;
 
-    memory @2: UInt16 = 128; # Amount of memory in MiB
-    cpu @3: UInt16 = 1; # Number of virtual CPUs
-    nics @4: List(NicLink);
-    vdisks @5: List(DiskLink);
-    flist @6: Text; # if specified, the vm will boot from an flist and not a vdisk
-    vnc @7: Int32 = -1; # the vnc port the machine is listening to
+    memory @1: UInt16 = 128; # Amount of memory in MiB
+    cpu @2: UInt16 = 1; # Number of virtual CPUs
+    nics @3: List(NicLink);
+    vdisks @4: List(DiskLink);
+    flist @5: Text; # if specified, the vm will boot from an flist and not a vdisk
+    vnc @6: Int32 = -1; # the vnc port the machine is listening to
 
 
     struct NicLink {
@@ -21,7 +20,7 @@ struct Schema {
     }
 
     struct DiskLink {
-      vdiskid @0: Text;
+      vdiskId @0: Text;
       maxIOps @1: UInt32;
     }
 

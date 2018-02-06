@@ -2,10 +2,15 @@
 
 
 struct Schema {
-  numhdd @0: UInt16; # expected number of hdds
-  numssd @1: UInt16; # expected number of ssds
+  supported @0: List(HWCombo); # List of known hw combinations
+  botToken @1: Text; # token of the telegram bot
+  chatId @2: Text; # id of the telegram groupchat
+}
+
+struct HWCombo {
+  hddCount @0: UInt16; # expected number of hdds
+  ssdCount @1: UInt16; # expected number of ssds
   ram @2: UInt64; # expected amount of ram (in mibi bytes - MiB)
   cpu @3: Text; # model name of expected cpu
-  botid @4: Text; # id of the telegram bot
-  chatid @5: Text; # id of the telegram groupchat
+  name @4: Text; # name of this hw combo
 }

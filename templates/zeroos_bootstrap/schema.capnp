@@ -1,13 +1,14 @@
-@0xa9de4f7dcccf86af;
+@0xa03ee920fb75e608; 
+
 
 struct Schema {
-    zerotierInstance @0: Text;
+    zerotierClient @0: Text;
     # instance name of the zerotier client to use
     zerotierNetID @1: Text;
     # network ID of the zerotier network to use
     # for discover ZeroOs node
 
-    wipedisks @2 :Bool=false;
+    wipeDisks @2 :Bool=false;
     # networks @2 :List(Text);
     # networks the new node needs to consume
     # Not implemented yet
