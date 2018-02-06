@@ -148,6 +148,12 @@ class Node(TemplateBase):
     def monitor(self):
         self.logger.info('monitor')
 
+    def info(self):
+        return self.node_sal.client.info.os()
+
+    def stats(self):
+        return self.node_sal.client.aggregator.query()
+
     def _healthcheck(self):
         if self.node_sal.is_running():
             _update_healthcheck_state(self, self.node_sal.healthcheck.openfiledescriptors())

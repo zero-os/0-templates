@@ -5,11 +5,11 @@ This template is responsible for configuring the zerotier client on jumpscale. I
 
 ### Schema:
 
-- `token`: the token for the zerotier api
+- `token`: the token for the zerotier api.
 
 
 ### Actions:
-- `delete`: delete the client from jumpscale
+- `delete`: delete the client from jumpscale.
 
 ```python
 args = {

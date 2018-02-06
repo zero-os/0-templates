@@ -6,7 +6,7 @@ This template is responsible for managing a vm on a zero-os node.
 ### Schema:
 
 - `node`: the node to deploy the vm on.
-- `id`: ?
+- `id`: ??
 - `memory`: amount of memory in MiB. Defaults to 128.
 - `cpu`: number of virtual CPUs. Defaults to 1.
 - `nics`: list of type NicLink specifying the nics of this vm.
@@ -20,7 +20,7 @@ NicLink:
 - `macaddress`: nic's macaddress
 
 DiskLink:
-- `vdiskId`: ??
+- `vdiskId`: vdisk identifier.
 - `maxIOps`: maximum iops for this disk
 
 NicType enum: 
@@ -31,12 +31,12 @@ NicType enum:
 
 
 ### Actions:
-- `install`: creates a a vm and the hypervisor on the node
-- `uninstall`: destroys the and deletes the service from 0-robot and the node
-- `shutdown`: shuts down the vm
-- `pause`: pause the vm
-- `resume`: resume the vm
-- `reboot`: reboot the vm
-- `reset`: reset the vm
-- `enable_vnc`: if a vnc port is specified, it opens the port
-- `disable_vnc`: if a vnc port is specified, it drops the port
+- `install`: creates a a vm and the hypervisor on the node.
+- `uninstall`: destroys the and deletes the service from 0-robot and the node.
+- `shutdown`: shuts down the vm.
+- `pause`: pause the vm.
+- `resume`: resume the vm.
+- `reboot`: reboot the vm.
+- `reset`: reset the vm.
+- `enable_vnc`: if a vnc port is specified, it opens the port.
+- `disable_vnc`: if a vnc port is specified, it drops the port.

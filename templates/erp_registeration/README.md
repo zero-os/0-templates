@@ -4,12 +4,12 @@
 This template is responsible for registering a node in odoo if it wasn't already registered.
 
 ### Schema:
-- `url`: url of the odoo server
-- `db`: name of the database
-- `username`: username to use to connect to odoo
-- `password`: password to use to connect to odoo
-- `botToken`: token of the telegram bot to be use to send the telegram message
-- `chatId`: id of the telegram groupchat to send the message to
+- `url`: url of the odoo server.
+- `db`: name of the database.
+- `username`: username to use to connect to odoo.
+- `password`: password to use to connect to odoo.
+- `botToken`: token of the telegram bot to be use to send the telegram message.
+- `chatId`: id of the telegram groupchat to send the message to.
 
 
 ### Actions:

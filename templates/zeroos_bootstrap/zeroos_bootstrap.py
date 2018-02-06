@@ -76,9 +76,6 @@ class ZeroosBootstrap(TemplateBase):
         return zerotier_ip
 
     def _get_node_sal(self, ip):
-        if 'bootstrap' in j.clients.zero_os.items:
-            del j.clients.zero_os.items['bootstrap']
-
         data = {
             'host': ip,
             'port': 6379,
@@ -122,7 +119,7 @@ class ZeroosBootstrap(TemplateBase):
         for _ in range(5):
             try:
                 self.logger.info("connection to g8os with IP: %s", zerotier_ip)
-                node.client.ping()
+                node_sal.client.ping()
                 break
             except:
                 continue
@@ -180,7 +177,8 @@ class ZeroosBootstrap(TemplateBase):
             raise err
         if task_install.state == 'error':
             cleanup()
-            raise RuntimeError("unexpected error during installation of node %s: %s" % (name, task_install.eco.errormessage))
+            raise RuntimeError(
+                "unexpected error during installation of node %s: %s" % (name, task_install.eco.errormessage))
 
         for erp in self.api.services.find(template_uid=ERP_TEMPLATE_UID):
             erp.schedule_action('register', args={'node_name': name}).wait()
