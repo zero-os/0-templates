@@ -5,8 +5,7 @@ This template is responsible for managing a zero-os node.
 
 ### Schema:
 
-- `id`: The mac address of the management network with the colons removed. **optional**
-- `hostname`: the name of the host. **optional**
+- `hostname`: the name of the host. It will be automatically filled when the node is created by the `zero_os_bootstrap` service. **optional**
 - `redisAddr`: the redis address the client uses to connect to the node.
 - `redisPort`: the redis port the client uses to connect to the node. Defaults to 6379.
 - `redisPassword`: the redis password the client uses to connect to the node.

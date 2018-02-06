@@ -23,7 +23,6 @@ class Node(TemplateBase):
         self._node = None
         self._validate_input()
         self._ensure_client_config()
-        # self.recurring_action('monitor', 10)
         self.recurring_action('_healthcheck', 30)
 
     def _validate_input(self):
@@ -51,11 +50,11 @@ class Node(TemplateBase):
         cl.config.data.update(data)
         cl.config.save()
 
-    def update_data(self, d):
-        self.data.update(d)
+    def update_data(self, data):
+        self.data.update(data)
         # force recreation of the connection to the node
         for key in ['redisAddr', 'redisPort', 'redisPassword']:
-            if d.get(key) != self.data[key]:
+            if data.get(key) != self.data[key]:
                 self._node = None
                 break
 
@@ -118,7 +117,7 @@ class Node(TemplateBase):
             self.recurring_action('monitor', 60)
 
     def uninstall(self):
-        print('uninstalling  node')
+        self.logger.info('uninstalling  node')
         # stats_collector_service = get_stats_collector(service)
         # if stats_collector_service:
         #     stats_collector_service.executeAction('uninstall', context=job.context)
@@ -144,9 +143,6 @@ class Node(TemplateBase):
         # for etcd_cluster_service in service.aysrepo.servicesFind(role='etcd_cluster'):
         #     etcd_cluster_service.executeAction('delete', context=job.context)
         #     etcd_cluster_service.delete()
-
-    def monitor(self):
-        self.logger.info('monitor')
 
     def info(self):
         return self.node_sal.client.info.os()

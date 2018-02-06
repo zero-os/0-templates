@@ -2,6 +2,7 @@ from gevent import sleep
 
 from js9 import j
 from zerorobot.template.base import TemplateBase
+from zerorobot.template.decorator import timeout
 
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
 ERP_TEMPLATE_UID = 'github.com/zero-os/0-templates/erp_registeration/0.0.1'
@@ -56,6 +57,7 @@ class ZeroosBootstrap(TemplateBase):
         member['config']['authorized'] = False
         self.zt.client.network.updateMember(member, member['nodeId'], netid)
 
+    @timeout(20, error_message='Node did not get an ip assigned')
     def _wait_member_ip(self, member):
         self.logger.info("wait ip for member %s", member['nodeId'])
         netid = self.data['zerotierNetID']
@@ -63,14 +65,13 @@ class ZeroosBootstrap(TemplateBase):
         resp = self.zt.client.network.getMember(member['nodeId'], netid)
         member = resp.json()
 
-        for _ in range(20):
+        while True:
+            self.logger.info('Checking ip assignments for node with id %s' % member['nodeId'])
             if len(member['config']['ipAssignments']):
                 break
             sleep(1)
             resp = self.zt.client.network.getMember(member['nodeId'], netid)
             member = resp.json()
-        else:
-            raise RuntimeError('Node %s did not get an ip assigned' % (member['nodeId']))
 
         zerotier_ip = member['config']['ipAssignments'][0]
         return zerotier_ip
@@ -96,6 +97,7 @@ class ZeroosBootstrap(TemplateBase):
         # get a node object from the zero-os SAL
         return j.clients.zero_os.sal.node_get("bootstrap")
 
+    @timeout(60, error_message="can't connect, unauthorizing member")
     def _add_node(self, member):
         if not member['online'] or member['config']['authorized']:
             return
@@ -116,15 +118,14 @@ class ZeroosBootstrap(TemplateBase):
 
         # test if we can connect to the new member
         # node_client = j.clients.zero_os._get_manual(host=zerotier_ip, timeout=30, testConnectionAttempts=0)  # , password=get_jwt_token(service.aysrepo))
-        for _ in range(5):
+        while True:
             try:
                 self.logger.info("connection to g8os with IP: %s", zerotier_ip)
                 node_sal.client.ping()
                 break
-            except:
+            except Exception as e:
+                self.logger.error(str(e))
                 continue
-        else:
-            raise RuntimeError("can't connect, unauthorize member IP: {}".format(zerotier_ip))
 
         # connection succeeded, set the hostname of the node to zerotier member
         name = node_sal.name
@@ -139,7 +140,7 @@ class ZeroosBootstrap(TemplateBase):
             # the node already exists
             self.logger.info("service for node %s already exists, updating model", name)
             node = self.api.services.names[name]
-            node.schedule_action('update_data', args={'d': {'redisAddr': zerotier_ip}})
+            node.schedule_action('update_data', args={'data': {'redisAddr': zerotier_ip}})
             return
 
         # create and install the node.zero-os service

@@ -23,7 +23,6 @@ class Hypervisor(TemplateBase):
         """
         if self._node is None:
             self._node = j.clients.zero_os.sal.node_get(self.data['node'])
-            self._node.client.timeout = 60
         return self._node
 
     def create(self, media=None, flist=None, cpu=2, memory=512, nics=None, port=None, mount=None, tags=None):

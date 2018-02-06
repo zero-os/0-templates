@@ -24,9 +24,4 @@ services:
           zerotierClient: 'main'
           zerotierNetID: '12ac4a1e7122ed7a'
 
-actions:
-    - template: github.com/zero-os/0-templates/zeroos_bootstrap/0.0.1
-      service: 'bootstrap'
-      actions: ['bootstrap']
-
 ```

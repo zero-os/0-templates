@@ -35,19 +35,18 @@ class Container(TemplateBase):
 
     def install(self):
         node_name = self.data['node']
-        nodes = self.api.services.find(name=node_name, template_uid=NODE_TEMPLATE_UID)
-        if not nodes:
-            raise RuntimeError("service for node {} does'nt exist".format(node_name))
-
-        self.api.services.names[node_name].state.check('actions', 'install', 'ok')
+        node = self.api.services.get(name=node_name, template_uid=NODE_TEMPLATE_UID)
+        node.state.check('actions', 'install', 'ok')
 
         if self.node_sal is None:
             raise RuntimeError("no connection to the zero-os node")
 
         container_sal = self.node_sal.containers.create(self.name, self.data['flist'], hostname=None,
-                                                        mounts=None, nics=None, host_network=False,
-                                                        ports=None, storage=None, init_processes=None,
-                                                        privileged=False, env=None)
+                                                        mounts=None, nics=self.data['nics'],
+                                                        host_network=self.data['hostNetworking'],
+                                                        ports=self.data['ports'], storage=None,
+                                                        init_processes=self.data['initProcesses'],
+                                                        privileged=self.data['privileged'], env=None)
         self.state.set('actions', 'install', 'ok')
         return container_sal
 
@@ -56,7 +55,7 @@ class Container(TemplateBase):
             return
 
         self.state.check('actions', 'install', 'ok')
-        print('starting %s' % self.name)
+        self.logger.info('starting %s' % self.name)
         self.container_sal.start()
         self.state.set('actions', 'start', 'ok')
 
@@ -65,6 +64,6 @@ class Container(TemplateBase):
             return
 
         self.state.check('actions', 'start', 'ok')
-        print('stopping %s' % self.name)
+        self.logger.info('stopping %s' % self.name)
         self.container_sal.stop()
         self.state.delete('actions', 'start')

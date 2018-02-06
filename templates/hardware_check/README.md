@@ -24,10 +24,13 @@ HWCombo:
 
 ```python
 args = {
-    'hddCount': 2,
-    'ssdCount': 2,
-    'ram': 7150,
-    'cpu': 'intel',
+    'supported':[{
+        'hddCount': 2,
+        'ssdCount': 2,
+        'ram': 7150,
+        'cpu': 'intel',
+        'name': 'name',
+    }],
     'botToken': 'thisisabottoken',
     'chatId': '1823737123',
 }

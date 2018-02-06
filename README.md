@@ -29,4 +29,4 @@ Upcomming releases:
 
 Contribution:
 
-Please check the [contribution](./docs/contribution.md) guidelines before contributing to this repo.
+Please check the [contribution](./CONTRIBUTING.md) guidelines before contributing to this repo.

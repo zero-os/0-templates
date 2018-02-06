@@ -44,11 +44,8 @@ class Vm(TemplateBase):
 
     def install(self):
         node_name = self.data['node']
-        nodes = self.api.services.find(name=node_name, template_uid=NODE_TEMPLATE_UID)
-        if not nodes:
-            raise RuntimeError("service for node {} does'nt exist".format(node_name))
-
-        self.api.services.names[node_name].state.check('actions', 'install', 'ok')
+        node = self.api.services.get(name=node_name, template_uid=NODE_TEMPLATE_UID)
+        node.state.check('actions', 'install', 'ok')
 
         data = {
             'node': self.node_sal.name,
