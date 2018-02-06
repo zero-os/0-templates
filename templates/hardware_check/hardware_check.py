@@ -17,14 +17,12 @@ class HardwareCheck(TemplateBase):
     def _validate_input(self):
         for param in ['botToken', 'chatId', 'supported']:
             if not self.data[param]:
-                raise ValueError("parameter '%s' not valid: %s",
-                                 str(self.data[param]))
+                raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
         for supported in self.data['supported']:
             for param in ['ssdCount', 'hddCount', 'ram', 'cpu', 'name']:
                 if not supported[param]:
-                    raise ValueError("parameter '%s' not valid: %s",
-                                     str(self.data[param]))
+                    raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
     def _get_bot_client(self):
         data = {

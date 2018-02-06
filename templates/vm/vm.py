@@ -24,7 +24,7 @@ class Vm(TemplateBase):
         vdisks = self.data.get('vdisks')
         flist = self.data.get('flist')
         if not vdisks and not flist:
-            raise ValueError("invalid input. Vm requires or a vdisk or flist to be specifed.")
+            raise ValueError("invalid input. Vm requires a vdisk or flist to be specifed.")
 
     @property
     def node_sal(self):

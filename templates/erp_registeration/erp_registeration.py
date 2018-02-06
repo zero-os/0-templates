@@ -18,8 +18,7 @@ class ErpRegisteration(TemplateBase):
     def _validate_input(self):
         for param in ['url', 'db', 'username', 'password', 'productId', 'botToken', 'chatId']:
             if not self.data[param]:
-                raise ValueError("parameter '%s' not valid: %s",
-                                 str(self.data[param]))
+                raise ValueError("parameter '%s' not valid: %s" %(param, str(self.data[param])))
 
     def _get_erp_client(self):
         data = {
