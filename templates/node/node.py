@@ -20,10 +20,13 @@ class Node(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._node = None
         self._validate_input()
+
+        self._refresh_password()
         self._ensure_client_config()
-        self.recurring_action('_healthcheck', 30)
+
+        self.recurring_action('_healthcheck', 30)  # every 30 secondes
+        self.recurring_action('_refresh_password', 1200)  # every 20 minutes
 
     def _validate_input(self):
         for param in ['redisAddr', 'redisPort']:
@@ -46,16 +49,26 @@ class Node(TemplateBase):
             create=True,
             die=True)
 
-        # update the config with correct value
-        cl.config.data.update(data)
         cl.config.save()
+
+    def _refresh_password(self):
+        """
+        this method is reponsible to automaticly refresh a jwt token used as password
+        """
+        if not self.data.get('redisPassword'):
+            return
+
+        # refresh jwt
+        self.data['redisPassword'] = j.clients.itsyouonline.refresh_jwt_token(self.data['redisPassword'], validity=3600)
+        # update the configuration of the client
+        self._ensure_client_config()
 
     def update_data(self, data):
         self.data.update(data)
         # force recreation of the connection to the node
         for key in ['redisAddr', 'redisPort', 'redisPassword']:
             if data.get(key) != self.data[key]:
-                self._node = None
+                self._ensure_client_config()
                 break
 
     @property
@@ -63,14 +76,12 @@ class Node(TemplateBase):
         """
         connection to the node
         """
-        if self._node is None:
-            self._ensure_client_config()
-            self._node = j.clients.zero_os.sal.node_get(self.name)
-            self.data['version'] = '{branch}:{revision}'.format(**self._node.client.info.version())
-        return self._node
+        return j.clients.zero_os.sal.node_get(self.name)
 
     @retry(Exception, tries=2, delay=2)
     def install(self):
+        self.data['version'] = '{branch}:{revision}'.format(**self.node_sal.client.info.version())
+
         poolname = '{}_fscache'.format(self.name)
 
         self.logger.debug('create storage pool for fuse cache')
@@ -151,28 +162,29 @@ class Node(TemplateBase):
         return self.node_sal.client.aggregator.query()
 
     def _healthcheck(self):
-        if self.node_sal.is_running():
-            _update_healthcheck_state(self, self.node_sal.healthcheck.openfiledescriptors())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.cpu_mem())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.rotate_logs())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.network_bond())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.interrupts())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.context_switch())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.threads())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.qemu_vm_logs())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.network_load())
-            _update_healthcheck_state(self, self.node_sal.healthcheck.disk_usage())
+        node_sal = self.node_sal
+        if node_sal.is_running():
+            _update_healthcheck_state(self, node_sal.healthcheck.openfiledescriptors())
+            _update_healthcheck_state(self, node_sal.healthcheck.cpu_mem())
+            _update_healthcheck_state(self, node_sal.healthcheck.rotate_logs())
+            _update_healthcheck_state(self, node_sal.healthcheck.network_bond())
+            _update_healthcheck_state(self, node_sal.healthcheck.interrupts())
+            _update_healthcheck_state(self, node_sal.healthcheck.context_switch())
+            _update_healthcheck_state(self, node_sal.healthcheck.threads())
+            _update_healthcheck_state(self, node_sal.healthcheck.qemu_vm_logs())
+            _update_healthcheck_state(self, node_sal.healthcheck.network_load())
+            _update_healthcheck_state(self, node_sal.healthcheck.disk_usage())
 
             # this is for VM. VM is not implemented yet, and we'll probably not need
             # some cleanup like this anyhow
-            # self.node_sal.healthcheck.ssh_cleanup(job=job)
+            # node_sal.healthcheck.ssh_cleanup(job=job)
 
             # TODO: this need to be configurable
             flist_healhcheck = 'https://hub.gig.tech/gig-official-apps/healthcheck.flist'
-            with self.node_sal.healthcheck.with_container(flist_healhcheck) as cont:
-                _update_healthcheck_state(self, self.node_sal.healthcheck.node_temperature(cont))
-                _update_healthcheck_state(self, self.node_sal.healthcheck.powersupply(cont))
-                _update_healthcheck_state(self, self.node_sal.healthcheck.fan(cont))
+            with node_sal.healthcheck.with_container(flist_healhcheck) as cont:
+                _update_healthcheck_state(self, node_sal.healthcheck.node_temperature(cont))
+                _update_healthcheck_state(self, node_sal.healthcheck.powersupply(cont))
+                _update_healthcheck_state(self, node_sal.healthcheck.fan(cont))
 
         # TODO: check network stability of  node with the rest of the nodes !
 

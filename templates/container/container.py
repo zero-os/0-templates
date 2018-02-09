@@ -13,7 +13,6 @@ class Container(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self._validate_input()
-        self._node = None
 
     def _validate_input(self):
         for param in ['node', 'flist']:
@@ -22,9 +21,7 @@ class Container(TemplateBase):
 
     @property
     def node_sal(self):
-        if self._node is None:
-            self._node = j.clients.zero_os.sal.node_get(self.data['node'])
-        return self._node
+        return j.clients.zero_os.sal.node_get(self.data['node'])
 
     @property
     def container_sal(self):
