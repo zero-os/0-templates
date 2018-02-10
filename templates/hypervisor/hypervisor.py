@@ -36,34 +36,30 @@ class Hypervisor(TemplateBase):
                                                mount=mount,
                                                tags=tags)
         self.data['uid'] = resp.data[1:-1]
+        self.state.set('actions', 'create', 'ok')
 
     def destroy(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.destroy(self.data['uid'])
         del self.data['uid']
+        self.state.delete('actions', 'create')
 
     def shutdown(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.shutdown(self.data['uid'])
 
     def pause(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.pause(self.data['uid'])
 
     def resume(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.resume(self.data['uid'])
 
     def reboot(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.reboot(self.data['uid'])
 
     def reset(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.reset(self.data['uid'])

@@ -6,7 +6,6 @@ import pytest
 from js9 import j
 from hypervisor import Hypervisor
 from zerorobot.template.state import StateCheckError
-from zerorobot import service_collection as scol
 
 
 class TestHypervisorTemplate(TestCase):
@@ -25,11 +24,11 @@ class TestHypervisorTemplate(TestCase):
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the node'):
             Hypervisor(name='hypervisor', data={})
 
-    def test_valid_dara(self):
+    def test_valid_data(self):
         """
         Test creating a hypervisor service with valid data
         """
-        Hypervisor('hypervisor', data=self.valid_data)
+        hyperevisor = Hypervisor('hypervisor', data=self.valid_data)
 
     def test_node_sal_node_is_none(self):
         """
@@ -67,15 +66,14 @@ class TestHypervisorTemplate(TestCase):
 
         assert hypervisor.node_sal.client.kvm.create.called
 
-    def test_destroy_hypervisor_no_uid(self):
+    def test_destroy_hypervisor_not_created(self):
         """
-        Test destroying the hypervisor with no uid set in data
+        Test destroying the hypervisor without creation
         """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.destroy = MagicMock()
-        hypervisor.destroy()
-
-        assert hypervisor.node_sal.client.kvm.destroy.called is False
+        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+            hypervisor = Hypervisor('hypervisor', data=self.valid_data)
+            hypervisor.node_sal.client.kvm.destroy = MagicMock()
+            hypervisor.destroy()
 
     def test_destroy_hypervisor(self):
         """
@@ -84,20 +82,20 @@ class TestHypervisorTemplate(TestCase):
         """
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.node_sal.client.kvm.destroy = MagicMock()
+        hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.destroy()
 
         assert hypervisor.node_sal.client.kvm.destroy.called
 
-    def test_shutdown_hypervisor_no_uid(self):
+    def test_shutdown_hypervisor_not_created(self):
         """
-        Test shuting down the hypervisor with no uid set in data
+        Test shuting down the hypervisor without creation
         """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.shutdown = MagicMock()
-        hypervisor.shutdown()
-
-        assert hypervisor.node_sal.client.kvm.shutdown.called is False
+        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+            hypervisor = Hypervisor('hypervisor', data=self.valid_data)
+            hypervisor.node_sal.client.kvm.shutdown = MagicMock()
+            hypervisor.shutdown()
 
     def test_shutdown_hypervisor(self):
         """
@@ -106,20 +104,20 @@ class TestHypervisorTemplate(TestCase):
         """
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.node_sal.client.kvm.shutdown = MagicMock()
+        hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.shutdown()
 
         assert hypervisor.node_sal.client.kvm.shutdown.called
 
-    def test_pause_hypervisor_no_uid(self):
+    def test_pause_hypervisor_not_created(self):
         """
-        Test pause the hypervisor with no uid set in data
+        Test pause the hypervisor without creation
         """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.pause = MagicMock()
-        hypervisor.pause()
-
-        assert hypervisor.node_sal.client.kvm.pause.called is False
+        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+            hypervisor = Hypervisor('hypervisor', data=self.valid_data)
+            hypervisor.node_sal.client.kvm.pause = MagicMock()
+            hypervisor.pause()
 
     def test_pause_hypervisor(self):
         """
@@ -128,20 +126,20 @@ class TestHypervisorTemplate(TestCase):
         """
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.node_sal.client.kvm.pause = MagicMock()
+        hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.pause()
 
         assert hypervisor.node_sal.client.kvm.pause.called
 
-    def test_resume_hypervisor_no_uid(self):
+    def test_resume_hypervisor_not_created(self):
         """
-        Test resume the hypervisor with no uid set in data
+        Test resume the hypervisor without creation
         """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.resume = MagicMock()
-        hypervisor.resume()
-
-        assert hypervisor.node_sal.client.kvm.resume.called is False
+        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+            hypervisor = Hypervisor('hypervisor', data=self.valid_data)
+            hypervisor.node_sal.client.kvm.resume = MagicMock()
+            hypervisor.resume()
 
     def test_resume_hypervisor(self):
         """
@@ -150,20 +148,20 @@ class TestHypervisorTemplate(TestCase):
         """
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.node_sal.client.kvm.resume = MagicMock()
+        hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.resume()
 
         assert hypervisor.node_sal.client.kvm.resume.called
 
-    def test_reboot_hypervisor_no_uid(self):
+    def test_reboot_hypervisor_not_created(self):
         """
-        Test reboot the hypervisor with no uid set in data
+        Test reboot the hypervisor without creation
         """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.reboot = MagicMock()
-        hypervisor.reboot()
-
-        assert hypervisor.node_sal.client.kvm.reboot.called is False
+        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+            hypervisor = Hypervisor('hypervisor', data=self.valid_data)
+            hypervisor.node_sal.client.kvm.reboot = MagicMock()
+            hypervisor.reboot()
 
     def test_reboot_hypervisor(self):
         """
@@ -172,20 +170,20 @@ class TestHypervisorTemplate(TestCase):
         """
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.node_sal.client.kvm.reboot = MagicMock()
+        hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.reboot()
 
         assert hypervisor.node_sal.client.kvm.reboot.called
 
-    def test_reset_hypervisor_no_uid(self):
+    def test_reset_hypervisor_not_created(self):
         """
-        Test reset the hypervisor with no uid set in data
+        Test reset the hypervisor without creation
         """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.reset = MagicMock()
-        hypervisor.reset()
-
-        assert hypervisor.node_sal.client.kvm.reset.called is False
+        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+            hypervisor = Hypervisor('hypervisor', data=self.valid_data)
+            hypervisor.node_sal.client.kvm.reset = MagicMock()
+            hypervisor.reset()
 
     def test_reset_hypervisor(self):
         """
@@ -194,6 +192,7 @@ class TestHypervisorTemplate(TestCase):
         """
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.node_sal.client.kvm.reset = MagicMock()
+        hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.reset()
 
