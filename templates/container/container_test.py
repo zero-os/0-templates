@@ -143,6 +143,8 @@ class TestContainerTemplate(TestCase):
         container.state.check('actions', 'start', 'ok')
         container.state.check('actions', 'start', 'ok')
         assert container.node_sal.containers.create.called
+        assert container.node_sal.containers.create.call_args[1]['ports'] == {80: 80}, \
+            "ports forward list should have been converted to dict of int"
         assert container.api.services.get.called
 
     def test_start_container_wrong_node(self):

@@ -42,10 +42,16 @@ class Container(TemplateBase):
         if self.node_sal is None:
             raise RuntimeError("no connection to the zero-os node")
 
+        # convert "src:dst" to {src:dst}
+        ports = {}
+        for p in self.data['ports']:
+            src, dst = p.split(":")
+            ports[int(src)] = int(dst)
+
         self.node_sal.containers.create(self.name, self.data['flist'], hostname=None,
                                         mounts=None, nics=self.data['nics'],
                                         host_network=self.data['hostNetworking'],
-                                        ports=self.data['ports'], storage=None,
+                                        ports=ports, storage=None,
                                         init_processes=self.data['initProcesses'],
                                         privileged=self.data['privileged'], env=None)
         self.state.set('actions', 'install', 'ok')
