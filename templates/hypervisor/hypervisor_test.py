@@ -1,11 +1,17 @@
+import os
+import shutil
+import tempfile
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from js9 import j
 from hypervisor import Hypervisor
+from js9 import j
+from zerorobot import service_collection as scol
+from zerorobot import config
 from zerorobot.template.state import StateCheckError
+from zerorobot.template_uid import TemplateUID
 
 
 class TestHypervisorTemplate(TestCase):
@@ -13,6 +19,13 @@ class TestHypervisorTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.valid_data = {'node': 'node'}
+        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
+        Hypervisor.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Hypervisor.template_name, Hypervisor.version))
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(config.DATA_DIR):
+            shutil.rmtree(config.DATA_DIR)
 
     def tearDown(self):
         patch.stopall()
