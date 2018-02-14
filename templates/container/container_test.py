@@ -176,6 +176,7 @@ class TestContainerTemplate(TestCase):
         container.start()
 
         assert container.state.check('actions', 'start', 'ok')
+        assert container.container_sal.start.called
 
     def test_stop_container_wrong_node(self):
         """
@@ -201,7 +202,12 @@ class TestContainerTemplate(TestCase):
         """
         container = Container('container', data=self.valid_data)
         container.state.check = MagicMock(return_value=True)
+        container.state.delete = MagicMock(return_value=True)
         container.node_sal.containers = MagicMock()
         container.container_sal.stop = MagicMock()
 
+        container.stop()
+
         assert container.state.check('actions', 'start', 'ok')
+        assert container.container_sal.stop.called
+        assert container.state.delete.called
