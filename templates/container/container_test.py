@@ -1,5 +1,8 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+import tempfile
+import shutil
+import os
 
 import pytest
 
@@ -7,13 +10,22 @@ from js9 import j
 from container import Container
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
+from zerorobot import config
+from zerorobot.template_uid import TemplateUID
 
 
 class TestContainerTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'flist': 'flist', 'node': 'node'}
+        cls.valid_data = {'flist': 'flist', 'node': 'node', 'ports': ['80:80']}
+        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
+        Container.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Container.template_name, Container.version))
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(config.DATA_DIR):
+            shutil.rmtree(config.DATA_DIR)
 
     def tearDown(self):
         patch.stopall()
@@ -77,6 +89,7 @@ class TestContainerTemplate(TestCase):
         container_sal_return = 'container_sal'
         container = Container('container', data=self.valid_data)
         container.node_sal.containers.get = MagicMock(side_effect=[LookupError, container_sal_return])
+
         container.install = MagicMock()
         container_sal = container.container_sal
 
