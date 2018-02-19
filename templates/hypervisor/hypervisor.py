@@ -9,7 +9,6 @@ class Hypervisor(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._node = None
         self._validate_input()
 
     def _validate_input(self):
@@ -21,9 +20,7 @@ class Hypervisor(TemplateBase):
         """
         connection to the zos node
         """
-        if self._node is None:
-            self._node = j.clients.zero_os.sal.node_get(self.data['node'])
-        return self._node
+        return j.clients.zero_os.sal.node_get(self.data['node'])
 
     def create(self, media=None, flist=None, cpu=2, memory=512, nics=None, port=None, mount=None, tags=None):
         resp = self.node_sal.client.kvm.create(name=self.name,

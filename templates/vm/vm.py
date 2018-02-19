@@ -13,7 +13,6 @@ class Vm(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self.hv_name = "hv_%s" % self.guid
-        self._node = None
         self._hypervisor = None
         self._validate_input()
 
@@ -31,9 +30,7 @@ class Vm(TemplateBase):
         """
         connection to the zos node
         """
-        if self._node is None:
-            self._node = j.clients.zero_os.sal.node_get(self.data['node'])
-        return self._node
+        return j.clients.zero_os.sal.node_get(self.data['node'])
 
     @property
     def hypervisor(self):
