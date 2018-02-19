@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 import tempfile
 import shutil
 import os
@@ -23,9 +23,6 @@ class TestZerotierClientTemplate(TestCase):
     def tearDownClass(cls):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
-
-    def tearDown(self):
-        patch.stopall()
 
     def test_create_data_none(self):
         j.clients.zerotier.list = MagicMock(return_value=[])

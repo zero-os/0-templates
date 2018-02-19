@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, PropertyMock
 import tempfile
 import shutil
 import os
@@ -21,6 +21,7 @@ class TestVmTemplate(TestCase):
         cls.valid_data = {'node': 'node', 'flist': 'flist'}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Vm.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Vm.template_name, Vm.version))
+        cls.vnc_port = 5900
 
     @classmethod
     def tearDownClass(cls):
@@ -47,9 +48,9 @@ class TestVmTemplate(TestCase):
         vm = Vm('vm', data=self.valid_data)
         # assert self.valid_data == vm.data
 
-    def test_node_sal_node_is_none(self):
+    def test_node_sal(self):
         """
-        Test the node_sal property when Vm._node is None
+        Test the node_sal property
         """
         vm = Vm('vm', data=self.valid_data)
         node_sal_return = 'node_sal'
@@ -59,35 +60,71 @@ class TestVmTemplate(TestCase):
         assert node_sal == node_sal_return
         j.clients.zero_os.sal.node_get.assert_called_with(self.valid_data['node'])
 
-    def test_node_sal_node_is_set(self):
+    def test_install_vm_node_not_found(self):
         """
-        Test the node_sal property when Vm._node is set
+        Test installing a vm with no service found for the node
+        """
+        with pytest.raises(scol.ServiceNotFoundError,
+                           message='install action should raise an error if node service is not found'):
+            vm = Vm('vm', data=self.valid_data)
+            vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
+            vm.install()
+
+    def test_install_vm_node_not_installed(self):
+        """
+        Test installing the vm without the node being installed
+        """
+        with pytest.raises(StateCheckError,
+                           message='install action should raise an error if the node is not installed'):
+            vm = Vm('vm', data=self.valid_data)
+            node = MagicMock()
+            vm.api.services.get = MagicMock(return_value=node)
+            node.state.check = MagicMock(side_effect=StateCheckError)
+            vm.install()
+
+    def test_install_vm(self):
+        """
+        Test successfully creating a vm
         """
         vm = Vm('vm', data=self.valid_data)
-        node_sal_return = 'node_sal'
+        vm.api.services.get = MagicMock()
         patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-        vm._node = node_sal_return
-        node_sal = vm.node_sal
+        task = MagicMock(state='ok')
+        hyperviser = MagicMock()
+        hyperviser.schedule_action = MagicMock(return_value=task)
+        vm.api.services.create = MagicMock(return_value=hyperviser)
+        vm.install()
 
-        assert node_sal == node_sal_return
-        assert j.clients.zero_os.sal.node_get.called is False
+    def test_install_vm_fail(self):
+        """
+        Test vm install fails and hypervisor guid not in services list
+        """
+        with pytest.raises(RuntimeError,
+                           message='install action should raise an error if the hypervisor state is not ok'):
+            vm = Vm('vm', data=self.valid_data)
+            vm.api.services = MagicMock()
+            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+            vm.install()
+            assert vm._hypervisor is not None
 
-    # def test_create_vm(self):
-    #     """
-    #     Test successfully creating a vm
-    #     :return:
-    #     """
-    #     vm = Vm('vm', data=self.valid_data)
-    #     vm.node_sal.client.kvm.create = MagicMock()
-    #     vm.create()
-    #
-    #     assert vm.node_sal.client.kvm.create.called
+    def test_install_vm_fail_hypervisor_delete(self):
+        """
+        Test vm install fails and hypervisor guid in services list
+        """
+        with pytest.raises(RuntimeError,
+                           message='install action should raise an error if the hypervisor state is not ok'):
+            vm = Vm('vm', data=self.valid_data)
+            vm.api.services = MagicMock(guids={'guid': MagicMock()})
+            vm.api.services.create = MagicMock(guid='guid')
+            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+            vm.install()
+            assert vm._hypervisor is None
 
     def test_uninstall_vm_hypervisor_not_created(self):
         """
         Test uninstalling the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Starting vm before install should raise an error'):
+        with pytest.raises(scol.ServiceNotFoundError, message='Uninstall vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.uninstall()
@@ -95,7 +132,6 @@ class TestVmTemplate(TestCase):
     def test_uninstall_vm(self):
         """
         Test successfully destroying the vm
-        :return:
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
@@ -108,15 +144,14 @@ class TestVmTemplate(TestCase):
         """
         Test shutting down the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Starting vm before install should raise an error'):
+        with pytest.raises(scol.ServiceNotFoundError, message='Shuting down vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.shutdown()
 
     def test_shutdown_vm(self):
         """
-        Test successfully shuting down the vm
-        :return:
+        Test successfully shutting down the vm
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
@@ -129,7 +164,7 @@ class TestVmTemplate(TestCase):
         """
         Test pausing the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Starting vm before install should raise an error'):
+        with pytest.raises(scol.ServiceNotFoundError, message='Pausing vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.pause()
@@ -137,7 +172,6 @@ class TestVmTemplate(TestCase):
     def test_pause_vm(self):
         """
         Test successfully pausing the vm
-        :return:
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
@@ -150,7 +184,7 @@ class TestVmTemplate(TestCase):
         """
         Test resume the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Starting vm before install should raise an error'):
+        with pytest.raises(scol.ServiceNotFoundError, message='Resuming vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.resume()
@@ -158,7 +192,6 @@ class TestVmTemplate(TestCase):
     def test_resume_vm(self):
         """
         Test successfully resume the vm
-        :return:
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
@@ -171,7 +204,7 @@ class TestVmTemplate(TestCase):
         """
         Test reboot the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Starting vm before install should raise an error'):
+        with pytest.raises(scol.ServiceNotFoundError, message='Rebooting vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.reboot()
@@ -179,7 +212,6 @@ class TestVmTemplate(TestCase):
     def test_reboot_vm(self):
         """
         Test successfully reboot the vm
-        :return:
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
@@ -192,7 +224,7 @@ class TestVmTemplate(TestCase):
         """
         Test reset the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Starting vm before install should raise an error'):
+        with pytest.raises(scol.ServiceNotFoundError, message='Resetting vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.reset()
@@ -200,7 +232,6 @@ class TestVmTemplate(TestCase):
     def test_reset_vm(self):
         """
         Test successfully reset the vm
-        :return:
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
@@ -208,3 +239,65 @@ class TestVmTemplate(TestCase):
         vm.reset()
 
         vm.hypervisor.schedule_action.assert_called_with('reset')
+
+    def test_get_vnc_port(self):
+        """
+        Test _get_vnc_port when there is a vnc port
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        vm = Vm('vm', data=self.valid_data)
+        vm.node_sal.client.kvm.list = MagicMock(return_value=[{'name': vm.hv_name, 'vnc': self.vnc_port}])
+        assert vm._get_vnc_port() == self.vnc_port
+
+    def test_get_vnc_port_no_port(self):
+        """
+        Test _get_vnc_port when there is no vnc port
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        vm = Vm('vm', data=self.valid_data)
+        vm.node_sal.client.kvm.list = MagicMock(return_value=[])
+        assert vm._get_vnc_port() is None
+
+    def test_enable_vnc(self):
+        """
+        Test enable_vnc when there is a vnc port
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        vm = Vm('vm', data=self.valid_data)
+        vm._get_vnc_port = MagicMock(return_value=self.vnc_port)
+        vm.node_sal.client.nft.open_port = MagicMock()
+        vm.enable_vnc()
+        vm.node_sal.client.nft.open_port.assert_called_with(self.vnc_port)
+
+    def test_enable_vnc_no_port(self):
+        """
+        Test enable_vnc when there is no vnc port
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        vm = Vm('vm', data=self.valid_data)
+        vm._get_vnc_port = MagicMock(return_value=None)
+        vm.node_sal.client.nft.open_port = MagicMock()
+        vm.enable_vnc()
+        vm.node_sal.client.nft.open_port.assert_not_called()
+
+    def test_disable_vnc(self):
+        """
+        Test disable_vnc when there is a vnc port
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        vm = Vm('vm', data=self.valid_data)
+        vm._get_vnc_port = MagicMock(return_value=self.vnc_port)
+        vm.node_sal.client.nft.drop_port = MagicMock()
+        vm.disable_vnc()
+        vm.node_sal.client.nft.drop_port.assert_called_with(self.vnc_port)
+
+    def test_disable_vnc_no_port(self):
+        """
+        Test disable_vnc when there is no vnc port
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        vm = Vm('vm', data=self.valid_data)
+        vm._get_vnc_port = MagicMock(return_value=None)
+        vm.node_sal.client.nft.drop_port = MagicMock()
+        vm.disable_vnc()
+        vm.node_sal.client.nft.drop_port.assert_not_called()

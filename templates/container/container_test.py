@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, PropertyMock
 import tempfile
 import shutil
 import os
@@ -43,35 +43,20 @@ class TestContainerTemplate(TestCase):
     def test_create_valid_data(self):
         Container(name='container', data=self.valid_data)
 
-    def test_node_sal_node_is_none(self):
+    def test_node_sal(self):
         """
-        Test the node_sal property when Container._node is None
+        Test the node_sal property
         """
-        container = Container('container', data=self.valid_data)
-        node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock(return_value=node_sal_return)).start()
-        node_sal = container.node_sal
-
-        assert node_sal == node_sal_return
-        j.clients.zero_os.sal.node_get.assert_called_with(self.valid_data['node'])
-
-    def test_node_sal_node_is_set(self):
-        """
-        Test the node_sal property when Container._node is set
-        """
-        container = Container('container', data=self.valid_data)
-        node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-        container._node = node_sal_return
-        node_sal = container.node_sal
-
-        assert node_sal == node_sal_return
-        assert j.clients.zero_os.sal.node_get.called is False
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
+            container = Container('container', data=self.valid_data)
+            node_sal = container.node_sal
+            assert node_get.called
 
     def test_container_sal_container_installed(self):
         """
         Test container_sal property when container is exists
         """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container_sal_return = 'container_sal'
         container.node_sal.containers.get = MagicMock(return_value=container_sal_return)
@@ -86,6 +71,7 @@ class TestContainerTemplate(TestCase):
         """
         Test container_sal property when container doesn't exist
         """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container_sal_return = 'container_sal'
         container = Container('container', data=self.valid_data)
         container.node_sal.containers.get = MagicMock(side_effect=[LookupError, container_sal_return])
@@ -113,7 +99,7 @@ class TestContainerTemplate(TestCase):
         Test installing a container with no service found for the node
         """
         with pytest.raises(scol.ServiceNotFoundError,
-                           message='install action should raise an error if there is no connection to the node'):
+                           message='install action should raise an error if node service is not found'):
             container = Container('container', data=self.valid_data)
             container.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             container.install()
@@ -123,7 +109,7 @@ class TestContainerTemplate(TestCase):
         Test installing the container without the node being installed
         """
         with pytest.raises(StateCheckError,
-                           message='install action should raise an error if there is no connection to the node'):
+                           message='install action should raise an error if node is not installed'):
             container = Container('container', data=self.valid_data)
             node = MagicMock()
             container.api.services.get = MagicMock(return_value=node)
@@ -134,6 +120,7 @@ class TestContainerTemplate(TestCase):
         """
         Test successfully installing a container
         """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container.api.services.get = MagicMock()
         container.node_sal.containers.create = MagicMock()
@@ -169,10 +156,9 @@ class TestContainerTemplate(TestCase):
         """
         Test successfully starting a container
         """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container.state.set('actions', 'install', 'ok')
-        container.node_sal.containers = MagicMock()
-        container.container_sal.start = MagicMock()
         container.start()
 
         assert container.state.check('actions', 'start', 'ok')
@@ -192,7 +178,7 @@ class TestContainerTemplate(TestCase):
         """
         Test stopping a container without starting
         """
-        with pytest.raises(StateCheckError, message='Starting container before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Stopping container before install should raise an error'):
             container = Container('container', data=self.valid_data)
             container.stop()
 
@@ -200,11 +186,10 @@ class TestContainerTemplate(TestCase):
         """
         Test successfully stopping a container
         """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container.state.check = MagicMock(return_value=True)
         container.state.delete = MagicMock(return_value=True)
-        container.node_sal.containers = MagicMock()
-        container.container_sal.stop = MagicMock()
 
         container.stop()
 

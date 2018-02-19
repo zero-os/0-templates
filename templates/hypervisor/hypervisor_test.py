@@ -43,7 +43,7 @@ class TestHypervisorTemplate(TestCase):
         """
         hyperevisor = Hypervisor('hypervisor', data=self.valid_data)
 
-    def test_node_sal_node_is_none(self):
+    def test_node_sal_node(self):
         """
         Test the node_sal property when Hypervisor._node is None
         """
@@ -55,26 +55,13 @@ class TestHypervisorTemplate(TestCase):
         assert node_sal == node_sal_return
         j.clients.zero_os.sal.node_get.assert_called_with(self.valid_data['node'])
 
-    def test_node_sal_node_is_set(self):
-        """
-        Test the node_sal property when Hypervisor._node is set
-        """
-        hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-        hypervisor._node = node_sal_return
-        node_sal = hypervisor.node_sal
-
-        assert node_sal == node_sal_return
-        assert j.clients.zero_os.sal.node_get.called is False
-
     def test_create_hypervisor(self):
         """
         Test successfully creating a hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.create = MagicMock()
         hypervisor.create()
 
         assert hypervisor.node_sal.client.kvm.create.called
@@ -83,7 +70,7 @@ class TestHypervisorTemplate(TestCase):
         """
         Test destroying the hypervisor without creation
         """
-        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Destroying hypervisor before install should raise an error'):
             hypervisor = Hypervisor('hypervisor', data=self.valid_data)
             hypervisor.node_sal.client.kvm.destroy = MagicMock()
             hypervisor.destroy()
@@ -93,8 +80,8 @@ class TestHypervisorTemplate(TestCase):
         Test successfully destroying the hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.destroy = MagicMock()
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.destroy()
@@ -105,7 +92,7 @@ class TestHypervisorTemplate(TestCase):
         """
         Test shuting down the hypervisor without creation
         """
-        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Shuting down hypervisor before install should raise an error'):
             hypervisor = Hypervisor('hypervisor', data=self.valid_data)
             hypervisor.node_sal.client.kvm.shutdown = MagicMock()
             hypervisor.shutdown()
@@ -115,8 +102,8 @@ class TestHypervisorTemplate(TestCase):
         Test successfully shuting down the hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.shutdown = MagicMock()
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.shutdown()
@@ -127,7 +114,7 @@ class TestHypervisorTemplate(TestCase):
         """
         Test pause the hypervisor without creation
         """
-        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Pausing hypervisor before install should raise an error'):
             hypervisor = Hypervisor('hypervisor', data=self.valid_data)
             hypervisor.node_sal.client.kvm.pause = MagicMock()
             hypervisor.pause()
@@ -137,8 +124,8 @@ class TestHypervisorTemplate(TestCase):
         Test successfully pause the hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.pause = MagicMock()
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.pause()
@@ -149,7 +136,7 @@ class TestHypervisorTemplate(TestCase):
         """
         Test resume the hypervisor without creation
         """
-        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Resuming hypervisor before install should raise an error'):
             hypervisor = Hypervisor('hypervisor', data=self.valid_data)
             hypervisor.node_sal.client.kvm.resume = MagicMock()
             hypervisor.resume()
@@ -159,8 +146,8 @@ class TestHypervisorTemplate(TestCase):
         Test successfully resume the hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.resume = MagicMock()
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.resume()
@@ -171,7 +158,7 @@ class TestHypervisorTemplate(TestCase):
         """
         Test reboot the hypervisor without creation
         """
-        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Rebooting hypervisor before install should raise an error'):
             hypervisor = Hypervisor('hypervisor', data=self.valid_data)
             hypervisor.node_sal.client.kvm.reboot = MagicMock()
             hypervisor.reboot()
@@ -181,8 +168,8 @@ class TestHypervisorTemplate(TestCase):
         Test successfully pause the hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.reboot = MagicMock()
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.reboot()
@@ -193,7 +180,7 @@ class TestHypervisorTemplate(TestCase):
         """
         Test reset the hypervisor without creation
         """
-        with pytest.raises(StateCheckError, message='Starting hypervisor before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Resetting hypervisor before install should raise an error'):
             hypervisor = Hypervisor('hypervisor', data=self.valid_data)
             hypervisor.node_sal.client.kvm.reset = MagicMock()
             hypervisor.reset()
@@ -203,8 +190,8 @@ class TestHypervisorTemplate(TestCase):
         Test successfully reset the hypervisor
         :return:
         """
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
-        hypervisor.node_sal.client.kvm.reset = MagicMock()
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
         hypervisor.reset()
