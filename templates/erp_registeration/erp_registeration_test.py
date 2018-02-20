@@ -35,6 +35,10 @@ class TestErpRegisterationTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def test_invalid_data(self):
+        """
+        Test create with invalid data
+        :return:
+        """
         data = {}
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the url'):
             ErpRegisteration(name='erp', data=data)
@@ -64,10 +68,16 @@ class TestErpRegisterationTemplate(TestCase):
             ErpRegisteration(name='erp', data=data)
 
     def test_create_valid_data(self):
+        """
+        Test create ErpRegisteration with valid data
+        """
         erp = ErpRegisteration(name='erp', data=self.valid_data)
         erp.data = self.valid_data
 
     def test_get_erp_client(self):
+        """
+        Test _get_erp_client
+        """
         with patch('js9.j.clients.erppeek.get', MagicMock()) as client_get:
             erp = ErpRegisteration(name='erp', data=self.valid_data)
             erp._get_erp_client()
@@ -80,6 +90,10 @@ class TestErpRegisterationTemplate(TestCase):
             client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
 
     def test_get_bot_client(self):
+        """
+        Test _get_bot_client
+        :return:
+        """
         with patch('js9.j.clients.telegram_bot.get', MagicMock()) as client_get:
             erp = ErpRegisteration(name='erp', data=self.valid_data)
             erp._get_bot_client()
@@ -89,6 +103,9 @@ class TestErpRegisterationTemplate(TestCase):
             client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
 
     def test_register_new_node(self):
+        """
+        Test register new node
+        """
         erp = ErpRegisteration(name='erp', data=self.valid_data)
         client = MagicMock()
         client.count_records = MagicMock(return_value=0)
@@ -102,6 +119,9 @@ class TestErpRegisterationTemplate(TestCase):
         assert erp._get_bot_client.called
 
     def test_register_old_node(self):
+        """
+        Test register old node
+        """
         erp = ErpRegisteration(name='erp', data=self.valid_data)
         client = MagicMock()
         client.count_records = MagicMock(return_value=1)
@@ -114,6 +134,9 @@ class TestErpRegisterationTemplate(TestCase):
         assert erp._get_bot_client.called
 
     def test_registeration_error(self):
+        """
+        Test error during registeration
+        """
         with pytest.raises(j.exceptions.RuntimeError, message='action should fail if an error was raised'):
             erp = ErpRegisteration(name='erp', data=self.valid_data)
             erp._get_erp_client = MagicMock(side_effect=Exception)

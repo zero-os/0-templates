@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 import tempfile
 import shutil
 import os
@@ -49,7 +49,7 @@ class TestContainerTemplate(TestCase):
         """
         with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
             container = Container('container', data=self.valid_data)
-            node_sal = container.node_sal
+            container.node_sal
             assert node_get.called
 
     def test_container_sal_container_installed(self):

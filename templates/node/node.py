@@ -208,27 +208,27 @@ class Node(TemplateBase):
             t.wait(timeout)
 
 
-# healthchecks
-def _update_healthcheck_state(service, healthcheck):
-    def do(healcheck_result):
-        category = healcheck_result['category'].lower()
-        if len(healcheck_result['messages']) == 1:
-            tag = healcheck_result['id'].lower()
-            status = healcheck_result['messages'][0]['status'].lower()
+def _update(service, healcheck_result):
+    category = healcheck_result['category'].lower()
+    if len(healcheck_result['messages']) == 1:
+        tag = healcheck_result['id'].lower()
+        status = healcheck_result['messages'][0]['status'].lower()
+        service.state.set(category, tag, status)
+    elif len(healcheck_result['messages']) > 1:
+        for msg in healcheck_result['messages']:
+            tag = ('%s-%s' % (healcheck_result['id'], msg['id'])).lower()
+            status = msg['status'].lower()
             service.state.set(category, tag, status)
-        elif len(healcheck_result['messages']) > 1:
-            for msg in healcheck_result['messages']:
-                tag = ('%s-%s' % (healcheck_result['id'], msg['id'])).lower()
-                status = msg['status'].lower()
-                service.state.set(category, tag, status)
-        else:
-            # probably something wrong in the format of the healthcheck
-            service.logger.warning('no message in healthcheck result for %s-%s',
-                                   healcheck_result['category'], healcheck_result['id'])
-            return
+    else:
+        # probably something wrong in the format of the healthcheck
+        service.logger.warning('no message in healthcheck result for %s-%s',
+                               healcheck_result['category'], healcheck_result['id'])
+        return
 
+
+def _update_healthcheck_state(service, healthcheck):
     if isinstance(healthcheck, list):
         for hc in healthcheck:
-            do(hc)
+            _update(service, hc)
     else:
-        do(healthcheck)
+        _update(service, healthcheck)

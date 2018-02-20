@@ -7,8 +7,7 @@ import os
 import pytest
 
 from js9 import j
-from node import Node, _update_healthcheck_state
-from zerorobot.template.state import StateCheckError
+from node import Node, _update_healthcheck_state, _update
 from zerorobot import service_collection as scol
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
@@ -18,6 +17,7 @@ class TestNodeTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        patch('gevent.sleep', MagicMock()).start()
         cls.valid_data = {'redisAddr': 'localhost'}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Node.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
@@ -61,7 +61,7 @@ class TestNodeTemplate(TestCase):
         Test refresh password when password is set
         """
         with patch('js9.j.clients', MagicMock()) as client_get:
-            node = Node(name='node', data={'redisAddr': 'localhost', 'redisPassword': 'token'})
+            Node(name='node', data={'redisAddr': 'localhost', 'redisPassword': 'token'})
             client_get.itsyouonline.refresh_jwt_token.assert_called_with('token', validity=3600)
 
     def test_update_data(self):
@@ -106,7 +106,7 @@ class TestNodeTemplate(TestCase):
         """
         Test node info
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
             node = Node(name='node', data=self.valid_data)
             node.info()
 
@@ -116,7 +116,7 @@ class TestNodeTemplate(TestCase):
         """
         Test node stats
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
             node = Node(name='node', data=self.valid_data)
             node.stats()
             node.node_sal.client.aggregator.query.assert_called_once_with()
@@ -215,55 +215,63 @@ class TestNodeTemplate(TestCase):
         node._start_all_containers.assert_called_once_with()
         node.recurring_action.assert_called_once_with('_healthcheck', 60)
 
-    # def test_reboot_node_not_reachable(self):
-    #     """
-    #     Test node reboot with node not reachable after reboot
-    #     """
-    #     patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-    #     patch('gevent.sleep', MagicMock()).start()
-    #     node = Node(name='node', data=self.valid_data)
-    #     node._stop_all_vms = MagicMock()
-    #     node._stop_all_containers = MagicMock()
-    #     node._start_all_vms = MagicMock()
-    #     node._start_all_containers = MagicMock()
-    #     node.recurring_action = MagicMock()
-    #     node.node_sal.client.ping = MagicMock(side_effect=RuntimeError)
-    #     node.reboot()
-    #
-    #     node._stop_all_vms.assert_called_once_with()
-    #     node._stop_all_containers.assert_called_once_with()
-    #     node._start_all_vms.assert_not_called()
-    #     node._start_all_containers.assert_not_called()
-    #     node.recurring_action.assert_called_once_with('_healthcheck', 60)
-    #
-    # def test_update_healthcheck_state(self):
-    #     """
-    #     Test called with list
-    #     """
-    #     healthcheck = MagicMock()
-    #     _update_healthcheck_state.do = MagicMock()
-    #     _update_healthcheck_state(MagicMock(), [healthcheck])
-    #     _update_healthcheck_state.locals.do.assert_called_with(healthcheck)
+    def test_reboot_node_not_reachable(self):
+        """
+        Test node reboot with node not reachable after reboot
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        node = Node(name='node', data=self.valid_data)
+        node._stop_all_vms = MagicMock()
+        node._stop_all_containers = MagicMock()
+        node._start_all_vms = MagicMock()
+        node._start_all_containers = MagicMock()
+        node.recurring_action = MagicMock()
+        node.node_sal.client.ping = MagicMock(side_effect=RuntimeError)
+        node.reboot()
 
-    def test_update_healthcheck_state_warning(self):
+        node._stop_all_vms.assert_called_once_with()
+        node._stop_all_containers.assert_called_once_with()
+        node._start_all_vms.assert_not_called()
+        node._start_all_containers.assert_not_called()
+        node.recurring_action.assert_called_once_with('_healthcheck', 60)
+
+    def test_update_healthcheck_state_list(self):
+        """
+        Test called with list
+        """
+        update = patch('node._update', MagicMock()).start()
+        healthcheck = MagicMock()
+        _update_healthcheck_state(MagicMock(), [healthcheck, healthcheck])
+        assert update.call_count == 2
+
+    def test_update_healthcheck_state(self):
+        """
+        Test called with one healthcheck
+        """
+        update = patch('node._update', MagicMock()).start()
+        healthcheck = MagicMock()
+        _update_healthcheck_state(MagicMock(), healthcheck)
+        assert update.call_count == 1
+
+    def test_update_warning(self):
         """
         Test called with invalid message
         """
         healthcheck = {'messages': [], 'category': 'category', 'id': 'id'}
         service = MagicMock()
-        _update_healthcheck_state(service, healthcheck)
+        _update(service, healthcheck)
         assert service.logger.warning.called
 
-    def test_update_healthcheck_state_one_message(self):
+    def test_update_one_message(self):
         """
         Test called with one message
         """
         healthcheck = {'messages': [{'status': 'status'}], 'category': 'category', 'id': 'id'}
         service = MagicMock()
-        _update_healthcheck_state(service, healthcheck)
+        _update(service, healthcheck)
         service.state.set.assert_called_once_with('category', 'id', 'status')
 
-    def test_update_healthcheck_state_multiple_messages(self):
+    def test_update_multiple_messages(self):
         """
         Test called with one message
         """
@@ -274,5 +282,5 @@ class TestNodeTemplate(TestCase):
             'id': 'id'
         }
         service = MagicMock()
-        _update_healthcheck_state(service, healthcheck)
+        _update(service, healthcheck)
         service.state.set.assert_has_calls([call('category', 'id-1', 'status'), call('category', 'id-2', 'status')])
