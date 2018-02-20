@@ -17,7 +17,7 @@ class TestNodeTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         patch('gevent.sleep', MagicMock()).start()
-        cls.valid_data = {'zerotierClient': 'zt'}
+        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False}
         cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
         cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
@@ -47,6 +47,7 @@ class TestNodeTemplate(TestCase):
         Test creating service with valid data
         """
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
+        assert bootstrap.data == self.valid_data
 
     def test_bootstrap_no_robot(self):
         """

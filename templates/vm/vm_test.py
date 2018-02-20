@@ -18,7 +18,16 @@ class TestVmTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'node': 'node', 'flist': 'flist'}
+        cls.valid_data = {
+            'cpu': 1,
+            'flist': 'flist',
+            'memory': 128,
+             'nics': [],
+             'node': 'node',
+             'vdisks': [],
+             'vnc': -1
+        }
+
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Vm.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Vm.template_name, Vm.version))
         cls.vnc_port = 5900
@@ -46,7 +55,7 @@ class TestVmTemplate(TestCase):
         Test creating a vm service with valid data
         """
         vm = Vm('vm', data=self.valid_data)
-        # assert self.valid_data == vm.data
+        assert vm.data == self.valid_data
 
     def test_node_sal(self):
         """

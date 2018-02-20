@@ -72,7 +72,7 @@ class TestErpRegisterationTemplate(TestCase):
         Test create ErpRegisteration with valid data
         """
         erp = ErpRegisteration(name='erp', data=self.valid_data)
-        erp.data = self.valid_data
+        assert erp.data == self.valid_data
 
     def test_get_erp_client(self):
         """

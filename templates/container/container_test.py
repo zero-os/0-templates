@@ -18,7 +18,22 @@ class TestContainerTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'flist': 'flist', 'node': 'node', 'ports': ['80:80']}
+        cls.valid_data = {
+            'bridges': [],
+            'flist': 'flist',
+            'hostNetworking': False,
+            'hostname': '',
+            'identity': '',
+            'initProcesses': [],
+            'mounts': [],
+            'nics': [],
+            'node': 'node',
+            'ports': ['80:80'],
+            'privileged': False,
+            'storage': '',
+            'zerotierNetwork': ''
+        }
+
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Container.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Container.template_name, Container.version))
 
@@ -41,7 +56,8 @@ class TestContainerTemplate(TestCase):
             Container(name='container', data={'node': 'node'})
 
     def test_create_valid_data(self):
-        Container(name='container', data=self.valid_data)
+        container = Container(name='container', data=self.valid_data)
+        assert container.data == self.valid_data
 
     def test_node_sal(self):
         """

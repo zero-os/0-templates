@@ -18,7 +18,7 @@ class TestHypervisorTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'node': 'node'}
+        cls.valid_data = {'node': 'node', 'vm': ''}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Hypervisor.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Hypervisor.template_name, Hypervisor.version))
 
@@ -42,6 +42,7 @@ class TestHypervisorTemplate(TestCase):
         Test creating a hypervisor service with valid data
         """
         hyperevisor = Hypervisor('hypervisor', data=self.valid_data)
+        assert hyperevisor.data == self.valid_data
 
     def test_node_sal_node(self):
         """
