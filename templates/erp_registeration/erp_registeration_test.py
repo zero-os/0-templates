@@ -28,7 +28,6 @@ class TestErpRegisterationTemplate(TestCase):
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         ErpRegisteration.template_uid = TemplateUID.parse(
             'github.com/zero-os/0-templates/%s/%s' % (ErpRegisteration.template_name, ErpRegisteration.version))
-        patch('js9.j.tools')
 
     @classmethod
     def tearDownClass(cls):
@@ -68,17 +67,17 @@ class TestErpRegisterationTemplate(TestCase):
         erp = ErpRegisteration(name='erp', data=self.valid_data)
         erp.data = self.valid_data
 
-    # def test_get_erp_client(self):
-    #     with patch('js9.j.clients.erppeek.get', MagicMock()) as client_get:
-    #         erp = ErpRegisteration(name='erp', data=self.valid_data)
-    #         erp._get_erp_client()
-    #         data = {
-    #             'url': erp.data['url'],
-    #             'db': erp.data['db'],
-    #             'password_': erp.data['password'],
-    #             'username': erp.data['username'],
-    #         }
-    #         client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
+    def test_get_erp_client(self):
+        with patch('js9.j.clients.erppeek.get', MagicMock()) as client_get:
+            erp = ErpRegisteration(name='erp', data=self.valid_data)
+            erp._get_erp_client()
+            data = {
+                'url': erp.data['url'],
+                'db': erp.data['db'],
+                'password_': erp.data['password'],
+                'username': erp.data['username'],
+            }
+            client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
 
     def test_get_bot_client(self):
         with patch('js9.j.clients.telegram_bot.get', MagicMock()) as client_get:

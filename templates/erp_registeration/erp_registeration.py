@@ -13,7 +13,6 @@ class ErpRegisteration(TemplateBase):
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self._validate_input()
-        j.tools.prefab.local.bash.executor.execute('pip install erppeek')
 
     def _validate_input(self):
         for param in ['url', 'db', 'username', 'password', 'productId', 'botToken', 'chatId']:
