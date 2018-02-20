@@ -100,21 +100,16 @@ class Node(TemplateBase):
 
         try:
             # force_reboot = self.data['forceReboot']
-            self._stop_all_container()
-            self._stop_all_vm()
+            self._stop_all_containers()
+            self._stop_all_vms()
 
             self.logger.info('reboot node %s' % self.name)
-            try:
-                self.node_sal.client.raw('core.reboot', {})
-            except redis.exceptions.TimeoutError:
-                # can happen if reboot is fast enough
-                pass
+            self.node_sal.client.raw('core.reboot', {})
         finally:
-            timeout = 60
+            timeout = 2
             start = time.time()
             while time.time() < start + timeout:
                 try:
-                    self._node = None
                     self.node_sal.client.ping()
                     break
                 except (RuntimeError, ConnectionError, redis.TimeoutError, TimeoutError):
@@ -122,10 +117,12 @@ class Node(TemplateBase):
 
             else:
                 self.logger.info('Could not wait within %d seconds for node to reboot' % timeout)
+                self.recurring_action('_healthcheck', 60)
+                return
 
-            self._start_all_container()
-            self._start_all_vm()
-            self.recurring_action('monitor', 60)
+            self._start_all_containers()
+            self._start_all_vms()
+            self.recurring_action('_healthcheck', 60)
 
     def uninstall(self):
         self.logger.info('uninstalling  node')
@@ -137,8 +134,8 @@ class Node(TemplateBase):
         # if statsdb_service and str(statsdb_service.parent) == str(service):
         #     statsdb_service.executeAction('uninstall', context=job.context)
 
-        self._stop_all_container()
-        self._stop_all_vm()
+        self._stop_all_containers()
+        self._stop_all_vms()
 
         # allow to search per template
 
@@ -188,21 +185,21 @@ class Node(TemplateBase):
 
         # TODO: check network stability of  node with the rest of the nodes !
 
-    def _start_all_container(self):
+    def _start_all_containers(self):
         for container in self.api.services.find(template_uid=CONTAINER_TEMPLATE_UID):
             container.schedule_action('start', args={'node_name': self.name})
 
-    def _start_all_vm(self):
+    def _start_all_vms(self):
         # TODO
         pass
 
-    def _stop_all_container(self):
+    def _stop_all_containers(self):
         tasks = []
         for container in self.api.services.find(template_uid=CONTAINER_TEMPLATE_UID):
             tasks.append(container.schedule_action('stop', args={'node_name': self.name}))
         self._wait_all(tasks)
 
-    def _stop_all_vm(self):
+    def _stop_all_vms(self):
         # TODO
         pass
 
@@ -218,17 +215,17 @@ def _update_healthcheck_state(service, healthcheck):
         if len(healcheck_result['messages']) == 1:
             tag = healcheck_result['id'].lower()
             status = healcheck_result['messages'][0]['status'].lower()
+            service.state.set(category, tag, status)
         elif len(healcheck_result['messages']) > 1:
             for msg in healcheck_result['messages']:
                 tag = ('%s-%s' % (healcheck_result['id'], msg['id'])).lower()
                 status = msg['status'].lower()
+                service.state.set(category, tag, status)
         else:
             # probably something wrong in the format of the healthcheck
             service.logger.warning('no message in healthcheck result for %s-%s',
                                    healcheck_result['category'], healcheck_result['id'])
             return
-
-        service.state.set(category, tag, status)
 
     if isinstance(healthcheck, list):
         for hc in healthcheck:
