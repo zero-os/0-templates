@@ -17,9 +17,11 @@ class TestNodeTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         patch('gevent.sleep', MagicMock()).start()
-        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False}
+
+        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': ''}
         cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
         cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
+
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         ZeroosBootstrap.template_uid = TemplateUID.parse(
             'github.com/zero-os/0-templates/%s/%s' % (ZeroosBootstrap.template_name, ZeroosBootstrap.version))
