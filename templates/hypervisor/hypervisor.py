@@ -9,7 +9,6 @@ class Hypervisor(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._node = None
         self._validate_input()
 
     def _validate_input(self):
@@ -21,9 +20,7 @@ class Hypervisor(TemplateBase):
         """
         connection to the zos node
         """
-        if self._node is None:
-            self._node = j.clients.zero_os.sal.node_get(self.data['node'])
-        return self._node
+        return j.clients.zero_os.sal.node_get(self.data['node'])
 
     def create(self, media=None, flist=None, cpu=2, memory=512, nics=None, port=None, mount=None, tags=None):
         resp = self.node_sal.client.kvm.create(name=self.name,
@@ -36,34 +33,30 @@ class Hypervisor(TemplateBase):
                                                mount=mount,
                                                tags=tags)
         self.data['uid'] = resp.data[1:-1]
+        self.state.set('actions', 'create', 'ok')
 
     def destroy(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.destroy(self.data['uid'])
         del self.data['uid']
+        self.state.delete('actions', 'create')
 
     def shutdown(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.shutdown(self.data['uid'])
 
     def pause(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.pause(self.data['uid'])
 
     def resume(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.resume(self.data['uid'])
 
     def reboot(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.reboot(self.data['uid'])
 
     def reset(self):
-        if 'uid' not in self.data:
-            return
+        self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.reset(self.data['uid'])

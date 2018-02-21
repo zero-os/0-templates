@@ -13,7 +13,6 @@ class Vm(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self.hv_name = "hv_%s" % self.guid
-        self._node = None
         self._hypervisor = None
         self._validate_input()
 
@@ -31,15 +30,12 @@ class Vm(TemplateBase):
         """
         connection to the zos node
         """
-        if self._node is None:
-            self._node = j.clients.zero_os.sal.node_get(self.data['node'])
-        return self._node
+        return j.clients.zero_os.sal.node_get(self.data['node'])
 
     @property
     def hypervisor(self):
         if self._hypervisor is None:
-            if self.hv_name in self.api.services.names:
-                self._hypervisor = self.api.services.names[self.hv_name]
+            self._hypervisor = self.api.services.get(name=self.hv_name,template_uid=HV_TEMPLATE)
         return self._hypervisor
 
     def install(self):
@@ -76,45 +72,29 @@ class Vm(TemplateBase):
             raise RuntimeError("error during creation of the hypervisor: %s", t.eco.errormessage)
 
     def uninstall(self):
-        if not self.hypervisor:
-            return
-
         # TODO: deal with vdisks
-        self.hypervisor.schedule_action('destroy')
+        self.hypervisor.schedule_action('destroy').wait()
         self.hypervisor.delete()
         self._hypervisor = None
 
     def shutdown(self):
-        if not self.hypervisor:
-            return
         self.hypervisor.schedule_action('shutdown')
 
     def pause(self):
-        if not self.hypervisor:
-            return
         self.hypervisor.schedule_action('pause')
 
     def resume(self):
-        if not self.hypervisor:
-            return
         self.hypervisor.schedule_action('resume')
 
     def reboot(self):
-        if not self.hypervisor:
-            return
         self.hypervisor.schedule_action('reboot')
 
     def reset(self):
-        if not self.hypervisor:
-            return
         self.hypervisor.schedule_action('reset')
 
     def _get_vnc_port(self):
         # Fix me: client.kvm should provide a way to get
         # the info without listing all vms
-        if not self.hypervisor:
-            return None
-
         for vm in self.node_sal.client.kvm.list():
             if vm['name'] == self.hv_name:
                 return vm['vnc']

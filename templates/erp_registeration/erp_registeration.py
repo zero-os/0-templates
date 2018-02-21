@@ -13,7 +13,6 @@ class ErpRegisteration(TemplateBase):
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self._validate_input()
-        j.tools.prefab.local.bash.executor.execute('pip install erppeek')
 
     def _validate_input(self):
         for param in ['url', 'db', 'username', 'password', 'productId', 'botToken', 'chatId']:
@@ -42,7 +41,7 @@ class ErpRegisteration(TemplateBase):
 
     def _get_bot_client(self):
         data = {
-            'bot_token_': self.data['botId'],
+            'bot_token_': self.data['botToken'],
         }
         # make sure the config exists
         cl = j.clients.telegram_bot.get(
@@ -77,4 +76,4 @@ class ErpRegisteration(TemplateBase):
             raise j.exceptions.RuntimeError(message)
         finally:
             bot_cl = self._get_bot_client()
-            bot_cl.send_message(self.data['chatid'], message)
+            bot_cl.send_message(self.data['chatId'], message)

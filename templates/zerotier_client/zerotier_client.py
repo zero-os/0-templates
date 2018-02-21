@@ -18,7 +18,7 @@ class ZerotierClient(TemplateBase):
         # create the client instance
         token = self.data.get('token')
         if not token:
-            raise RuntimeError("no token specified in service data")
+            raise ValueError("no token specified in service data")
 
         # this will create a configuration for this instance
         _ = j.clients.zerotier.get(self.name, data={'token_': self.data['token']})
