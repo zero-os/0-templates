@@ -140,7 +140,7 @@ class ZeroosBootstrap(TemplateBase):
         if len(results) > 0:
             # the node already exists
             self.logger.info("service for node %s already exists, updating model", name)
-            node = self.api.services.names[name]
+            node = results[0]
             node.schedule_action('update_data', args={'data': {'redisAddr': zerotier_ip}})
             return
 
@@ -166,19 +166,14 @@ class ZeroosBootstrap(TemplateBase):
         node = self.api.services.create(NODE_TEMPLATE_UID, name, data=data)
         task_install = node.schedule_action('install')
 
-        # TODO: improve this flow
-        def cleanup():
-            # node_service.schedule_action('delete').wait(60)
-            node.delete()
-
         try:
             task_install.wait(60)
         except TimeoutError as err:
             self.logger.error("node %s took too long to install", name)
-            cleanup()
+            node.delete()
             raise err
         if task_install.state == 'error':
-            cleanup()
+            node.delete()
             raise RuntimeError(
                 "unexpected error during installation of node %s: %s" % (name, task_install.eco.errormessage))
 
