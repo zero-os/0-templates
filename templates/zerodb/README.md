@@ -8,7 +8,7 @@ This template is responsible for managing 0-db.
 - `listenAddr`: listen address (default 0.0.0.0)
 - `listenPort`: listen port (default 9900)
 - `dataDir`: data file directory (default ./data)
-- `indexDir`: the redis password the client uses to connect to the node.
+- `indexDir`: index file directory (default ./index)
 - `mode`: a value from enum Mode representing the 0-db mode.
 - `sync`: boolean deciding whether all write should be sync'd or not.
 - `container`: reference to the container running the zerodb.
