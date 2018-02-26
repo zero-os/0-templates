@@ -6,7 +6,7 @@ import redis
 from js9 import j
 from zerorobot.service_collection import ServiceConflictError
 from zerorobot.template.base import TemplateBase
-from zerorobot.template.decorator import retry
+from zerorobot.template.decorator import retry, timeout
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
@@ -51,6 +51,7 @@ class Node(TemplateBase):
 
         cl.config.save()
 
+    @timeout(2, error_message="_refresh_password timeout")
     def _refresh_password(self):
         """
         this method is reponsible to automaticly refresh a jwt token used as password
@@ -152,12 +153,17 @@ class Node(TemplateBase):
         #     etcd_cluster_service.executeAction('delete', context=job.context)
         #     etcd_cluster_service.delete()
 
+    @timeout(5, error_message='info action timeout')
     def info(self):
+        self.state.check('actions', 'install', 'ok')
         return self.node_sal.client.info.os()
 
+    @timeout(5, error_message='stats action timeout')
     def stats(self):
+        self.state.check('actions', 'install', 'ok')
         return self.node_sal.client.aggregator.query()
 
+    @timeout(20, error_message='_healthcheck action timeout')
     def _healthcheck(self):
         node_sal = self.node_sal
         if node_sal.is_running():

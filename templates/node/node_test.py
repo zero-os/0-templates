@@ -11,6 +11,7 @@ from node import Node, _update_healthcheck_state, _update
 from zerorobot import service_collection as scol
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
+from zerorobot.template.state import StateCheckError
 
 
 class TestNodeTemplate(TestCase):
@@ -89,7 +90,8 @@ class TestNodeTemplate(TestCase):
         with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
             node = Node(name='node', data=self.valid_data)
             node.node_sal
-            node_get.assert_called_once_with(node.name)
+            assert node_get.call_count == 2  # once during __init__ once the line above
+            node_get.assert_called_with(node.name)
 
     def test_install(self):
         """
@@ -102,24 +104,44 @@ class TestNodeTemplate(TestCase):
 
         node.state.check('actions', 'install', 'ok')
 
-    def test_node_info(self):
+    def test_node_info_node_installed(self):
         """
         Test node info
         """
         with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
             node = Node(name='node', data=self.valid_data)
+            node.state.set('actions', 'install', 'ok')
             node.info()
 
             node.node_sal.client.info.os.assert_called_once_with()
 
-    def test_node_stats(self):
+    def test_node_info_node_not_installed(self):
+        """
+        Test node info
+        """
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
+            node = Node(name='node', data=self.valid_data)
+            with pytest.raises(StateCheckError):
+                node.info()
+
+    def test_node_stats_node_installed(self):
         """
         Test node stats
         """
         with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
             node = Node(name='node', data=self.valid_data)
+            node.state.set('actions', 'install', 'ok')
             node.stats()
             node.node_sal.client.aggregator.query.assert_called_once_with()
+
+    def test_node_stats_node_not_installed(self):
+        """
+        Test node stats
+        """
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
+            node = Node(name='node', data=self.valid_data)
+            with pytest.raises(Exception):
+                node.stats()
 
     def test_start_all_containers(self):
         """
@@ -163,9 +185,12 @@ class TestNodeTemplate(TestCase):
             patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
             node = Node(name='node', data=self.valid_data)
             node.node_sal.is_running = MagicMock(return_value=True)
-            node._healthcheck()
 
-            assert healthcheck.call_count == 13
+            # could be the recurring action already kicked in
+            # so we count the difference in call count
+            pre_exec = healthcheck.call_count
+            node._healthcheck()
+            assert healthcheck.call_count == pre_exec + 13
 
     def test_healthcheck_node_not_running(self):
         """
