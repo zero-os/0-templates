@@ -121,15 +121,12 @@ class Node(TemplateBase):
         self.state.check('status', 'running', 'ok')
         self.state.delete('status', 'running')
 
-        try:
-            # force_reboot = self.data['forceReboot']
-            self._stop_all_containers()
-            self._stop_all_vms()
+        self._stop_all_containers()
+        self._stop_all_vms()
 
-            self.logger.info('reboot node %s' % self.name)
-            self.node_sal.client.raw('core.reboot', {})
-        finally:
-            self.state.set('status', 'rebooting', 'ok')
+        self.logger.info('reboot node %s' % self.name)
+        self.node_sal.client.raw('core.reboot', {})
+        self.state.set('status', 'rebooting', 'ok')
 
     def uninstall(self):
         self.logger.info('uninstalling  node')
