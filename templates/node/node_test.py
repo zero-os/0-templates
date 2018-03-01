@@ -326,7 +326,7 @@ class TestNodeTemplate(TestCase):
 
         with pytest.raises(StateCheckError,
                            message='template should remove the rebooting status after monitoring'):
-            node.state.check('status', 'running', 'ok')
+            node.state.check('status', 'rebooting', 'ok')
 
     def test_monitor_node(self):
         """
