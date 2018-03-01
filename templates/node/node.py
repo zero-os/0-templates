@@ -1,10 +1,5 @@
-import time
 
-from gevent import sleep
-
-import redis
 from js9 import j
-from zerorobot.service_collection import ServiceConflictError
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.decorator import retry, timeout
 from zerorobot.template.state import StateCheckError

@@ -87,11 +87,11 @@ class TestNodeTemplate(TestCase):
         """
         Test node_sal property
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')) as node_get:
             node = Node(name='node', data=self.valid_data)
-            node.node_sal
-            assert node_get.call_count == 2  # once during __init__ once the line above
+            node_sal = node.node_sal
             node_get.assert_called_with(node.name)
+            assert node_sal == 'node_sal'
 
     def test_install(self):
         """
@@ -104,18 +104,18 @@ class TestNodeTemplate(TestCase):
 
         node.state.check('actions', 'install', 'ok')
 
-    def test_node_info_node_installed(self):
+    def test_node_info_node_running(self):
         """
         Test node info
         """
         with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
             node = Node(name='node', data=self.valid_data)
-            node.state.set('actions', 'install', 'ok')
+            node.state.set('status', 'running', 'ok')
             node.info()
 
             node.node_sal.client.info.os.assert_called_once_with()
 
-    def test_node_info_node_not_installed(self):
+    def test_node_info_node_not_running(self):
         """
         Test node info
         """
@@ -124,17 +124,17 @@ class TestNodeTemplate(TestCase):
             with pytest.raises(StateCheckError):
                 node.info()
 
-    def test_node_stats_node_installed(self):
+    def test_node_stats_node_running(self):
         """
         Test node stats
         """
         with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
             node = Node(name='node', data=self.valid_data)
-            node.state.set('actions', 'install', 'ok')
+            node.state.set('status', 'running', 'ok')
             node.stats()
             node.node_sal.client.aggregator.query.assert_called_once_with()
 
-    def test_node_stats_node_not_installed(self):
+    def test_node_stats_node_not_running(self):
         """
         Test node stats
         """
@@ -177,32 +177,19 @@ class TestNodeTemplate(TestCase):
 
         task.wait.assert_called_once_with(60)
 
-    def test_healthcheck_node_running(self):
+    def test_healthcheck(self):
         """
         Test node healthcheck if node is running
         """
         with patch('node._update_healthcheck_state', MagicMock()) as healthcheck:
             patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
             node = Node(name='node', data=self.valid_data)
-            node.node_sal.is_running = MagicMock(return_value=True)
 
             # could be the recurring action already kicked in
             # so we count the difference in call count
             pre_exec = healthcheck.call_count
             node._healthcheck()
             assert healthcheck.call_count == pre_exec + 13
-
-    def test_healthcheck_node_not_running(self):
-        """
-        Test node healthcheck if node is not running
-        """
-        with patch('node._update_healthcheck_state', MagicMock()) as healthcheck:
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-            node = Node(name='node', data=self.valid_data)
-            node.node_sal.is_running = MagicMock(return_value=False)
-            node._healthcheck()
-
-            healthcheck.assert_not_called()
 
     def test_uninstall(self):
         """
@@ -220,45 +207,28 @@ class TestNodeTemplate(TestCase):
         node._stop_all_vms.assert_called_once_with()
         bootstrap.schedule_action.assert_called_once_with('delete_node', args={'redis_addr': 'localhost'})
 
-    def test_reboot(self):
+    def test_reboot_node_running(self):
         """
-        Test node reboot with node reachable after reboot
-        """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-        node = Node(name='node', data=self.valid_data)
-        node._stop_all_vms = MagicMock()
-        node._stop_all_containers = MagicMock()
-        node._start_all_vms = MagicMock()
-        node._start_all_containers = MagicMock()
-        node.recurring_action = MagicMock()
-        node.node_sal.client.ping = MagicMock(side_effect=[RuntimeError, True])
-        node.reboot()
-
-        node._stop_all_vms.assert_called_once_with()
-        node._stop_all_containers.assert_called_once_with()
-        node._start_all_vms.assert_called_once_with()
-        node._start_all_containers.assert_called_once_with()
-        node.recurring_action.assert_called_once_with('_healthcheck', 60)
-
-    def test_reboot_node_not_reachable(self):
-        """
-        Test node reboot with node not reachable after reboot
+        Test node reboot if node already running
         """
         patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
-        node._stop_all_vms = MagicMock()
-        node._stop_all_containers = MagicMock()
-        node._start_all_vms = MagicMock()
-        node._start_all_containers = MagicMock()
-        node.recurring_action = MagicMock()
-        node.node_sal.client.ping = MagicMock(side_effect=RuntimeError)
+        node.state.set('status', 'running', 'ok')
+        node.node_sal.client.raw = MagicMock()
         node.reboot()
 
-        node._stop_all_vms.assert_called_once_with()
-        node._stop_all_containers.assert_called_once_with()
-        node._start_all_vms.assert_not_called()
-        node._start_all_containers.assert_not_called()
-        node.recurring_action.assert_called_once_with('_healthcheck', 60)
+        node.node_sal.client.raw.assert_called_with('core.reboot', {})
+
+    def test_reboot_node_halted(self):
+        """
+        Test node reboot if node is not
+        """
+        with pytest.raises(StateCheckError, message='template should fail to reboot if node is not running'):
+            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+            node = Node(name='node', data=self.valid_data)
+            node.node_sal.client.raw = MagicMock()
+            node.reboot()
+            assert not node.node_sal.client.raw.called
 
     def test_update_healthcheck_state_list(self):
         """
@@ -309,3 +279,71 @@ class TestNodeTemplate(TestCase):
         service = MagicMock()
         _update(service, healthcheck)
         service.state.set.assert_has_calls([call('category', 'id-1', 'status'), call('category', 'id-2', 'status')])
+
+    def test_monitor_node_not_installed(self):
+        """
+        Test _monitor action called before the install action
+        """
+        with pytest.raises(StateCheckError, message='template should fail to monitor if node is not installed'):
+            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+            node = Node(name='node', data=self.valid_data)
+            node._monitor()
+
+    def test_monitor_node_is_not_running(self):
+        """
+        Test _monitor action called when node is not running
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        node = Node(name='node', data=self.valid_data)
+        node.state.set('actions', 'install', 'ok')
+        node.node_sal.is_running = MagicMock(return_value=False)
+        node._monitor()
+
+        with pytest.raises(StateCheckError,
+                           message='template should remove the running status if the node is not running'):
+            node.state.check('status', 'running', 'ok')
+
+    def test_monitor_node_reboot(self):
+        """
+        Test _monitor action called after node rebooted
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        node = Node(name='node', data=self.valid_data)
+        node.install = MagicMock()
+        node._start_all_containers = MagicMock()
+        node._start_all_vms = MagicMock()
+        node._healthcheck = MagicMock()
+        node.state.set('actions', 'install', 'ok')
+        node.state.set('status', 'rebooting', 'ok')
+        node.node_sal.is_running = MagicMock(return_value=True)
+        node.node_sal.is_configured = MagicMock(return_value=False)
+        node._monitor()
+
+        node._start_all_containers.assert_called_once_with()
+        node._start_all_vms.assert_called_once_with()
+        node.install.assert_called_once_with()
+        node._healthcheck.assert_called_with()
+
+        with pytest.raises(StateCheckError,
+                           message='template should remove the rebooting status after monitoring'):
+            node.state.check('status', 'running', 'ok')
+
+    def test_monitor_node(self):
+        """
+        Test _monitor action called after node rebooted
+        """
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        node = Node(name='node', data=self.valid_data)
+        node.install = MagicMock()
+        node._start_all_containers = MagicMock()
+        node._start_all_vms = MagicMock()
+        node._healthcheck = MagicMock()
+        node.state.set('actions', 'install', 'ok')
+        node.node_sal.is_running = MagicMock(return_value=True)
+        node.node_sal.is_configured = MagicMock(return_value=True)
+        node._monitor()
+
+        assert not node._start_all_containers.called
+        assert not node._start_all_vms.called
+        assert not node.install.called
+        node._healthcheck.assert_called_with()
