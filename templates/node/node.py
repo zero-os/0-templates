@@ -1,12 +1,8 @@
-import time
 
-from gevent import sleep
-
-import redis
 from js9 import j
-from zerorobot.service_collection import ServiceConflictError
 from zerorobot.template.base import TemplateBase
-from zerorobot.template.decorator import retry
+from zerorobot.template.decorator import retry, timeout
+from zerorobot.template.state import StateCheckError
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
@@ -25,7 +21,7 @@ class Node(TemplateBase):
         self._refresh_password()
         self._ensure_client_config()
 
-        self.recurring_action('_healthcheck', 30)  # every 30 secondes
+        self.recurring_action('_monitor', 30)  # every 30 seconds
         self.recurring_action('_refresh_password', 1200)  # every 20 minutes
 
     def _validate_input(self):
@@ -51,6 +47,7 @@ class Node(TemplateBase):
 
         cl.config.save()
 
+    @timeout(2, error_message="_refresh_password timeout")
     def _refresh_password(self):
         """
         this method is reponsible to automaticly refresh a jwt token used as password
@@ -78,6 +75,27 @@ class Node(TemplateBase):
         """
         return j.clients.zero_os.sal.node_get(self.name)
 
+    def _monitor(self):
+        self.state.check('actions', 'install', 'ok')
+
+        if not self.node_sal.is_running():
+            self.state.delete('status', 'running')
+            return
+
+        if not self.node_sal.is_configured():
+            self.install()
+
+        try:
+            # check if the node was rebooting and start containers and vms
+            self.state.check('status', 'rebooting', 'ok')
+            self._start_all_containers()
+            self._start_all_vms()
+            self.state.delete('status', 'rebooting')
+        except StateCheckError:
+            pass
+
+        self._healthcheck()
+
     @retry(Exception, tries=2, delay=2)
     def install(self):
         self.data['version'] = '{branch}:{revision}'.format(**self.node_sal.client.info.version())
@@ -92,37 +110,18 @@ class Node(TemplateBase):
         self.node_sal.client.bash('echo %s > /etc/hostname' % self.data['hostname']).get()
 
         self.state.set('actions', 'install', 'ok')
+        self.state.set('status', 'running', 'ok')
 
     def reboot(self):
+        self.state.check('status', 'running', 'ok')
+        self.state.delete('status', 'running')
 
-        # TODO: review stop recurring
-        self.gl_mgr.stop('recurring_monitor')
+        self._stop_all_containers()
+        self._stop_all_vms()
 
-        try:
-            # force_reboot = self.data['forceReboot']
-            self._stop_all_containers()
-            self._stop_all_vms()
-
-            self.logger.info('reboot node %s' % self.name)
-            self.node_sal.client.raw('core.reboot', {})
-        finally:
-            timeout = 2
-            start = time.time()
-            while time.time() < start + timeout:
-                try:
-                    self.node_sal.client.ping()
-                    break
-                except (RuntimeError, ConnectionError, redis.TimeoutError, TimeoutError):
-                    sleep(1)
-
-            else:
-                self.logger.info('Could not wait within %d seconds for node to reboot' % timeout)
-                self.recurring_action('_healthcheck', 60)
-                return
-
-            self._start_all_containers()
-            self._start_all_vms()
-            self.recurring_action('_healthcheck', 60)
+        self.logger.info('reboot node %s' % self.name)
+        self.node_sal.client.raw('core.reboot', {})
+        self.state.set('status', 'rebooting', 'ok')
 
     def uninstall(self):
         self.logger.info('uninstalling  node')
@@ -152,36 +151,39 @@ class Node(TemplateBase):
         #     etcd_cluster_service.executeAction('delete', context=job.context)
         #     etcd_cluster_service.delete()
 
+    @timeout(5, error_message='info action timeout')
     def info(self):
+        self.state.check('status', 'running', 'ok')
         return self.node_sal.client.info.os()
 
+    @timeout(5, error_message='stats action timeout')
     def stats(self):
+        self.state.check('status', 'running', 'ok')
         return self.node_sal.client.aggregator.query()
 
     def _healthcheck(self):
         node_sal = self.node_sal
-        if node_sal.is_running():
-            _update_healthcheck_state(self, node_sal.healthcheck.openfiledescriptors())
-            _update_healthcheck_state(self, node_sal.healthcheck.cpu_mem())
-            _update_healthcheck_state(self, node_sal.healthcheck.rotate_logs())
-            _update_healthcheck_state(self, node_sal.healthcheck.network_bond())
-            _update_healthcheck_state(self, node_sal.healthcheck.interrupts())
-            _update_healthcheck_state(self, node_sal.healthcheck.context_switch())
-            _update_healthcheck_state(self, node_sal.healthcheck.threads())
-            _update_healthcheck_state(self, node_sal.healthcheck.qemu_vm_logs())
-            _update_healthcheck_state(self, node_sal.healthcheck.network_load())
-            _update_healthcheck_state(self, node_sal.healthcheck.disk_usage())
+        _update_healthcheck_state(self, node_sal.healthcheck.openfiledescriptors())
+        _update_healthcheck_state(self, node_sal.healthcheck.cpu_mem())
+        _update_healthcheck_state(self, node_sal.healthcheck.rotate_logs())
+        _update_healthcheck_state(self, node_sal.healthcheck.network_bond())
+        _update_healthcheck_state(self, node_sal.healthcheck.interrupts())
+        _update_healthcheck_state(self, node_sal.healthcheck.context_switch())
+        _update_healthcheck_state(self, node_sal.healthcheck.threads())
+        _update_healthcheck_state(self, node_sal.healthcheck.qemu_vm_logs())
+        _update_healthcheck_state(self, node_sal.healthcheck.network_load())
+        _update_healthcheck_state(self, node_sal.healthcheck.disk_usage())
 
-            # this is for VM. VM is not implemented yet, and we'll probably not need
-            # some cleanup like this anyhow
-            # node_sal.healthcheck.ssh_cleanup(job=job)
+        # this is for VM. VM is not implemented yet, and we'll probably not need
+        # some cleanup like this anyhow
+        # node_sal.healthcheck.ssh_cleanup(job=job)
 
-            # TODO: this need to be configurable
-            flist_healhcheck = 'https://hub.gig.tech/gig-official-apps/healthcheck.flist'
-            with node_sal.healthcheck.with_container(flist_healhcheck) as cont:
-                _update_healthcheck_state(self, node_sal.healthcheck.node_temperature(cont))
-                _update_healthcheck_state(self, node_sal.healthcheck.powersupply(cont))
-                _update_healthcheck_state(self, node_sal.healthcheck.fan(cont))
+        # TODO: this need to be configurable
+        flist_healhcheck = 'https://hub.gig.tech/gig-official-apps/healthcheck.flist'
+        with node_sal.healthcheck.with_container(flist_healhcheck) as cont:
+            _update_healthcheck_state(self, node_sal.healthcheck.node_temperature(cont))
+            _update_healthcheck_state(self, node_sal.healthcheck.powersupply(cont))
+            _update_healthcheck_state(self, node_sal.healthcheck.fan(cont))
 
         # TODO: check network stability of  node with the rest of the nodes !
 
