@@ -63,10 +63,11 @@ class TestContainerTemplate(TestCase):
         """
         Test the node_sal property
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
+        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node')) as node_get:
             container = Container('container', data=self.valid_data)
-            container.node_sal
+            node_sal = container.node_sal
             assert node_get.called
+            assert node_sal == 'node'
 
     def test_container_sal_container_installed(self):
         """
