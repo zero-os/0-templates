@@ -112,6 +112,7 @@ class Node(TemplateBase):
 
         mounts = self.node_sal.partition_and_mount_disks(poolname)
         port = 9900
+        tasks = []
         for mount in mounts:
             zdb_name = 'zdb_%s_%s' % (self.name, mount['partition'])
             if self.api.services.exists(template_uid=ZDB_TEMPLATE_UID, name=zdb_name):
@@ -123,15 +124,16 @@ class Node(TemplateBase):
                     'containerMountPoint': '/zerodb',
                     'listenPort': port,
                     'listenAddr': self.data['redisAddr'],
-                    'admin': j.data.idgenerator.generateGUID(),
+                    'admin': j.data.idgenerator.generateXCharID(10),
                 }
 
                 zdb = self.api.services.create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
-                zdb.schedule_action('install').wait()
+                tasks.append(zdb.schedule_action('install'))
 
             port += 1
-            zdb.schedule_action('start').wait()
+            tasks.append(zdb.schedule_action('start'))
 
+        self._wait_all(tasks)
         self.state.set('actions', 'install', 'ok')
 
     def reboot(self):
