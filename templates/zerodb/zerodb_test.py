@@ -93,10 +93,9 @@ class TestZerodbTemplate(TestCase):
         zdb.install()
 
         container_data = {
-            'flist': 'https://staging.hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist',
+            'flist': 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist',
             'mounts': {},
             'node': self.valid_data['node'],
-            'storage': 'ardb://staging.hub.gig.tech:16379',
             'hostNetworking': True,
         }
         zdb.api.services.create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)

@@ -4,7 +4,7 @@ from zerorobot.template.base import TemplateBase
 
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
-ZERODB_FLIST = 'https://staging.hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
+ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
 
 
 class Zerodb(TemplateBase):
