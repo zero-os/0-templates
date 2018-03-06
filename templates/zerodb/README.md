@@ -7,13 +7,15 @@ This template is responsible for managing 0-db.
 
 - `listenAddr`: listen address (default 0.0.0.0)
 - `listenPort`: listen port (default 9900)
-- `dataDir`: data file directory (default /zerodb/data)
-- `indexDir`: index file directory (default /zerodb/index)
+- `dataDir`: data file directory (default /zerodb/)
+- `indexDir`: index file directory (default /zerodb/)
 - `mode`: a value from enum Mode representing the 0-db mode.
-- `sync`: boolean deciding whether all write should be sync'd or not.
+- `sync`: boolean indicating whether all write should be sync'd or not.
 - `container`: reference to the container running the zerodb.
+- `node`: reference to the node running the zerdb container
 - `nodeMountPoint`: the node mountpoint that will be mounted at containerMountPoint.
 - `containerMountPoint`: the container destination where hostMountPoint will be mounted.
+- `admin`: admin password
 
 
 Mode enum:

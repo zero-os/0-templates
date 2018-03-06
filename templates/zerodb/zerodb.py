@@ -4,6 +4,7 @@ from zerorobot.template.base import TemplateBase
 
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
+ZERODB_FLIST = 'https://staging.hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
 
 
 class Zerodb(TemplateBase):
@@ -34,17 +35,14 @@ class Zerodb(TemplateBase):
                                                 self.data['mode'], self.data['sync'], self.data['admin'])
 
     def install(self):
-        flist = 'https://staging.hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
-        storage = 'ardb://staging.hub.gig.tech:16379'
         mounts = {}
         if self.data['nodeMountPoint'] and self.data['containerMountPoint']:
             mounts = {self.data['nodeMountPoint']: self.data['containerMountPoint']}
 
         container_data = {
-            'flist': flist,
+            'flist': ZERODB_FLIST,
             'mounts': mounts,
             'node': self.data['node'],
-            'storage': storage,
             'hostNetworking': True,
         }
         self.data['container'] = 'container_%s' % self.name
