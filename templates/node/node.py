@@ -77,8 +77,6 @@ class Node(TemplateBase):
         return j.clients.zero_os.sal.node_get(self.name)
 
     def _monitor(self):
-        self.state.check('actions', 'install', 'ok')
-
         if not self.node_sal.is_running():
             self.state.delete('status', 'running')
             return
@@ -98,7 +96,7 @@ class Node(TemplateBase):
         self._healthcheck()
 
     @retry(Exception, tries=2, delay=2)
-    def install(self, zdb_flist='https://staging.hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'):
+    def install(self):
         self.data['version'] = '{branch}:{revision}'.format(**self.node_sal.client.info.version())
 
         poolname = '{}_fscache'.format(self.name)
@@ -114,22 +112,24 @@ class Node(TemplateBase):
 
         mounts = self.node_sal.partition_and_mount_disks(poolname)
         port = 9900
-        for partition, mount in mounts.items():
-            zdb_name = 'zdb_%s_%s' % (self.name, partition)
+        for mount in mounts:
+            zdb_name = 'zdb_%s_%s' % (self.name, mount['partition'])
             if self.api.services.exists(template_uid=ZDB_TEMPLATE_UID, name=zdb_name):
                 zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
             else:
                 zdb_data = {
                     'node': self.name,
-                    'diskMount': mount,
+                    'nodeMountPoint': mount['mountpoint'],
+                    'containerMountPoint': '/zerodb',
                     'listenPort': port,
                     'listenAddr': self.data['redisAddr'],
-                    # 'admin': j.data.idgenerator.generatePasswd(10),
+                    'admin': j.data.idgenerator.generateGUID(),
                 }
-                port += 1
-                zdb = self.api.services.create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
-                zdb.schedule_action('install', args={'flist': zdb_flist}).wait()
 
+                zdb = self.api.services.create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
+                zdb.schedule_action('install').wait()
+
+            port += 1
             zdb.schedule_action('start').wait()
 
         self.state.set('actions', 'install', 'ok')

@@ -280,15 +280,6 @@ class TestNodeTemplate(TestCase):
         _update(service, healthcheck)
         service.state.set.assert_has_calls([call('category', 'id-1', 'status'), call('category', 'id-2', 'status')])
 
-    def test_monitor_node_not_installed(self):
-        """
-        Test _monitor action called before the install action
-        """
-        with pytest.raises(StateCheckError, message='template should fail to monitor if node is not installed'):
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-            node = Node(name='node', data=self.valid_data)
-            node._monitor()
-
     def test_monitor_node_is_not_running(self):
         """
         Test _monitor action called when node is not running

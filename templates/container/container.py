@@ -46,7 +46,7 @@ class Container(TemplateBase):
             ports[int(src)] = int(dst)
 
         self.node_sal.containers.create(self.name, self.data['flist'], hostname=None,
-                                        mounts=self.data['mount'], nics=self.data['nics'],
+                                        mounts=self.data['mounts'], nics=self.data['nics'],
                                         host_network=self.data['hostNetworking'],
                                         ports=ports, storage=self.data['storage'],
                                         init_processes=self.data['initProcesses'],

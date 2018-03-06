@@ -13,9 +13,11 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        for param in ['node', 'diskMount']:
+        for param in ['node']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
+        if bool(self.data.get('nodeMountPoint')) != bool(self.data['containerMountPoint']):
+            raise ValueError('nodeMountPoint and containerMountPoint must either both be defined or both be none.')
 
     @property
     def node_sal(self):
@@ -31,12 +33,18 @@ class Zerodb(TemplateBase):
                                                 self.data['listenPort'], self.data['dataDir'], self.data['indexDir'],
                                                 self.data['mode'], self.data['sync'], self.data['admin'])
 
-    def install(self, flist):
+    def install(self):
+        flist = 'https://staging.hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
+        storage = 'ardb://staging.hub.gig.tech:16379'
+        mounts = {}
+        if self.data['nodeMountPoint'] and self.data['containerMountPoint']:
+            mounts = {self.data['nodeMountPoint']: self.data['containerMountPoint']}
+
         container_data = {
             'flist': flist,
-            'mount': {self.data['diskMount']: '/mnt'},
+            'mounts': mounts,
             'node': self.data['node'],
-            'storage': 'ardb://staging.hub.gig.tech:16379',
+            'storage': storage,
             'hostNetworking': True,
         }
         self.data['container'] = 'container_%s' % self.name
@@ -75,8 +83,10 @@ class Zerodb(TemplateBase):
     def namespace_create(self, name, size=None, secret=None):
         self.state.check('actions', 'start', 'ok')
         self.zerodb_sal.create_namespace(name)
-        self.zerodb_sal.set_namespace_property(name, 'maxsize', size)
-        self.zerodb_sal.set_namespace_property(name, 'secret', secret)
+        if size:
+            self.zerodb_sal.set_namespace_property(name, 'maxsize', size)
+        if secret:
+            self.zerodb_sal.set_namespace_property(name, 'password', secret)
 
     def namespace_set(self, name, prop, value):
         self.state.check('actions', 'start', 'ok')
