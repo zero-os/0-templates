@@ -114,7 +114,7 @@ class Node(TemplateBase):
         port = 9900
         tasks = []
         for mount in mounts:
-            zdb_name = 'zdb_%s_%s' % (self.name, mount['partition'])
+            zdb_name = 'zdb_%s_%s' % (self.name, mount['disk'])
             if self.api.services.exists(template_uid=ZDB_TEMPLATE_UID, name=zdb_name):
                 zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
             else:
