@@ -99,6 +99,7 @@ class TestNodeTemplate(TestCase):
         """
         Test _wait_member_ip
         """
+        patch('js9.j.clients.zerotier.get', MagicMock()).start()
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
 
         resp = MagicMock()
