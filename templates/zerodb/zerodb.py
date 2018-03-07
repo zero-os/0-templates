@@ -30,9 +30,18 @@ class Zerodb(TemplateBase):
 
     @property
     def zerodb_sal(self):
-        return j.clients.zero_os.sal.get_zerodb(self.container_sal, self.name, self.data['listenAddr'],
-                                                self.data['listenPort'], self.data['dataDir'], self.data['indexDir'],
-                                                self.data['mode'], self.data['sync'], self.data['admin'])
+        kwargs = {
+            'name': self.name,
+            'container': self.container_sal,
+            'addr': self.data['listenAddr'],
+            'port': self.data['listenPort'],
+            'data_dir': self.data['dataDir'],
+            'index_dir': self.data['indexDir'],
+            'mode': self.data['mode'],
+            'sync': self.data['sync'],
+            'admin': self.data['admin'],
+        }
+        return j.clients.zero_os.sal.get_zerodb(**kwargs)
 
     def install(self):
         mounts = {}
