@@ -31,6 +31,9 @@ class TestHardwareCheckTemplate(TestCase):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
 
+    def tearDown(self):
+        patch.stopall()
+
     def test_invalid_data(self):
         data = {}
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the botToken'):
@@ -71,13 +74,13 @@ class TestHardwareCheckTemplate(TestCase):
         """
         test _get_bot_client
         """
-        with patch('js9.j.clients.telegram_bot.get', MagicMock()) as client_get:
-            hw = HardwareCheck(name='hw', data=self.valid_data)
-            hw._get_bot_client()
-            data = {
-                'bot_token_': hw.data['botToken'],
-            }
-            client_get.assert_called_with(instance=hw.guid, data=data, create=True, die=True)
+        client_get = patch('js9.j.clients.telegram_bot.get', MagicMock()).start()
+        hw = HardwareCheck(name='hw', data=self.valid_data)
+        hw._get_bot_client()
+        data = {
+            'bot_token_': hw.data['botToken'],
+        }
+        client_get.assert_called_with(instance=hw.guid, data=data, create=True, die=True)
 
     def test_ram(self):
         """

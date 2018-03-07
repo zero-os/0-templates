@@ -34,6 +34,9 @@ class TestErpRegisterationTemplate(TestCase):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
 
+    def tearDown(self):
+        patch.stopall()
+
     def test_invalid_data(self):
         """
         Test create with invalid data
@@ -78,29 +81,29 @@ class TestErpRegisterationTemplate(TestCase):
         """
         Test _get_erp_client
         """
-        with patch('js9.j.clients.erppeek.get', MagicMock()) as client_get:
-            erp = ErpRegisteration(name='erp', data=self.valid_data)
-            erp._get_erp_client()
-            data = {
-                'url': erp.data['url'],
-                'db': erp.data['db'],
-                'password_': erp.data['password'],
-                'username': erp.data['username'],
-            }
-            client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
+        client_get = patch('js9.j.clients.erppeek.get', MagicMock()).start()
+        erp = ErpRegisteration(name='erp', data=self.valid_data)
+        erp._get_erp_client()
+        data = {
+            'url': erp.data['url'],
+            'db': erp.data['db'],
+            'password_': erp.data['password'],
+            'username': erp.data['username'],
+        }
+        client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
 
     def test_get_bot_client(self):
         """
         Test _get_bot_client
         :return:
         """
-        with patch('js9.j.clients.telegram_bot.get', MagicMock()) as client_get:
-            erp = ErpRegisteration(name='erp', data=self.valid_data)
-            erp._get_bot_client()
-            data = {
-                'bot_token_': erp.data['botToken'],
-            }
-            client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
+        client_get = patch('js9.j.clients.telegram_bot.get', MagicMock()).start()
+        erp = ErpRegisteration(name='erp', data=self.valid_data)
+        erp._get_bot_client()
+        data = {
+            'bot_token_': erp.data['botToken'],
+        }
+        client_get.assert_called_with(instance=erp.guid, data=data, create=True, die=True)
 
     def test_register_new_node(self):
         """

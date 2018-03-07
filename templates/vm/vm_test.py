@@ -37,6 +37,9 @@ class TestVmTemplate(TestCase):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
 
+    def setUp(self):
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+
     def tearDown(self):
         patch.stopall()
 
@@ -97,7 +100,6 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         task = MagicMock(state='ok')
         hyperviser = MagicMock()
         hyperviser.schedule_action = MagicMock(return_value=task)
@@ -112,7 +114,6 @@ class TestVmTemplate(TestCase):
                            message='install action should raise an error if the hypervisor state is not ok'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services = MagicMock()
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
             vm.install()
             assert vm._hypervisor is not None
 
@@ -125,7 +126,6 @@ class TestVmTemplate(TestCase):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services = MagicMock(guids={'guid': MagicMock()})
             vm.api.services.create = MagicMock(guid='guid')
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
             vm.install()
             assert vm._hypervisor is None
 
@@ -253,7 +253,6 @@ class TestVmTemplate(TestCase):
         """
         Test _get_vnc_port when there is a vnc port
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         vm = Vm('vm', data=self.valid_data)
         vm.node_sal.client.kvm.list = MagicMock(return_value=[{'name': vm.hv_name, 'vnc': self.vnc_port}])
         assert vm._get_vnc_port() == self.vnc_port
@@ -262,7 +261,6 @@ class TestVmTemplate(TestCase):
         """
         Test _get_vnc_port when there is no vnc port
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         vm = Vm('vm', data=self.valid_data)
         vm.node_sal.client.kvm.list = MagicMock(return_value=[])
         assert vm._get_vnc_port() is None
@@ -271,7 +269,6 @@ class TestVmTemplate(TestCase):
         """
         Test enable_vnc when there is a vnc port
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         vm = Vm('vm', data=self.valid_data)
         vm._get_vnc_port = MagicMock(return_value=self.vnc_port)
         vm.node_sal.client.nft.open_port = MagicMock()
@@ -282,7 +279,6 @@ class TestVmTemplate(TestCase):
         """
         Test enable_vnc when there is no vnc port
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         vm = Vm('vm', data=self.valid_data)
         vm._get_vnc_port = MagicMock(return_value=None)
         vm.node_sal.client.nft.open_port = MagicMock()
@@ -293,7 +289,6 @@ class TestVmTemplate(TestCase):
         """
         Test disable_vnc when there is a vnc port
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         vm = Vm('vm', data=self.valid_data)
         vm._get_vnc_port = MagicMock(return_value=self.vnc_port)
         vm.node_sal.client.nft.drop_port = MagicMock()
@@ -304,7 +299,6 @@ class TestVmTemplate(TestCase):
         """
         Test disable_vnc when there is no vnc port
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         vm = Vm('vm', data=self.valid_data)
         vm._get_vnc_port = MagicMock(return_value=None)
         vm.node_sal.client.nft.drop_port = MagicMock()

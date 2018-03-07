@@ -13,7 +13,6 @@ from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
 
-
 class TestZerodbTemplate(TestCase):
 
     @classmethod
@@ -39,6 +38,12 @@ class TestZerodbTemplate(TestCase):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
 
+    def setUp(self):
+        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
+
+    def tearDown(self):
+        patch.stopall()
+
     def test_create_invalid_data(self):
         """
         Test initializing zerodb service with
@@ -61,33 +66,34 @@ class TestZerodbTemplate(TestCase):
         """
         Test node_sal property
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')) as node_get:
-            zdb = Zerodb('zdb', data=self.valid_data)
-            assert zdb.node_sal == 'node_sal'
-            node_get.assert_called_once_with(zdb.data['node'])
+        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')).start()
+        zdb = Zerodb('zdb', data=self.valid_data)
+
+        assert zdb.node_sal == 'node_sal'
+        node_get.assert_called_once_with(zdb.data['node'])
 
     def test_container_sal(self):
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
-            zdb = Zerodb('zdb', data=self.valid_data)
-            zdb.node_sal.containers.get = MagicMock(return_value='container')
-            assert zdb.container_sal == 'container'
-            zdb.node_sal.containers.get.assert_called_once_with(zdb.data['container'])
+        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        zdb = Zerodb('zdb', data=self.valid_data)
+        zdb.node_sal.containers.get = MagicMock(return_value='container')
+
+        assert zdb.container_sal == 'container'
+        zdb.node_sal.containers.get.assert_called_once_with(zdb.data['container'])
 
     def test_zerodb_sal(self):
         """
         Test node_sal property
         """
-        with patch('js9.j.clients.zero_os.sal.get_zerodb', MagicMock(return_value='zdb_sal')) as zdb_sal:
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-            zdb = Zerodb('zdb', data=self.valid_data)
-            assert zdb.zerodb_sal == 'zdb_sal'
-            assert zdb_sal.called
+        zdb_sal = patch('js9.j.clients.zero_os.sal.get_zerodb', MagicMock(return_value='zdb_sal')).start()
+        zdb = Zerodb('zdb', data=self.valid_data)
+
+        assert zdb.zerodb_sal == 'zdb_sal'
+        assert zdb_sal.called
 
     def test_install(self):
         """
         Test install action
         """
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.api.services.create = MagicMock()
         zdb.install()
@@ -105,7 +111,6 @@ class TestZerodbTemplate(TestCase):
         """
         Test start action
         """
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'install', 'ok')
         zdb.api.services.get = MagicMock()
@@ -128,7 +133,6 @@ class TestZerodbTemplate(TestCase):
         """
         Test stop action
         """
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
         zdb.stop()
@@ -159,7 +163,6 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb.namespace_list()
 
         zdb.zerodb_sal.list_namespaces.assert_called_once_with()
@@ -179,7 +182,6 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb.namespace_info('namespace')
 
         zdb.zerodb_sal.get_namespace_info.assert_called_once_with('namespace')
@@ -199,7 +201,6 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb.namespace_create('namespace', 12, 'secret')
 
         zdb.zerodb_sal.create_namespace.assert_called_once_with('namespace')
@@ -221,7 +222,6 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
         zdb.namespace_set('namespace', 'maxsize', 12)
 
         zdb.zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
