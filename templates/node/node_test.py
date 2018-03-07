@@ -13,6 +13,7 @@ from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
+
 def mockdecorator(func):
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
