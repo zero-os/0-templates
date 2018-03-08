@@ -27,6 +27,9 @@ class TestHypervisorTemplate(TestCase):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
 
+    def setUp(self):
+        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
+
     def tearDown(self):
         patch.stopall()
 
@@ -61,7 +64,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully creating a hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.create()
 
@@ -81,7 +83,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully destroying the hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
@@ -103,7 +104,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully shuting down the hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
@@ -125,7 +125,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully pause the hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
@@ -147,7 +146,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully resume the hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
@@ -169,7 +167,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully pause the hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'
@@ -191,7 +188,6 @@ class TestHypervisorTemplate(TestCase):
         Test successfully reset the hypervisor
         :return:
         """
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock()).start()
         hypervisor = Hypervisor('hypervisor', data=self.valid_data)
         hypervisor.state.set('actions', 'create', 'ok')
         hypervisor.data['uid'] = 'uid'

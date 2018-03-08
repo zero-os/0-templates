@@ -6,7 +6,6 @@ import os
 
 import pytest
 
-from js9 import j
 from container import Container
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
@@ -35,12 +34,16 @@ class TestContainerTemplate(TestCase):
         }
 
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Container.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Container.template_name, Container.version))
+        Container.template_uid = TemplateUID.parse(
+            'github.com/zero-os/0-templates/%s/%s' % (Container.template_name, Container.version))
 
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
+
+    def setUp(self):
+        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -63,16 +66,16 @@ class TestContainerTemplate(TestCase):
         """
         Test the node_sal property
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()) as node_get:
-            container = Container('container', data=self.valid_data)
-            container.node_sal
-            assert node_get.called
+        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node')).start()
+        container = Container('container', data=self.valid_data)
+        node_sal = container.node_sal
+        assert node_get.called
+        assert node_sal == 'node'
 
     def test_container_sal_container_installed(self):
         """
         Test container_sal property when container is exists
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container_sal_return = 'container_sal'
         container.node_sal.containers.get = MagicMock(return_value=container_sal_return)
@@ -87,7 +90,6 @@ class TestContainerTemplate(TestCase):
         """
         Test container_sal property when container doesn't exist
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container_sal_return = 'container_sal'
         container = Container('container', data=self.valid_data)
         container.node_sal.containers.get = MagicMock(side_effect=[LookupError, container_sal_return])
@@ -136,7 +138,6 @@ class TestContainerTemplate(TestCase):
         """
         Test successfully installing a container
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container.api.services.get = MagicMock()
         container.node_sal.containers.create = MagicMock()
@@ -172,7 +173,6 @@ class TestContainerTemplate(TestCase):
         """
         Test successfully starting a container
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container.state.set('actions', 'install', 'ok')
         container.start()
@@ -202,7 +202,6 @@ class TestContainerTemplate(TestCase):
         """
         Test successfully stopping a container
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         container = Container('container', data=self.valid_data)
         container.state.check = MagicMock(return_value=True)
         container.state.delete = MagicMock(return_value=True)

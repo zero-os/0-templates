@@ -7,6 +7,7 @@ from zerorobot.template.state import StateCheckError
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
 BOOTSTRAP_TEMPLATE_UID = 'github.com/zero-os/0-templates/zeroos_bootstrap/0.0.1'
+ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
 
 
 class Node(TemplateBase):
@@ -76,13 +77,11 @@ class Node(TemplateBase):
         return j.clients.zero_os.sal.node_get(self.name)
 
     def _monitor(self):
-        self.state.check('actions', 'install', 'ok')
-
         if not self.node_sal.is_running():
             self.state.delete('status', 'running')
             return
 
-        if not self.node_sal.is_configured():
+        if not self.node_sal.is_configured(self.name):
             self.install()
 
         try:
@@ -109,8 +108,33 @@ class Node(TemplateBase):
         self.node_sal.client.system('hostname %s' % self.data['hostname']).get()
         self.node_sal.client.bash('echo %s > /etc/hostname' % self.data['hostname']).get()
 
-        self.state.set('actions', 'install', 'ok')
         self.state.set('status', 'running', 'ok')
+
+        mounts = self.node_sal.partition_and_mount_disks(poolname)
+        port = 9900
+        tasks = []
+        for mount in mounts:
+            zdb_name = 'zdb_%s_%s' % (self.name, mount['disk'])
+            if self.api.services.exists(template_uid=ZDB_TEMPLATE_UID, name=zdb_name):
+                zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
+            else:
+                zdb_data = {
+                    'node': self.name,
+                    'nodeMountPoint': mount['mountpoint'],
+                    'containerMountPoint': '/zerodb',
+                    'listenPort': port,
+                    'listenAddr': self.data['redisAddr'],
+                    'admin': j.data.idgenerator.generateXCharID(10),
+                }
+
+                zdb = self.api.services.create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
+                tasks.append(zdb.schedule_action('install'))
+
+            port += 1
+            tasks.append(zdb.schedule_action('start'))
+
+        self._wait_all(tasks)
+        self.state.set('actions', 'install', 'ok')
 
     def reboot(self):
         self.state.check('status', 'running', 'ok')
@@ -125,13 +149,6 @@ class Node(TemplateBase):
 
     def uninstall(self):
         self.logger.info('uninstalling  node')
-        # stats_collector_service = get_stats_collector(service)
-        # if stats_collector_service:
-        #     stats_collector_service.executeAction('uninstall', context=job.context)
-
-        # statsdb_service = get_statsdb(service)
-        # if statsdb_service and str(statsdb_service.parent) == str(service):
-        #     statsdb_service.executeAction('uninstall', context=job.context)
 
         self._stop_all_containers()
         self._stop_all_vms()
@@ -141,15 +158,6 @@ class Node(TemplateBase):
         for bootstrap in self.api.services.find(template_uid=BOOTSTRAP_TEMPLATE_UID):
             # FIXME: not ideal cause we're leaking data info to other service
             bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait()
-
-        # # Remove etcd_cluster if this was the last node service
-        # node_services = service.aysrepo.servicesFind(role='node')
-        # if len(node_services) > 1:
-        #     return
-
-        # for etcd_cluster_service in service.aysrepo.servicesFind(role='etcd_cluster'):
-        #     etcd_cluster_service.executeAction('delete', context=job.context)
-        #     etcd_cluster_service.delete()
 
     @timeout(5, error_message='info action timeout')
     def info(self):

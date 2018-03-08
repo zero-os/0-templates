@@ -34,7 +34,7 @@ class Container(TemplateBase):
     def install(self):
         node_name = self.data['node']
         node = self.api.services.get(name=node_name, template_uid=NODE_TEMPLATE_UID)
-        node.state.check('actions', 'install', 'ok')
+        node.state.check('status', 'running', 'ok')
 
         if self.node_sal is None:
             raise RuntimeError("no connection to the zero-os node")
@@ -46,9 +46,9 @@ class Container(TemplateBase):
             ports[int(src)] = int(dst)
 
         self.node_sal.containers.create(self.name, self.data['flist'], hostname=None,
-                                        mounts=None, nics=self.data['nics'],
+                                        mounts=self.data['mounts'], nics=self.data['nics'],
                                         host_network=self.data['hostNetworking'],
-                                        ports=ports, storage=None,
+                                        ports=ports, storage=self.data['storage'],
                                         init_processes=self.data['initProcesses'],
                                         privileged=self.data['privileged'], env=None)
         self.state.set('actions', 'install', 'ok')

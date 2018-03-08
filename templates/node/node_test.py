@@ -14,11 +14,20 @@ from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
 
+def mockdecorator(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mockdecorator)).start()
+patch("zerorobot.template.decorator.retry", MagicMock(return_value=mockdecorator)).start()
+patch("gevent.sleep", MagicMock()).start()
+
+
 class TestNodeTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        patch('gevent.sleep', MagicMock()).start()
         cls.valid_data = {'redisAddr': 'localhost'}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Node.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
@@ -27,6 +36,9 @@ class TestNodeTemplate(TestCase):
     def tearDownClass(cls):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
+
+    def setUp(self):
+        self.client_get = patch('js9.j.clients', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -43,27 +55,24 @@ class TestNodeTemplate(TestCase):
         """
         Test create node service and password is not refreshed
         """
-        with patch('js9.j.clients', MagicMock()) as client_get:
-            client_get.start()
-            node = Node(name='node', data=self.valid_data)
-            data = {
-                'host': node.data['redisAddr'],
-                'port': node.data['redisPort'],
-                'password_': node.data['redisPassword'],
-                'ssl': True,
-                'db': 0,
-                'timeout': 120,
-            }
-            client_get.zero_os.get.assert_called_with(instance=node.name, data=data, create=True, die=True)
-            client_get.itsyouonline.refresh_jwt_token.assert_not_called()
+        node = Node(name='node', data=self.valid_data)
+        data = {
+            'host': node.data['redisAddr'],
+            'port': node.data['redisPort'],
+            'password_': node.data['redisPassword'],
+            'ssl': True,
+            'db': 0,
+            'timeout': 120,
+        }
+        self.client_get.zero_os.get.assert_called_with(instance=node.name, data=data, create=True, die=True)
+        self.client_get.itsyouonline.refresh_jwt_token.assert_not_called()
 
     def test_refresh_password(self):
         """
         Test refresh password when password is set
         """
-        with patch('js9.j.clients', MagicMock()) as client_get:
-            Node(name='node', data={'redisAddr': 'localhost', 'redisPassword': 'token'})
-            client_get.itsyouonline.refresh_jwt_token.assert_called_with('token', validity=3600)
+        Node(name='node', data={'redisAddr': 'localhost', 'redisPassword': 'token'})
+        self.client_get.itsyouonline.refresh_jwt_token.assert_called_with('token', validity=3600)
 
     def test_update_data(self):
         """
@@ -87,17 +96,16 @@ class TestNodeTemplate(TestCase):
         """
         Test node_sal property
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')) as node_get:
-            node = Node(name='node', data=self.valid_data)
-            node_sal = node.node_sal
-            node_get.assert_called_with(node.name)
-            assert node_sal == 'node_sal'
+        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')).start()
+        node = Node(name='node', data=self.valid_data)
+        node_sal = node.node_sal
+        node_get.assert_called_with(node.name)
+        assert node_sal == 'node_sal'
 
     def test_install(self):
         """
         Test node install
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
         node.node_sal.client.info.version = MagicMock(return_value={'branch': 'master', 'revision': 'revision'})
         node.install()
@@ -108,40 +116,36 @@ class TestNodeTemplate(TestCase):
         """
         Test node info
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
-            node = Node(name='node', data=self.valid_data)
-            node.state.set('status', 'running', 'ok')
-            node.info()
+        node = Node(name='node', data=self.valid_data)
+        node.state.set('status', 'running', 'ok')
+        node.info()
 
-            node.node_sal.client.info.os.assert_called_once_with()
+        node.node_sal.client.info.os.assert_called_once_with()
 
     def test_node_info_node_not_running(self):
         """
         Test node info
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
-            node = Node(name='node', data=self.valid_data)
-            with pytest.raises(StateCheckError):
-                node.info()
+        node = Node(name='node', data=self.valid_data)
+        with pytest.raises(StateCheckError):
+            node.info()
 
     def test_node_stats_node_running(self):
         """
         Test node stats
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
-            node = Node(name='node', data=self.valid_data)
-            node.state.set('status', 'running', 'ok')
-            node.stats()
-            node.node_sal.client.aggregator.query.assert_called_once_with()
+        node = Node(name='node', data=self.valid_data)
+        node.state.set('status', 'running', 'ok')
+        node.stats()
+        node.node_sal.client.aggregator.query.assert_called_once_with()
 
     def test_node_stats_node_not_running(self):
         """
         Test node stats
         """
-        with patch('js9.j.clients.zero_os.sal.node_get', MagicMock()):
-            node = Node(name='node', data=self.valid_data)
-            with pytest.raises(Exception):
-                node.stats()
+        node = Node(name='node', data=self.valid_data)
+        with pytest.raises(Exception):
+            node.stats()
 
     def test_start_all_containers(self):
         """
@@ -181,21 +185,19 @@ class TestNodeTemplate(TestCase):
         """
         Test node healthcheck if node is running
         """
-        with patch('node._update_healthcheck_state', MagicMock()) as healthcheck:
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-            node = Node(name='node', data=self.valid_data)
+        healthcheck = patch('node._update_healthcheck_state', MagicMock()).start()
+        node = Node(name='node', data=self.valid_data)
 
-            # could be the recurring action already kicked in
-            # so we count the difference in call count
-            pre_exec = healthcheck.call_count
-            node._healthcheck()
-            assert healthcheck.call_count == pre_exec + 13
+        # could be the recurring action already kicked in
+        # so we count the difference in call count
+        pre_exec = healthcheck.call_count
+        node._healthcheck()
+        assert healthcheck.call_count == pre_exec + 13
 
     def test_uninstall(self):
         """
         Test node uninstall
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
         node._stop_all_vms = MagicMock()
         node._stop_all_containers = MagicMock()
@@ -211,7 +213,6 @@ class TestNodeTemplate(TestCase):
         """
         Test node reboot if node already running
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
         node.state.set('status', 'running', 'ok')
         node.node_sal.client.raw = MagicMock()
@@ -224,7 +225,6 @@ class TestNodeTemplate(TestCase):
         Test node reboot if node is not
         """
         with pytest.raises(StateCheckError, message='template should fail to reboot if node is not running'):
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
             node = Node(name='node', data=self.valid_data)
             node.node_sal.client.raw = MagicMock()
             node.reboot()
@@ -280,20 +280,10 @@ class TestNodeTemplate(TestCase):
         _update(service, healthcheck)
         service.state.set.assert_has_calls([call('category', 'id-1', 'status'), call('category', 'id-2', 'status')])
 
-    def test_monitor_node_not_installed(self):
-        """
-        Test _monitor action called before the install action
-        """
-        with pytest.raises(StateCheckError, message='template should fail to monitor if node is not installed'):
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
-            node = Node(name='node', data=self.valid_data)
-            node._monitor()
-
     def test_monitor_node_is_not_running(self):
         """
         Test _monitor action called when node is not running
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
         node.state.set('actions', 'install', 'ok')
         node.node_sal.is_running = MagicMock(return_value=False)
@@ -307,7 +297,6 @@ class TestNodeTemplate(TestCase):
         """
         Test _monitor action called after node rebooted
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
         node.install = MagicMock()
         node._start_all_containers = MagicMock()
@@ -332,7 +321,6 @@ class TestNodeTemplate(TestCase):
         """
         Test _monitor action called after node rebooted
         """
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
         node = Node(name='node', data=self.valid_data)
         node.install = MagicMock()
         node._start_all_containers = MagicMock()

@@ -7,17 +7,25 @@ import os
 import pytest
 
 from js9 import j
-from zeroos_bootstrap import ZeroosBootstrap
+
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
+from zeroos_bootstrap import ZeroosBootstrap
 
 
-class TestNodeTemplate(TestCase):
+def mockdecorator(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+patch('zerorobot.template.decorator.timeout', MagicMock(return_value=mockdecorator)).start()
+patch("gevent.sleep", MagicMock()).start()
+
+
+class TestBootstrapTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        patch('gevent.sleep', MagicMock()).start()
-
         cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': ''}
         cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
         cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
@@ -32,6 +40,7 @@ class TestNodeTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
+
         patch('js9.j.clients.zerotier.get', MagicMock()).start()
 
     def tearDown(self):
@@ -99,6 +108,7 @@ class TestNodeTemplate(TestCase):
         """
         Test _wait_member_ip
         """
+        patch("zerorobot.template.decorator.timeout").start()
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
 
         resp = MagicMock()
@@ -136,6 +146,7 @@ class TestNodeTemplate(TestCase):
         """
         Test ping node
         """
+        patch("zerorobot.template.decorator.timeout").start()
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         bootstrap.logger = MagicMock()
         node_sal = MagicMock()
@@ -143,7 +154,7 @@ class TestNodeTemplate(TestCase):
         bootstrap._ping_node(node_sal, MagicMock())
 
         # ensure the loop is working when ping raises an exception
-        node_sal.client.ping.call_count == 2
+        assert node_sal.client.ping.call_count == 2
 
     def test_delete_node(self):
         """
