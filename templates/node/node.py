@@ -84,6 +84,8 @@ class Node(TemplateBase):
         if not self.node_sal.is_configured(self.name):
             self.install()
 
+        self.state.set('status', 'running', 'ok')
+
         try:
             # check if the node was rebooting and start containers and vms
             self.state.check('status', 'rebooting', 'ok')
