@@ -171,6 +171,11 @@ class Node(TemplateBase):
         self.state.check('status', 'running', 'ok')
         return self.node_sal.client.aggregator.query()
 
+    @timeout(5, error_message='processes action timeout')
+    def processes(self):
+        self.state.check('status', 'running', 'ok')
+        return self.node_sal.client.process.list()
+
     def _healthcheck(self):
         node_sal = self.node_sal
         _update_healthcheck_state(self, node_sal.healthcheck.openfiledescriptors())
