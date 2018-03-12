@@ -19,6 +19,7 @@ class TestContainerTemplate(TestCase):
     def setUpClass(cls):
         cls.valid_data = {
             'bridges': [],
+            'env': {},
             'flist': 'flist',
             'hostNetworking': False,
             'hostname': '',

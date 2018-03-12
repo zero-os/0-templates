@@ -35,7 +35,7 @@ class Vm(TemplateBase):
     @property
     def hypervisor(self):
         if self._hypervisor is None:
-            self._hypervisor = self.api.services.get(name=self.hv_name,template_uid=HV_TEMPLATE)
+            self._hypervisor = self.api.services.get(name=self.hv_name, template_uid=HV_TEMPLATE)
         return self._hypervisor
 
     def install(self):

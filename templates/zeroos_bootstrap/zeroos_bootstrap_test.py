@@ -3,10 +3,7 @@ from unittest.mock import MagicMock, patch
 import tempfile
 import shutil
 import os
-
 import pytest
-
-from js9 import j
 
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID

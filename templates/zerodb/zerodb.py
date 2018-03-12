@@ -43,16 +43,20 @@ class Zerodb(TemplateBase):
         }
         return j.clients.zero_os.sal.get_zerodb(**kwargs)
 
+    def get_data(self):
+        return self.data
+
     def install(self):
         mounts = {}
         if self.data['nodeMountPoint'] and self.data['containerMountPoint']:
-            mounts = {self.data['nodeMountPoint']: self.data['containerMountPoint']}
+            mounts = {'source': self.data['nodeMountPoint'], 'target': self.data['containerMountPoint']}
 
         container_data = {
             'flist': ZERODB_FLIST,
-            'mounts': mounts,
+            'mounts': [mounts],
             'node': self.data['node'],
             'hostNetworking': True,
+            'storage': 'ardb://hub.gig.tech:16379',
         }
         self.data['container'] = 'container_%s' % self.name
         container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
@@ -64,7 +68,7 @@ class Zerodb(TemplateBase):
         start zerodb server
         """
         self.state.check('actions', 'install', 'ok')
-        self.logger.info('Staring zerodb {}'.format(self.name))
+        self.logger.info('Starting zerodb {}'.format(self.name))
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
         container.schedule_action('start').wait()
         self.zerodb_sal.start()
