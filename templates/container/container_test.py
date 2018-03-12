@@ -191,24 +191,45 @@ class TestContainerTemplate(TestCase):
 
         assert container.state.check.called is False
 
-    def test_stop_container_before_start(self):
+    def test_stop_container_before_install(self):
         """
-        Test stopping a container without starting
+        Test stopping a container without installing
         """
         with pytest.raises(StateCheckError, message='Stopping container before install should raise an error'):
             container = Container('container', data=self.valid_data)
             container.stop()
 
-    def test_stop_container_after_start(self):
+    def test_stop_container(self):
         """
         Test successfully stopping a container
         """
         container = Container('container', data=self.valid_data)
-        container.state.check = MagicMock(return_value=True)
+        container.state.set('actions', 'install', 'ok')
         container.state.delete = MagicMock(return_value=True)
 
         container.stop()
 
-        assert container.state.check('actions', 'start', 'ok')
         assert container.container_sal.stop.called
-        assert container.state.delete.called
+        container.state.delete.assert_called_once_with('actions', 'start')
+
+    def test_uninstall_container_before_install(self):
+        """
+        Test uninstall a container without installing
+        """
+        with pytest.raises(StateCheckError, message='Uninstall container before install should raise an error'):
+            container = Container('container', data=self.valid_data)
+            container.uninstall()
+
+    def test_uninstall_container(self):
+        """
+        Test successfully uninstall a container
+        """
+        container = Container('container', data=self.valid_data)
+        container.state.set('actions', 'install', 'ok')
+        container.state.delete = MagicMock(return_value=True)
+        container.stop = MagicMock()
+
+        container.uninstall()
+
+        container.stop.assert_called_once_with()
+        container.state.delete.assert_called_once_with('actions', 'install')
