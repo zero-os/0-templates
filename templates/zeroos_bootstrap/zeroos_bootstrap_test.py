@@ -26,7 +26,7 @@ class TestBootstrapTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': ''}
+        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': '', 'redisPassword': ''}
         cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
         cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
 
