@@ -1,4 +1,4 @@
-@0xa03ee920fb75e608; 
+@0xa03ee920fb75e608;
 
 
 struct Schema {
@@ -13,5 +13,8 @@ struct Schema {
     # networks the new node needs to consume
     # Not implemented yet
 
+    redisPassword @3 :Text;
+    # jwt token used as password when
+    # connecting to the node
 
 }

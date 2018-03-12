@@ -20,9 +20,24 @@ class ZeroosBootstrap(TemplateBase):
         if not self.data['zerotierClient']:
             raise RuntimeError("no zerotier instance specified")
 
+        if self.data['redisPassword']:
+            self._refresh_password()
+
         self.zt = j.clients.zerotier.get(self.data['zerotierClient'])
         # start recurring action
         self.recurring_action('bootstrap', 10)
+        self.recurring_action('_refresh_password', 1200)  # every 20 minutes
+
+    @timeout(2, error_message="_refresh_password timeout")
+    def _refresh_password(self):
+        """
+        this method is responsible to automatically refresh a jwt token used as password
+        """
+        if not self.data.get('redisPassword'):
+            return
+
+        # refresh jwt
+        self.data['redisPassword'] = j.clients.itsyouonline.refresh_jwt_token(self.data['redisPassword'], validity=3600)
 
     def bootstrap(self):
 
@@ -73,7 +88,7 @@ class ZeroosBootstrap(TemplateBase):
         data = {
             'host': ip,
             'port': 6379,
-            'password_': "",
+            'password_': self.data.get('redisPassword', ''),
             'db': 0,
             'ssl': True,
             'timeout': 120,
@@ -154,6 +169,7 @@ class ZeroosBootstrap(TemplateBase):
             # 'networks': networks,
             'hostname': hostname,
             'redisAddr': zerotier_ip,
+            'redisPassword': self.data.get('redisPassword', ''),
         }
         self.logger.info("create node.zero-os service {}".format(name))
         node = self.api.services.create(NODE_TEMPLATE_UID, name, data=data)
