@@ -26,13 +26,6 @@ class ZeroosBootstrap(TemplateBase):
 
     def bootstrap(self):
 
-        # make sure we can find a robot that can create the node service
-        try:
-            self.api.get_robot(NODE_TEMPLATE_UID)
-        except KeyError:
-            self.logger.error("can't find a robot that can create node service. node discovery can't proceed")
-            return
-
         netid = self.data['zerotierNetID']
 
         resp = self.zt.client.network.listMembers(netid)
