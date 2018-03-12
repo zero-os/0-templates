@@ -40,6 +40,7 @@ class ZeroosBootstrap(TemplateBase):
         self.data['redisPassword'] = j.clients.itsyouonline.refresh_jwt_token(self.data['redisPassword'], validity=3600)
 
     def bootstrap(self):
+        self.logger.info("start discovering new members")
 
         netid = self.data['zerotierNetID']
 
@@ -85,6 +86,9 @@ class ZeroosBootstrap(TemplateBase):
         return zerotier_ip
 
     def _get_node_sal(self, ip):
+        instance = 'bootstrap'
+        j.clients.zero_os.delete(instance)
+
         data = {
             'host': ip,
             'port': 6379,
@@ -93,17 +97,19 @@ class ZeroosBootstrap(TemplateBase):
             'ssl': True,
             'timeout': 120,
         }
+
         # ensure client config
         cl = j.clients.zero_os.get(
-            instance="bootstrap",
+            instance=instance,
             data=data,
             create=True,
-            die=True)
-        cl.config._data.update(data)
+            die=True,
+            interactive=False)
+
         cl.config.save()
 
         # get a node object from the zero-os SAL
-        return j.clients.zero_os.sal.node_get("bootstrap")
+        return j.clients.zero_os.sal.node_get(instance)
 
     @timeout(60, error_message="can't connect, unauthorizing member")
     def _ping_node(self, node_sal, zerotier_ip):
