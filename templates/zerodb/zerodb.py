@@ -47,6 +47,7 @@ class Zerodb(TemplateBase):
         return self.data
 
     def install(self):
+        self.logger.info('Installing zerodb %s' % self.name)
         mounts = {}
         if self.data['nodeMountPoint'] and self.data['containerMountPoint']:
             mounts = {'source': self.data['nodeMountPoint'], 'target': self.data['containerMountPoint']}
@@ -67,7 +68,7 @@ class Zerodb(TemplateBase):
         start zerodb server
         """
         self.state.check('actions', 'install', 'ok')
-        self.logger.info('Starting zerodb {}'.format(self.name))
+        self.logger.info('Starting zerodb %s' % self.name)
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
         container.schedule_action('start').wait()
         self.zerodb_sal.start()
@@ -77,20 +78,35 @@ class Zerodb(TemplateBase):
         """
         stop zerodb server
         """
-        self.state.check('actions', 'start', 'ok')
-        self.logger.info('Stopping zerodb {}'.format(self.name))
+        self.state.check('actions', 'install', 'ok')
+        self.logger.info('Stopping zerodb %s' % self.name)
         self.zerodb_sal.stop()
         self.state.delete('actions', 'start')
 
     def namespace_list(self):
+        """
+        List namespace
+        :return: list of namespaces ex: ['namespace1', 'namespace2']
+        """
         self.state.check('actions', 'start', 'ok')
         return self.zerodb_sal.list_namespaces()
 
     def namespace_info(self, name):
+        """
+        Get info of namespace
+        :param name: namespace name
+        :return: dict
+        """
         self.state.check('actions', 'start', 'ok')
         return self.zerodb_sal.get_namespace_info(name)
 
     def namespace_create(self, name, size=None, secret=None):
+        """
+        Create a namespace and set the size and secret
+        :param name: namespace name
+        :param size: namespace size
+        :param secret: namespace secret
+        """
         self.state.check('actions', 'start', 'ok')
         self.zerodb_sal.create_namespace(name)
         if size:
@@ -99,5 +115,11 @@ class Zerodb(TemplateBase):
             self.zerodb_sal.set_namespace_property(name, 'password', secret)
 
     def namespace_set(self, name, prop, value):
+        """
+        Set a property of a namespace
+        :param name: namespace name
+        :param prop: property name
+        :param value: property value
+        """
         self.state.check('actions', 'start', 'ok')
         self.zerodb_sal.set_namespace_property(name, prop, value)

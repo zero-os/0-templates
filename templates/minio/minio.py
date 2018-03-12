@@ -5,7 +5,7 @@ from zerorobot.template.base import TemplateBase
 ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 
-MINIO_FLIST = 'https://hub.gig.tech/gig-official-apps/minio.flist'
+MINIO_FLIST = 'https://hub.gig.tech/zaibon/minio.flist'
 
 
 class Minio(TemplateBase):
@@ -51,6 +51,7 @@ class Minio(TemplateBase):
         return zdbs_hosts
 
     def install(self):
+        self.logger.info('Installing minio %s' % self.name)
         env = [
             {
                 'name': 'MINIO_ACCESS_KEY',
@@ -78,7 +79,7 @@ class Minio(TemplateBase):
         start minio server
         """
         self.state.check('actions', 'install', 'ok')
-        self.logger.info('Starting minio {}'.format(self.name))
+        self.logger.info('Starting minio %s' % self.name)
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
         container.schedule_action('start').wait()
         self.minio_sal.start()
@@ -89,14 +90,13 @@ class Minio(TemplateBase):
         stop minio server
         """
         self.state.check('actions', 'start', 'ok')
-        self.logger.info('Stopping minio {}'.format(self.name))
+        self.logger.info('Stopping minio %s' % self.name)
         self.minio_sal.stop()
         self.state.delete('actions', 'start')
 
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
+        self.logger.info('Uninstalling minio %s' % self.name)
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
-        container.schedule_action('stop').wait()
-        container.delete()
-        self.delete()
-
+        container.schedule_action('uninstall').wait()
+        self.state.delete('actions', 'install')
