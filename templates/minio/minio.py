@@ -89,7 +89,7 @@ class Minio(TemplateBase):
         """
         stop minio server
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('actions', 'install', 'ok')
         self.logger.info('Stopping minio %s' % self.name)
         self.minio_sal.stop()
         self.state.delete('actions', 'start')
@@ -97,6 +97,7 @@ class Minio(TemplateBase):
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Uninstalling minio %s' % self.name)
+        self.stop()
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
         container.schedule_action('uninstall').wait()
         self.state.delete('actions', 'install')

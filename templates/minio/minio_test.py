@@ -141,18 +141,20 @@ class TestMinioTemplate(TestCase):
         Test stop action
         """
         minio = Minio('minio', data=self.valid_data)
-        minio.state.set('actions', 'start', 'ok')
+        minio.state.set('actions', 'install', 'ok')
+        minio.state.delete = MagicMock()
         minio._get_zdbs = MagicMock()
         minio.stop()
 
         minio.minio_sal.stop.assert_called_once_with()
+        minio.state.delete.assert_called_once_with('actions', 'start')
 
-    def test_stop_before_start(self):
+    def test_stop_before_install(self):
         """
-        Test stop action without start
+        Test stop action without install
         """
         with pytest.raises(StateCheckError,
-                           message='stop action should raise an error if minio is not started'):
+                           message='stop action should raise an error if minio is not installed'):
             minio = Minio('minio', data=self.valid_data)
             minio.stop()
 
@@ -162,12 +164,14 @@ class TestMinioTemplate(TestCase):
         """
         minio = Minio('minio', data=self.valid_data)
         minio.state.set('actions', 'install', 'ok')
-        minio.delete = MagicMock()
+        minio.state.delete = MagicMock()
+        minio.stop = MagicMock()
         minio.api.services.get = MagicMock()
 
         minio.uninstall()
 
-        minio.delete.assert_called_once_with()
+        minio.stop.assert_called_once_with()
+        minio.state.delete.assert_called_once_with('actions', 'install')
 
     def test_uninstall_before_install(self):
         """

@@ -132,17 +132,17 @@ class TestZerodbTemplate(TestCase):
         Test stop action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.state.set('actions', 'start', 'ok')
+        zdb.state.set('actions', 'install', 'ok')
         zdb.stop()
 
         zdb.zerodb_sal.stop.assert_called_once_with()
 
-    def test_stop_before_start(self):
+    def test_stop_before_install(self):
         """
-        Test stop action without start
+        Test stop action without install
         """
         with pytest.raises(StateCheckError,
-                           message='stop action should raise an error if zerodb is not started'):
+                           message='stop action should raise an error if zerodb is not installed'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.stop()
 
