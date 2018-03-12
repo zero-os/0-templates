@@ -26,7 +26,7 @@ Mode enum:
 
 ### Actions
 - `start`: starts the container and the 0-db process. 
-- `stop`: stops the container and the 0-db process.
+- `stop`: stops the 0-db process.
 - `namespace_create`: create a new namespace. Only admin can do this.
 - `namespace_info`: returns basic information about a namespace
 - `namespace_list`: returns an array of all available namespaces.

@@ -39,6 +39,7 @@ class Vm(TemplateBase):
         return self._hypervisor
 
     def install(self):
+        self.logger.info('Installing vm %s' % self.name)
         node_name = self.data['node']
         node = self.api.services.get(name=node_name, template_uid=NODE_TEMPLATE_UID)
         node.state.check('actions', 'install', 'ok')
@@ -72,24 +73,30 @@ class Vm(TemplateBase):
             raise RuntimeError("error during creation of the hypervisor: %s", t.eco.errormessage)
 
     def uninstall(self):
+        self.logger.info('Uninstalling vm %s' % self.name)
         # TODO: deal with vdisks
         self.hypervisor.schedule_action('destroy').wait()
         self.hypervisor.delete()
         self._hypervisor = None
 
     def shutdown(self):
+        self.logger.info('Shuting down vm %s' %self.name)
         self.hypervisor.schedule_action('shutdown')
 
     def pause(self):
+        self.logger.info('Pausing vm %s' %self.name)
         self.hypervisor.schedule_action('pause')
 
     def resume(self):
+        self.logger.info('Resuming vm %s' %self.name)
         self.hypervisor.schedule_action('resume')
 
     def reboot(self):
+        self.logger.info('Rebooting vm %s' %self.name)
         self.hypervisor.schedule_action('reboot')
 
     def reset(self):
+        self.logger.info('Resetting vm %s' %self.name)
         self.hypervisor.schedule_action('reset')
 
     def _get_vnc_port(self):
@@ -100,11 +107,13 @@ class Vm(TemplateBase):
                 return vm['vnc']
 
     def enable_vnc(self):
+        self.logger.info('Enable vnc for vm %s' % self.name)
         port = self._get_vnc_port()
         if port:
             self.node_sal.client.nft.open_port(port)
 
     def disable_vnc(self):
+        self.logger.info('Disable vnc for vm %s' % self.name)
         port = self._get_vnc_port()
         if port:
             self.node_sal.client.nft.drop_port(port)

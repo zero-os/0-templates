@@ -67,7 +67,7 @@ class Container(TemplateBase):
             return
 
         self.state.check('actions', 'install', 'ok')
-        self.logger.info('starting %s' % self.name)
+        self.logger.info('Starting container %s' % self.name)
         self.container_sal.start()
         self.state.set('actions', 'start', 'ok')
 
@@ -75,7 +75,14 @@ class Container(TemplateBase):
         if node_name and self.data['node'] != node_name:
             return
 
-        self.state.check('actions', 'start', 'ok')
-        self.logger.info('stopping %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
+        self.logger.info('Stopping container %s' % self.name)
         self.container_sal.stop()
         self.state.delete('actions', 'start')
+
+    def uninstall(self):
+        self.logger.info('Uninstalling container %s' % self.name)
+        self.stop()
+        self.state.delete('actions', 'install')
+
+
