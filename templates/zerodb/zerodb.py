@@ -56,7 +56,6 @@ class Zerodb(TemplateBase):
             'mounts': [mounts],
             'node': self.data['node'],
             'hostNetworking': True,
-            'storage': 'ardb://hub.gig.tech:16379',
         }
         self.data['container'] = 'container_%s' % self.name
         container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
