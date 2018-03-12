@@ -113,13 +113,12 @@ class ZeroosBootstrap(TemplateBase):
 
     @timeout(60, error_message="can't connect, unauthorizing member")
     def _ping_node(self, node_sal, zerotier_ip):
+        self.logger.info("connection to g8os with IP: %s", zerotier_ip)
         while True:
             try:
-                self.logger.info("connection to g8os with IP: %s", zerotier_ip)
                 node_sal.client.ping()
                 break
             except Exception as e:
-                self.logger.error(str(e))
                 continue
 
     def _add_node(self, member):
@@ -182,7 +181,7 @@ class ZeroosBootstrap(TemplateBase):
         task_install = node.schedule_action('install')
 
         try:
-            task_install.wait(60)
+            task_install.wait(120)
         except TimeoutError as err:
             self.logger.error("node %s took too long to install", name)
             node.delete()
