@@ -3,11 +3,9 @@ from unittest.mock import MagicMock, patch, call
 import tempfile
 import shutil
 import os
-
 import pytest
 
-from js9 import j
-from zerodb import Zerodb, CONTAINER_TEMPLATE_UID
+from zerodb import Zerodb, CONTAINER_TEMPLATE_UID, ZERODB_FLIST
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
@@ -99,8 +97,8 @@ class TestZerodbTemplate(TestCase):
         zdb.install()
 
         container_data = {
-            'flist': 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist',
-            'mounts': {},
+            'flist': ZERODB_FLIST,
+            'mounts':  [{}],
             'node': self.valid_data['node'],
             'hostNetworking': True,
         }
@@ -144,7 +142,7 @@ class TestZerodbTemplate(TestCase):
         Test stop action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='stop action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.stop()
 
@@ -153,7 +151,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_list action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace_list action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_list()
 
@@ -172,7 +170,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_info action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_info('namespace')
 
@@ -191,7 +189,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_create action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace_create action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_create('namespace')
 
@@ -212,7 +210,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_set action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace_set action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_set('namespace', 'maxsize', 12)
 

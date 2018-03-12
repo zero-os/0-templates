@@ -7,7 +7,7 @@ struct Schema {
     indexDir @3: Text="/zerodb"; # index file directory (default /zerodb/)
     mode @4: Mode; # a value from enum Mode representing the 0-db mode
     sync @5: Bool=false; # boolean indicating whether all write should be sync'd or not.
-    container @6: Text; # reference to the container running the zerodb
+    container @6: Text; # reference to the container running the zerodb. This is set by the template.
     node @7: Text; # reference to the node running the zerdb container
     nodeMountPoint @8: Text; # the node mountpoint that will be mounted at containerMountPoint
     containerMountPoint @9: Text; # the container destination where hostMountPoint will be mounted

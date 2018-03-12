@@ -17,10 +17,17 @@ struct Schema {
     zerotierNetwork @10:Text; # node's zerotier network id
     privileged @11 :Bool;
     identity @12 :Text;
+    env @13: List(Env); # environment variables needed to be set for the container
+
+
+    struct Env {
+        name @0 :Text; # variable name
+        value @1 :Text; # variable value
+    }
 
     struct Mount {
-        filesystem @0 :Text; # Instance name of a filesystem service
-        target @1 :Text; # where to mount this filesystem in the container
+        source @0 :Text; # node source
+        target @1 :Text; # container target
     }
 
     struct Process {

@@ -11,7 +11,7 @@ This template is responsible for managing 0-db.
 - `indexDir`: index file directory (default /zerodb/)
 - `mode`: a value from enum Mode representing the 0-db mode.
 - `sync`: boolean indicating whether all write should be sync'd or not.
-- `container`: reference to the container running the zerodb.
+- `container`: reference to the container running the zerodb. This is set by the template.
 - `node`: reference to the node running the zerdb container
 - `nodeMountPoint`: the node mountpoint that will be mounted at containerMountPoint.
 - `containerMountPoint`: the container destination where hostMountPoint will be mounted.
