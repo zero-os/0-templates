@@ -12,8 +12,11 @@ This template is responsible for managing [minio](https://minio.io/) server inst
 - `login`: minio login. End user need to know this login to have access to minio
 - `password`: minio password. End user need to know this login to have access to minio
 - `container`: reference to the container on which minio will be running. This is set by the template
-- `listenAddr`: the address minio will bind to
 - `listenPort`: the port minio will bind to
+- `resticRepo`: restic repo to create the bucket on and use for metadata backup
+- `resticUsername`: restic username
+- `resticPassword`: restic password
+- `privateKey`: encryption private key
 
 
 ### Actions

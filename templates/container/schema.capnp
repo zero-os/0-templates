@@ -10,7 +10,7 @@ struct Schema {
     hostNetworking @5 :Bool;
     # Make host networking available to the guest.
     # If true means that the container will be able participate in the networks available in the host operating system.
-    ports @6:List(Text); # List of node to container post mappings. e.g: 8080:80
+    ports @6:List(Text); # List of node to container port mappings. e.g: 8080:80
     storage @7 :Text;
     mounts @8: List(Mount); # List mount points mapping to the container
     bridges @9 :List(Text); # comsumed bridges, automaticly filled don't pass in blueprint

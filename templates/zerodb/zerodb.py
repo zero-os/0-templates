@@ -4,6 +4,7 @@ from zerorobot.template.base import TemplateBase
 
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
+NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
 ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
 
 
@@ -33,18 +34,24 @@ class Zerodb(TemplateBase):
         kwargs = {
             'name': self.name,
             'container': self.container_sal,
-            'addr': self.data['listenAddr'],
             'port': self.data['listenPort'],
             'data_dir': self.data['dataDir'],
             'index_dir': self.data['indexDir'],
             'mode': self.data['mode'],
             'sync': self.data['sync'],
             'admin': self.data['admin'],
+            'redis_addr': self._get_node_address(),
         }
         return j.clients.zero_os.sal.get_zerodb(**kwargs)
 
-    def get_data(self):
-        return self.data
+    def _get_node_address(self):
+        node = self.api.services.get(template_uid=NODE_TEMPLATE_UID, name=self.data['node'])
+        task = node.schedule_action('get_redis_address')
+        task.wait()
+        return task.result
+
+    def get_bind_address(self):
+        return '{ip}:{port}'.format(ip=self._get_node_address(), port=self.data['listenPort'])
 
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
@@ -56,7 +63,8 @@ class Zerodb(TemplateBase):
             'flist': ZERODB_FLIST,
             'mounts': [mounts],
             'node': self.data['node'],
-            'hostNetworking': True,
+            'ports': ['%s:%s' % (self.data['listenPort'], self.data['listenPort'])],
+            'nics': [{'type': 'default'}],
         }
         self.data['container'] = 'container_%s' % self.name
         container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)

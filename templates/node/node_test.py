@@ -335,3 +335,10 @@ class TestNodeTemplate(TestCase):
         assert not node._start_all_vms.called
         assert not node.install.called
         node._healthcheck.assert_called_with()
+
+    def test_get_node_ip(self):
+        """
+        Test get_node_ip
+        """
+        node = Node(name='node', data=self.valid_data)
+        assert self.valid_data['redisAddr'] == node.get_redis_address()
