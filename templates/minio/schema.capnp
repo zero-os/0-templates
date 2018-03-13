@@ -1,4 +1,4 @@
-@0x9895a7c4a0b2bd61; 
+@0x9895a7c4a0b2bd61;
 
 
 struct Schema {
@@ -11,7 +11,8 @@ struct Schema {
     container @6: Text; # reference to the container on which minio will be running. This is set by the template
     listenPort @7: UInt32=9000; # the port to bind to
     resticRepo @8: Text="s3:http://195.134.212.42/"; # restic repo to use for metadata backup
-    resticUsername @9: Text="zaibon"; # rustic username
-    resticPassword @10: Text="coucou01"; # rustic password
-    privateKey @11: Text; # encryption private key
+    resticRepoPassword @9: Text; # restic repo password
+    resticUsername @10: Text="zaibon"; # rustic username
+    resticPassword @11: Text="coucou01"; # rustic password
+    privateKey @12: Text; # encryption private key
 }

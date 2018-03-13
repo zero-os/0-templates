@@ -27,6 +27,7 @@ class TestMinioTemplate(TestCase):
             'privateKey': '',
             'resticPassword': 'pass',
             'resticRepo': 'repo',
+            'resticRepoPassword': '',
             'resticUsername': 'username'
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
@@ -52,17 +53,17 @@ class TestMinioTemplate(TestCase):
             Minio(name="minio", data=data)
 
         data['node'] = 'node'
-        with pytest.raises(ValueError,message='template should fail to instantiate if data contains no zerodbs'):
+        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no zerodbs'):
             Minio(name="minio", data=data)
 
         data['zerodbs'] = ['zerodb']
-        with pytest.raises(ValueError,message='template should fail to instantiate if data contains no namespace'):
+        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no namespace'):
             Minio(name="minio", data=data)
         data['namespace'] = 'namespace'
-        with pytest.raises(ValueError,message='template should fail to instantiate if data contains no login'):
+        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no login'):
             Minio(name="minio", data=data)
         data['login'] = 'login'
-        with pytest.raises(ValueError,message='template should fail to instantiate if data contains no password'):
+        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no password'):
             Minio(name="minio", data=data)
 
     def test_create_valid_data(self):
@@ -107,6 +108,7 @@ class TestMinioTemplate(TestCase):
         minio._get_zdbs = MagicMock()
         minio.install()
 
+        assert minio.data['resticRepoPassword'] != ''
         container_data = {
             'flist': MINIO_FLIST,
             'node': self.valid_data['node'],
