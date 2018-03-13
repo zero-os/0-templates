@@ -20,7 +20,6 @@ class TestZerodbTemplate(TestCase):
             'node': 'node',
             'dataDir': '/zerodb/data',
             'indexDir': '/zerodb/index',
-            'listenAddr': '0.0.0.0',
             'listenPort': 9900,
             'mode': 'user',
             'sync': False,
@@ -84,6 +83,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb_sal = patch('js9.j.clients.zero_os.sal.get_zerodb', MagicMock(return_value='zdb_sal')).start()
         zdb = Zerodb('zdb', data=self.valid_data)
+        zdb.api.services.get = MagicMock()
 
         assert zdb.zerodb_sal == 'zdb_sal'
         assert zdb_sal.called
@@ -100,7 +100,8 @@ class TestZerodbTemplate(TestCase):
             'flist': ZERODB_FLIST,
             'mounts':  [{}],
             'node': self.valid_data['node'],
-            'hostNetworking': True,
+            'ports': ['9900:9900'],
+            'nics': [{'type': 'default'}],
         }
         zdb.api.services.create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         zdb.state.check('actions', 'install', 'ok')
@@ -114,7 +115,7 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.start()
 
-        zdb.api.services.get.assert_called_once_with(template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
+        assert zdb.api.services.get.call_count == 2
         zdb.zerodb_sal.start.assert_called_once_with()
         zdb.state.check('actions', 'start', 'ok')
 
@@ -133,6 +134,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'install', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.stop()
 
         zdb.zerodb_sal.stop.assert_called_once_with()
@@ -161,6 +163,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_list()
 
         zdb.zerodb_sal.list_namespaces.assert_called_once_with()
@@ -180,6 +183,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_info('namespace')
 
         zdb.zerodb_sal.get_namespace_info.assert_called_once_with('namespace')
@@ -199,6 +203,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_create('namespace', 12, 'secret')
 
         zdb.zerodb_sal.create_namespace.assert_called_once_with('namespace')
@@ -220,6 +225,30 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_set('namespace', 'maxsize', 12)
 
         zdb.zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
+
+    def test_get_bind_address(self):
+        """
+        Test get_bind_address
+        """
+        zdb = Zerodb('zdb', data=self.valid_data)
+        ip = '0.0.0.0'
+        zdb._get_node_address = MagicMock(return_value=ip)
+        address = zdb.get_bind_address()
+        assert address == '{ip}:{port}'.format(ip=ip, port=self.valid_data['listenPort'])
+
+    def test_get_node_ip(self):
+        """
+        Test _get_node_ip
+        """
+        zdb = Zerodb('zdb', data=self.valid_data)
+        result = '0.0.0.0'
+        task = MagicMock(result=result)
+        node = MagicMock()
+        node.schedule_action = MagicMock(return_value=task)
+        zdb.api.services.get = MagicMock(return_value=node)
+
+        assert result == zdb._get_node_address()

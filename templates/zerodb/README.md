@@ -5,7 +5,6 @@ This template is responsible for managing 0-db.
 
 ### Schema:
 
-- `listenAddr`: listen address (default 0.0.0.0)
 - `listenPort`: listen port (default 9900)
 - `dataDir`: data file directory (default /zerodb/)
 - `indexDir`: index file directory (default /zerodb/)

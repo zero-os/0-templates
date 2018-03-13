@@ -69,6 +69,9 @@ class Node(TemplateBase):
                 self._ensure_client_config()
                 break
 
+    def get_redis_address(self):
+        return self.data['redisAddr']
+
     @property
     def node_sal(self):
         """
@@ -128,7 +131,6 @@ class Node(TemplateBase):
                     'nodeMountPoint': mount['mountpoint'],
                     'containerMountPoint': '/zerodb',
                     'listenPort': port,
-                    'listenAddr': self.data['redisAddr'],
                     'admin': j.data.idgenerator.generateXCharID(10),
                     'mode': 'direct',
                 }

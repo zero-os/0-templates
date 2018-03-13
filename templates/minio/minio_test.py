@@ -18,13 +18,16 @@ class TestMinioTemplate(TestCase):
         cls.valid_data = {
             'container': 'container_minio',
             'node': 'node',
-            'listenAddr': '0.0.0.0',
             'listenPort': 9000,
             'namespace': 'namespace',
             'nsSecret': 'nsSecret',
             'login': 'login',
             'password': 'password',
-            'zerodbs': ['zerodb']
+            'zerodbs': ['zerodb'],
+            'privateKey': '',
+            'resticPassword': 'pass',
+            'resticRepo': 'repo',
+            'resticUsername': 'username'
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Minio.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Minio.template_name, Minio.version))
@@ -107,8 +110,11 @@ class TestMinioTemplate(TestCase):
         container_data = {
             'flist': MINIO_FLIST,
             'node': self.valid_data['node'],
-            'hostNetworking': True,
-            'env': [{'value': 'login', 'name': 'MINIO_ACCESS_KEY'}, {'value': 'password', 'name': 'MINIO_SECRET_KEY'}],
+            'env':  [
+                {'name': 'MINIO_ACCESS_KEY', 'value': 'login'}, {'name': 'MINIO_SECRET_KEY', 'value': 'password'},
+                {'name': 'AWS_ACCESS_KEY_ID', 'value': 'username'}, {'name': 'AWS_SECRET_ACCESS_KEY', 'value': 'pass'}],
+            'ports': ['9000:9000'],
+            'nics': [{'type': 'default'}],
         }
         minio.api.services.create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         minio.state.check('actions', 'install', 'ok')
@@ -188,9 +194,10 @@ class TestMinioTemplate(TestCase):
         """
         minio = Minio('minio', data=self.valid_data)
         zdb = MagicMock()
-        task = MagicMock(result={'listenAddr': '0.0.0.0', 'listenPort': 9900})
+        result = '0.0.0.0:9900'
+        task = MagicMock(result=result)
         zdb.schedule_action = MagicMock(return_value=task)
         minio.api.services.get = MagicMock(return_value=zdb)
 
         zdbs = minio._get_zdbs()
-        assert zdbs == ['0.0.0.0:9900']
+        assert zdbs == [result]
