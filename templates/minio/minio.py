@@ -73,7 +73,7 @@ class Minio(TemplateBase):
             {
                 'name': 'MINIO_SECRET_KEY',
                 'value': self.data['password'],
-            },{
+            }, {
                 'name': 'AWS_ACCESS_KEY_ID',
                 'value': self.data['resticUsername'],
             },
@@ -92,8 +92,12 @@ class Minio(TemplateBase):
         self.data['container'] = 'container_%s' % self.name
         container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
         container.schedule_action('install').wait(die=True)
+
         self.minio_sal.create_config()
-        self.restic_sal.init_repo()
+        if not self.data['resticRepoPassword']:
+            self.data['resticRepoPassword'] = j.data.idgenerator.generateXCharID(10)
+        self.restic_sal.init_repo(password=self.data['resticRepoPassword'])
+
         self.state.set('actions', 'install', 'ok')
 
     def start(self):
