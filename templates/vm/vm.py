@@ -64,7 +64,7 @@ class Vm(TemplateBase):
         }
 
         t = self._hypervisor.schedule_action('create', args)
-        t.wait()
+        t.wait(die=True)
         if t.state != 'ok':
             # cleanup if hypervisor failed to start
             if self._hypervisor.guid in self.api.services.guids:
@@ -75,28 +75,28 @@ class Vm(TemplateBase):
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
         # TODO: deal with vdisks
-        self.hypervisor.schedule_action('destroy').wait()
+        self.hypervisor.schedule_action('destroy').wait(die=True)
         self.hypervisor.delete()
         self._hypervisor = None
 
     def shutdown(self):
-        self.logger.info('Shuting down vm %s' %self.name)
+        self.logger.info('Shuting down vm %s' % self.name)
         self.hypervisor.schedule_action('shutdown')
 
     def pause(self):
-        self.logger.info('Pausing vm %s' %self.name)
+        self.logger.info('Pausing vm %s' % self.name)
         self.hypervisor.schedule_action('pause')
 
     def resume(self):
-        self.logger.info('Resuming vm %s' %self.name)
+        self.logger.info('Resuming vm %s' % self.name)
         self.hypervisor.schedule_action('resume')
 
     def reboot(self):
-        self.logger.info('Rebooting vm %s' %self.name)
+        self.logger.info('Rebooting vm %s' % self.name)
         self.hypervisor.schedule_action('reboot')
 
     def reset(self):
-        self.logger.info('Resetting vm %s' %self.name)
+        self.logger.info('Resetting vm %s' % self.name)
         self.hypervisor.schedule_action('reset')
 
     def _get_vnc_port(self):

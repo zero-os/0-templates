@@ -58,7 +58,7 @@ class Minio(TemplateBase):
         for zdb_name in self.data['zerodbs']:
             zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
             task = zdb.schedule_action('get_bind_address')
-            task.wait()
+            task.wait(die=True)
             zdbs_hosts.append(task.result)
 
         return zdbs_hosts
@@ -91,7 +91,7 @@ class Minio(TemplateBase):
         }
         self.data['container'] = 'container_%s' % self.name
         container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
-        container.schedule_action('install').wait()
+        container.schedule_action('install').wait(die=True)
         self.minio_sal.create_config()
         self.restic_sal.init_repo()
         self.state.set('actions', 'install', 'ok')
@@ -103,7 +103,7 @@ class Minio(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Starting minio %s' % self.name)
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
-        container.schedule_action('start').wait()
+        container.schedule_action('start').wait(die=True)
         self.minio_sal.start()
         self.state.set('actions', 'start', 'ok')
 
@@ -121,5 +121,5 @@ class Minio(TemplateBase):
         self.logger.info('Uninstalling minio %s' % self.name)
         self.stop()
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
-        container.schedule_action('uninstall').wait()
+        container.schedule_action('uninstall').wait(die=True)
         self.state.delete('actions', 'install')

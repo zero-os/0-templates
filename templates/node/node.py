@@ -165,7 +165,7 @@ class Node(TemplateBase):
 
         for bootstrap in self.api.services.find(template_uid=BOOTSTRAP_TEMPLATE_UID):
             # FIXME: not ideal cause we're leaking data info to other service
-            bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait()
+            bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait(die=True)
 
     @timeout(5, error_message='info action timeout')
     def info(self):

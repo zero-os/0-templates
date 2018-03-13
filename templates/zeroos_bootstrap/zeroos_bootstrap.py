@@ -139,7 +139,7 @@ class ZeroosBootstrap(TemplateBase):
         self._ping_node(node_sal, zerotier_ip)
 
         for hw_check in self.api.services.find(template_uid=HARDWARE_CHECK_TEMPLATE_UID):
-            hw_check.schedule_action('register', args={'node_name': node_sal.name}).wait()
+            hw_check.schedule_action('register', args={'node_name': node_sal.name}).wait(die=True)
 
         # connection succeeded, set the hostname of the node to zerotier member
         name = node_sal.name
@@ -192,7 +192,7 @@ class ZeroosBootstrap(TemplateBase):
                 "unexpected error during installation of node %s: %s" % (name, task_install.eco.errormessage))
 
         for erp in self.api.services.find(template_uid=ERP_TEMPLATE_UID):
-            erp.schedule_action('register', args={'node_name': name}).wait()
+            erp.schedule_action('register', args={'node_name': name}).wait(die=True)
 
     def delete_node(self, redis_addr):
         """

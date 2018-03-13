@@ -47,7 +47,7 @@ class Zerodb(TemplateBase):
     def _get_node_address(self):
         node = self.api.services.get(template_uid=NODE_TEMPLATE_UID, name=self.data['node'])
         task = node.schedule_action('get_redis_address')
-        task.wait()
+        task.wait(die=True)
         return task.result
 
     def get_bind_address(self):
@@ -68,7 +68,7 @@ class Zerodb(TemplateBase):
         }
         self.data['container'] = 'container_%s' % self.name
         container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
-        container.schedule_action('install').wait()
+        container.schedule_action('install').wait(die=True)
         self.state.set('actions', 'install', 'ok')
 
     def start(self):
@@ -78,7 +78,7 @@ class Zerodb(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Starting zerodb %s' % self.name)
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
-        container.schedule_action('start').wait()
+        container.schedule_action('start').wait(die=True)
         self.zerodb_sal.start()
         self.state.set('actions', 'start', 'ok')
 
