@@ -100,6 +100,7 @@ class Minio(TemplateBase):
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
         container.schedule_action('start').wait(die=True)
         self.minio_sal.start()
+        self.restic_sal.restore(META_DIR)
         self.state.set('actions', 'start', 'ok')
 
     def stop(self):
