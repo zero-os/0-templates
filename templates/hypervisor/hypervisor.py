@@ -23,6 +23,7 @@ class Hypervisor(TemplateBase):
         return j.clients.zero_os.sal.node_get(self.data['node'])
 
     def create(self, media=None, flist=None, cpu=2, memory=512, nics=None, port=None, mount=None, tags=None):
+        self.logger.info('Creating hypervisor %s' % self.name)
         resp = self.node_sal.client.kvm.create(name=self.name,
                                                media=media,
                                                flist=flist,
@@ -36,27 +37,33 @@ class Hypervisor(TemplateBase):
         self.state.set('actions', 'create', 'ok')
 
     def destroy(self):
+        self.logger.info('Destroying hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.destroy(self.data['uid'])
         del self.data['uid']
         self.state.delete('actions', 'create')
 
     def shutdown(self):
+        self.logger.info('Shuting down hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.shutdown(self.data['uid'])
 
     def pause(self):
+        self.logger.info('Pausing hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.pause(self.data['uid'])
 
     def resume(self):
+        self.logger.info('Resuming hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.resume(self.data['uid'])
 
     def reboot(self):
+        self.logger.info('Rebooting hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.reboot(self.data['uid'])
 
     def reset(self):
+        self.logger.info('Resetting hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.node_sal.client.kvm.reset(self.data['uid'])

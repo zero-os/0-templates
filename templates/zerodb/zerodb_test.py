@@ -3,11 +3,9 @@ from unittest.mock import MagicMock, patch, call
 import tempfile
 import shutil
 import os
-
 import pytest
 
-from js9 import j
-from zerodb import Zerodb, CONTAINER_TEMPLATE_UID
+from zerodb import Zerodb, CONTAINER_TEMPLATE_UID, ZERODB_FLIST
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
@@ -22,7 +20,6 @@ class TestZerodbTemplate(TestCase):
             'node': 'node',
             'dataDir': '/zerodb/data',
             'indexDir': '/zerodb/index',
-            'listenAddr': '0.0.0.0',
             'listenPort': 9900,
             'mode': 'user',
             'sync': False,
@@ -86,6 +83,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb_sal = patch('js9.j.clients.zero_os.sal.get_zerodb', MagicMock(return_value='zdb_sal')).start()
         zdb = Zerodb('zdb', data=self.valid_data)
+        zdb.api.services.get = MagicMock()
 
         assert zdb.zerodb_sal == 'zdb_sal'
         assert zdb_sal.called
@@ -95,16 +93,17 @@ class TestZerodbTemplate(TestCase):
         Test install action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.api.services.create = MagicMock()
+        zdb.api.services.find_or_create = MagicMock()
         zdb.install()
 
         container_data = {
-            'flist': 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist',
-            'mounts': {},
+            'flist': ZERODB_FLIST,
+            'mounts':  [{}],
             'node': self.valid_data['node'],
-            'hostNetworking': True,
+            'ports': ['9900:9900'],
+            'nics': [{'type': 'default'}],
         }
-        zdb.api.services.create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
+        zdb.api.services.find_or_create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         zdb.state.check('actions', 'install', 'ok')
 
     def test_start(self):
@@ -116,7 +115,8 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.start()
 
-        zdb.api.services.get.assert_called_once_with(template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
+        zdb.api.services.get.assert_called_once_with(
+            template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
         zdb.zerodb_sal.start.assert_called_once_with()
         zdb.state.check('actions', 'start', 'ok')
 
@@ -134,17 +134,18 @@ class TestZerodbTemplate(TestCase):
         Test stop action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.state.set('actions', 'start', 'ok')
+        zdb.state.set('actions', 'install', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.stop()
 
         zdb.zerodb_sal.stop.assert_called_once_with()
 
-    def test_stop_before_start(self):
+    def test_stop_before_install(self):
         """
-        Test stop action without start
+        Test stop action without install
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='stop action should raise an error if zerodb is not installed'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.stop()
 
@@ -153,7 +154,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_list action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace_list action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_list()
 
@@ -163,6 +164,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_list()
 
         zdb.zerodb_sal.list_namespaces.assert_called_once_with()
@@ -172,7 +174,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_info action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_info('namespace')
 
@@ -182,6 +184,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_info('namespace')
 
         zdb.zerodb_sal.get_namespace_info.assert_called_once_with('namespace')
@@ -191,7 +194,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_create action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace_create action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_create('namespace')
 
@@ -201,6 +204,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_create('namespace', 12, 'secret')
 
         zdb.zerodb_sal.create_namespace.assert_called_once_with('namespace')
@@ -212,7 +216,7 @@ class TestZerodbTemplate(TestCase):
         Test namespace_set action without start
         """
         with pytest.raises(StateCheckError,
-                           message='start action should raise an error if zerodb is not installed'):
+                           message='namespace_set action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_set('namespace', 'maxsize', 12)
 
@@ -222,6 +226,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
+        zdb.api.services.get = MagicMock()
         zdb.namespace_set('namespace', 'maxsize', 12)
 
         zdb.zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)

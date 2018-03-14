@@ -48,7 +48,7 @@ class Node(TemplateBase):
 
         cl.config.save()
 
-    @timeout(2, error_message="_refresh_password timeout")
+    @timeout(30, error_message="_refresh_password timeout")
     def _refresh_password(self):
         """
         this method is reponsible to automaticly refresh a jwt token used as password
@@ -77,6 +77,8 @@ class Node(TemplateBase):
         return j.clients.zero_os.sal.node_get(self.name)
 
     def _monitor(self):
+        self.state.check('actions', 'install', 'ok')
+
         if not self.node_sal.is_running():
             self.state.delete('status', 'running')
             return
@@ -99,6 +101,7 @@ class Node(TemplateBase):
 
     @retry(Exception, tries=2, delay=2)
     def install(self):
+        self.logger.info('Installing node %s' % self.name)
         self.data['version'] = '{branch}:{revision}'.format(**self.node_sal.client.info.version())
 
         poolname = '{}_fscache'.format(self.name)
@@ -117,23 +120,19 @@ class Node(TemplateBase):
         tasks = []
         for mount in mounts:
             zdb_name = 'zdb_%s_%s' % (self.name, mount['disk'])
-            if self.api.services.exists(template_uid=ZDB_TEMPLATE_UID, name=zdb_name):
-                zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
-            else:
-                zdb_data = {
-                    'node': self.name,
-                    'nodeMountPoint': mount['mountpoint'],
-                    'containerMountPoint': '/zerodb',
-                    'listenPort': port,
-                    'listenAddr': self.data['redisAddr'],
-                    'admin': j.data.idgenerator.generateXCharID(10),
-                }
+            zdb_data = {
+                'node': self.name,
+                'nodeMountPoint': mount['mountpoint'],
+                'containerMountPoint': '/zerodb',
+                'listenPort': port,
+                'admin': j.data.idgenerator.generateXCharID(10),
+                'mode': 'direct',
+            }
 
-                zdb = self.api.services.create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
-                tasks.append(zdb.schedule_action('install'))
-
-            port += 1
+            zdb = self.api.services.find_or_create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
+            tasks.append(zdb.schedule_action('install'))
             tasks.append(zdb.schedule_action('start'))
+            port += 1
 
         self._wait_all(tasks)
         self.state.set('actions', 'install', 'ok')
@@ -145,12 +144,12 @@ class Node(TemplateBase):
         self._stop_all_containers()
         self._stop_all_vms()
 
-        self.logger.info('reboot node %s' % self.name)
+        self.logger.info('Rebooting node %s' % self.name)
         self.node_sal.client.raw('core.reboot', {})
         self.state.set('status', 'rebooting', 'ok')
 
     def uninstall(self):
-        self.logger.info('uninstalling  node')
+        self.logger.info('Uninstalling node %s' % self.name)
 
         self._stop_all_containers()
         self._stop_all_vms()
@@ -159,7 +158,7 @@ class Node(TemplateBase):
 
         for bootstrap in self.api.services.find(template_uid=BOOTSTRAP_TEMPLATE_UID):
             # FIXME: not ideal cause we're leaking data info to other service
-            bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait()
+            bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait(die=True)
 
     @timeout(5, error_message='info action timeout')
     def info(self):

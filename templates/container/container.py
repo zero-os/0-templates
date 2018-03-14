@@ -45,12 +45,20 @@ class Container(TemplateBase):
             src, dst = p.split(":")
             ports[int(src)] = int(dst)
 
+        mounts = {}
+        for mount in self.data['mounts']:
+            mounts[mount['source']] = mount['target']
+
+        envs = {}
+        for env in self.data['env']:
+            envs[env['name']] = env['value']
+
         self.node_sal.containers.create(self.name, self.data['flist'], hostname=None,
-                                        mounts=self.data['mounts'], nics=self.data['nics'],
+                                        mounts=mounts, nics=self.data['nics'],
                                         host_network=self.data['hostNetworking'],
                                         ports=ports, storage=self.data['storage'],
                                         init_processes=self.data['initProcesses'],
-                                        privileged=self.data['privileged'], env=None)
+                                        privileged=self.data['privileged'], env=envs)
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
 
@@ -59,7 +67,7 @@ class Container(TemplateBase):
             return
 
         self.state.check('actions', 'install', 'ok')
-        self.logger.info('starting %s' % self.name)
+        self.logger.info('Starting container %s' % self.name)
         self.container_sal.start()
         self.state.set('actions', 'start', 'ok')
 
@@ -67,7 +75,14 @@ class Container(TemplateBase):
         if node_name and self.data['node'] != node_name:
             return
 
-        self.state.check('actions', 'start', 'ok')
-        self.logger.info('stopping %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
+        self.logger.info('Stopping container %s' % self.name)
         self.container_sal.stop()
         self.state.delete('actions', 'start')
+
+    def uninstall(self):
+        self.logger.info('Uninstalling container %s' % self.name)
+        self.stop()
+        self.state.delete('actions', 'install')
+
+

@@ -16,11 +16,15 @@ This template is responsible for creating a container on zero-os nodes
 - `mounts`: a list of type Mount mapping mount points from the node to the container.
 - `zerotierNetwork`: The node's zerotier network id.
 - `privileged`: a boolean indicating whether this will be a privileged container or not.
-- `identity`: ??
+- `env`: a list of Env describing environment variables to be created on the container.
 
 Mount:
-- `filesystem`: instance name of the filesystem service.
-- `target`: the mount target of this filesystem in the container.
+- `source`: mount source on node
+- `target`: mount target on container 
+
+Env:
+- `name`: name of the environment variable
+- `value`: value of the environment variable
 
 Process:
 - `name`: name of the executable.

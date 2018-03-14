@@ -10,17 +10,24 @@ struct Schema {
     hostNetworking @5 :Bool;
     # Make host networking available to the guest.
     # If true means that the container will be able participate in the networks available in the host operating system.
-    ports @6:List(Text); # List of node to container post mappings. e.g: 8080:80
+    ports @6:List(Text); # List of node to container port mappings. e.g: 8080:80
     storage @7 :Text;
     mounts @8: List(Mount); # List mount points mapping to the container
     bridges @9 :List(Text); # comsumed bridges, automaticly filled don't pass in blueprint
     zerotierNetwork @10:Text; # node's zerotier network id
     privileged @11 :Bool;
     identity @12 :Text;
+    env @13: List(Env); # environment variables needed to be set for the container
+
+
+    struct Env {
+        name @0 :Text; # variable name
+        value @1 :Text; # variable value
+    }
 
     struct Mount {
-        filesystem @0 :Text; # Instance name of a filesystem service
-        target @1 :Text; # where to mount this filesystem in the container
+        source @0 :Text; # node source
+        target @1 :Text; # container target
     }
 
     struct Process {
