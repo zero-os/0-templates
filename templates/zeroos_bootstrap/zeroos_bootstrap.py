@@ -85,7 +85,7 @@ class ZeroosBootstrap(TemplateBase):
         zerotier_ip = member['config']['ipAssignments'][0]
         return zerotier_ip
 
-    def _get_node_sal(self, ip):
+    def _get_node_sal(self, ip, timeout=120):
         instance = 'bootstrap'
         j.clients.zero_os.delete(instance)
 
@@ -95,7 +95,7 @@ class ZeroosBootstrap(TemplateBase):
             'password_': self.data.get('redisPassword', ''),
             'db': 0,
             'ssl': True,
-            'timeout': 120,
+            'timeout': timeout,
         }
 
         # ensure client config
@@ -133,10 +133,12 @@ class ZeroosBootstrap(TemplateBase):
         # get assigned ip of this member
         zerotier_ip = self._wait_member_ip(member)
 
-        # create client configuration for that node
-        node_sal = self._get_node_sal(zerotier_ip)
-
+        # create client configuration for that node, to test the connection
+        node_sal = self._get_node_sal(zerotier_ip, timeout=10)
         self._ping_node(node_sal, zerotier_ip)
+
+        # create client configuration for that node, to start installing it
+        node_sal = self._get_node_sal(zerotier_ip, timeout=120)
 
         for hw_check in self.api.services.find(template_uid=HARDWARE_CHECK_TEMPLATE_UID):
             hw_check.schedule_action('register', args={'node_name': node_sal.name}).wait(die=True)
