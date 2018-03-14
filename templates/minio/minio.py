@@ -20,6 +20,9 @@ class Minio(TemplateBase):
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
+        if not self.data['resticRepo'].endswith('/'):
+            self.data['resticRepo'] += '/'
+
         self.recurring_action('_backup_minio', 30)
 
     @property
