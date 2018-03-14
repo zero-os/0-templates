@@ -26,7 +26,7 @@ class TestMinioTemplate(TestCase):
             'zerodbs': ['192.24.121.42:9900'],
             'privateKey': '',
             'resticPassword': 'pass',
-            'resticRepo': 'repo',
+            'resticRepo': 'repo/',
             'resticRepoPassword': '',
             'resticUsername': 'username'
         }
