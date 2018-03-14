@@ -23,7 +23,7 @@ class TestBootstrapTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': ''}
+        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': '', 'redisPassword': ''}
         cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
         cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
 
@@ -56,17 +56,6 @@ class TestBootstrapTemplate(TestCase):
         """
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         assert bootstrap.data == self.valid_data
-
-    def test_bootstrap_no_robot(self):
-        """
-        Test bootstrap with no zrobot
-        """
-        bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
-        bootstrap.api.get_robot = MagicMock(side_effect=KeyError)
-        bootstrap.logger.error = MagicMock()
-        bootstrap.bootstrap()
-
-        bootstrap.logger.error.assert_called_with("can't find a robot that can create node service. node discovery can't proceed")
 
     def test_bootstrap(self):
         """

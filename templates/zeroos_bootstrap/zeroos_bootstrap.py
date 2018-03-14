@@ -20,18 +20,27 @@ class ZeroosBootstrap(TemplateBase):
         if not self.data['zerotierClient']:
             raise RuntimeError("no zerotier instance specified")
 
+        if self.data['redisPassword']:
+            self._refresh_password()
+
         self.zt = j.clients.zerotier.get(self.data['zerotierClient'])
         # start recurring action
         self.recurring_action('bootstrap', 10)
+        self.recurring_action('_refresh_password', 1200)  # every 20 minutes
+
+    @timeout(2, error_message="_refresh_password timeout")
+    def _refresh_password(self):
+        """
+        this method is responsible to automatically refresh a jwt token used as password
+        """
+        if not self.data.get('redisPassword'):
+            return
+
+        # refresh jwt
+        self.data['redisPassword'] = j.clients.itsyouonline.refresh_jwt_token(self.data['redisPassword'], validity=3600)
 
     def bootstrap(self):
-
-        # make sure we can find a robot that can create the node service
-        try:
-            self.api.get_robot(NODE_TEMPLATE_UID)
-        except KeyError:
-            self.logger.error("can't find a robot that can create node service. node discovery can't proceed")
-            return
+        self.logger.info("start discovering new members")
 
         netid = self.data['zerotierNetID']
 
@@ -77,35 +86,39 @@ class ZeroosBootstrap(TemplateBase):
         return zerotier_ip
 
     def _get_node_sal(self, ip):
+        instance = 'bootstrap'
+        j.clients.zero_os.delete(instance)
+
         data = {
             'host': ip,
             'port': 6379,
-            'password_': "",
+            'password_': self.data.get('redisPassword', ''),
             'db': 0,
             'ssl': True,
             'timeout': 120,
         }
+
         # ensure client config
         cl = j.clients.zero_os.get(
-            instance="bootstrap",
+            instance=instance,
             data=data,
             create=True,
-            die=True)
-        cl.config._data.update(data)
+            die=True,
+            interactive=False)
+
         cl.config.save()
 
         # get a node object from the zero-os SAL
-        return j.clients.zero_os.sal.node_get("bootstrap")
+        return j.clients.zero_os.sal.node_get(instance)
 
     @timeout(60, error_message="can't connect, unauthorizing member")
     def _ping_node(self, node_sal, zerotier_ip):
+        self.logger.info("connection to g8os with IP: %s", zerotier_ip)
         while True:
             try:
-                self.logger.info("connection to g8os with IP: %s", zerotier_ip)
                 node_sal.client.ping()
                 break
             except Exception as e:
-                self.logger.error(str(e))
                 continue
 
     def _add_node(self, member):
@@ -161,13 +174,14 @@ class ZeroosBootstrap(TemplateBase):
             # 'networks': networks,
             'hostname': hostname,
             'redisAddr': zerotier_ip,
+            'redisPassword': self.data.get('redisPassword', ''),
         }
         self.logger.info("create node.zero-os service {}".format(name))
         node = self.api.services.create(NODE_TEMPLATE_UID, name, data=data)
         task_install = node.schedule_action('install')
 
         try:
-            task_install.wait(60)
+            task_install.wait(120)
         except TimeoutError as err:
             self.logger.error("node %s took too long to install", name)
             node.delete()
