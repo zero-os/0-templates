@@ -6,7 +6,7 @@ This template is responsible for managing [minio](https://minio.io/) server inst
 ### Schema:
 
 - `node`: name of the node service to where minio will be deployed
-- `zdbs`: names of the 0-db services used as backend for minio
+- `zdbs`: list of zerodbs endpoints used as backend for minio ex: ['192.168.122.87:9600']
 - `namespace`: namespace name to use on the 0-db
 - `nsSecret`: secret to use to have access to the namespace on the 0-db servers
 - `login`: minio login. End user need to know this login to have access to minio

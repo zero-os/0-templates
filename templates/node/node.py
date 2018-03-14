@@ -48,7 +48,7 @@ class Node(TemplateBase):
 
         cl.config.save()
 
-    @timeout(2, error_message="_refresh_password timeout")
+    @timeout(30, error_message="_refresh_password timeout")
     def _refresh_password(self):
         """
         this method is reponsible to automaticly refresh a jwt token used as password
@@ -68,9 +68,6 @@ class Node(TemplateBase):
             if data.get(key) != self.data[key]:
                 self._ensure_client_config()
                 break
-
-    def get_redis_address(self):
-        return self.data['redisAddr']
 
     @property
     def node_sal(self):
@@ -123,23 +120,19 @@ class Node(TemplateBase):
         tasks = []
         for mount in mounts:
             zdb_name = 'zdb_%s_%s' % (self.name, mount['disk'])
-            if self.api.services.exists(template_uid=ZDB_TEMPLATE_UID, name=zdb_name):
-                zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
-            else:
-                zdb_data = {
-                    'node': self.name,
-                    'nodeMountPoint': mount['mountpoint'],
-                    'containerMountPoint': '/zerodb',
-                    'listenPort': port,
-                    'admin': j.data.idgenerator.generateXCharID(10),
-                    'mode': 'direct',
-                }
+            zdb_data = {
+                'node': self.name,
+                'nodeMountPoint': mount['mountpoint'],
+                'containerMountPoint': '/zerodb',
+                'listenPort': port,
+                'admin': j.data.idgenerator.generateXCharID(10),
+                'mode': 'direct',
+            }
 
-                zdb = self.api.services.create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
-                tasks.append(zdb.schedule_action('install'))
-
-            port += 1
+            zdb = self.api.services.find_or_create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
+            tasks.append(zdb.schedule_action('install'))
             tasks.append(zdb.schedule_action('start'))
+            port += 1
 
         self._wait_all(tasks)
         self.state.set('actions', 'install', 'ok')

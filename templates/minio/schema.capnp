@@ -3,7 +3,7 @@
 
 struct Schema {
     node @0: Text; # name of the node service to where minio will be deployed
-    zerodbs @1: List(Text); # names of the 0-db services used as backend for minio
+    zerodbs @1: List(Text); # list of zerodbs endpoints used as backend for minio ex: ['192.168.122.87:9600']
     namespace @2: Text; # namespace to use on the 0-db
     nsSecret @3: Text; # secret to use to have access to the namespace on the 0-db servers
     login @4: Text; # minio login. End user needs to know this login to have access to minio
