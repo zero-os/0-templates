@@ -40,18 +40,8 @@ class Zerodb(TemplateBase):
             'mode': self.data['mode'],
             'sync': self.data['sync'],
             'admin': self.data['admin'],
-            'redis_addr': self._get_node_address(),
         }
         return j.clients.zero_os.sal.get_zerodb(**kwargs)
-
-    def _get_node_address(self):
-        node = self.api.services.get(template_uid=NODE_TEMPLATE_UID, name=self.data['node'])
-        task = node.schedule_action('get_redis_address')
-        task.wait(die=True)
-        return task.result
-
-    def get_bind_address(self):
-        return '{ip}:{port}'.format(ip=self._get_node_address(), port=self.data['listenPort'])
 
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
@@ -67,7 +57,7 @@ class Zerodb(TemplateBase):
             'nics': [{'type': 'default'}],
         }
         self.data['container'] = 'container_%s' % self.name
-        container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
+        container = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
         container.schedule_action('install').wait(die=True)
         self.state.set('actions', 'install', 'ok')
 

@@ -37,7 +37,7 @@ class Minio(TemplateBase):
             'container': self.container_sal,
             'namespace': self.data['namespace'],
             'namespace_secret': self.data['nsSecret'],
-            'zdbs': self._get_zdbs(),
+            'zdbs': self.data['zerodbs'],
             'port': self.data['listenPort'],
             'private_key': self.data['privateKey']
         }
@@ -52,16 +52,6 @@ class Minio(TemplateBase):
         self.state.check('actions', 'start', 'ok')
         self.logger.info('Backing up minio %s' % self.name)
         print(self.restic_sal.backup(META_DIR))
-
-    def _get_zdbs(self):
-        zdbs_hosts = []
-        for zdb_name in self.data['zerodbs']:
-            zdb = self.api.services.get(template_uid=ZDB_TEMPLATE_UID, name=zdb_name)
-            task = zdb.schedule_action('get_bind_address')
-            task.wait(die=True)
-            zdbs_hosts.append(task.result)
-
-        return zdbs_hosts
 
     def install(self):
         self.logger.info('Installing minio %s' % self.name)
@@ -90,7 +80,8 @@ class Minio(TemplateBase):
             'nics': [{'type': 'default'}],
         }
         self.data['container'] = 'container_%s' % self.name
-        container = self.api.services.create(CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
+        container = self.api.services.find_or_create(
+            CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
         container.schedule_action('install').wait(die=True)
 
         self.minio_sal.create_config()

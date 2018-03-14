@@ -93,7 +93,7 @@ class TestZerodbTemplate(TestCase):
         Test install action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.api.services.create = MagicMock()
+        zdb.api.services.find_or_create = MagicMock()
         zdb.install()
 
         container_data = {
@@ -103,7 +103,7 @@ class TestZerodbTemplate(TestCase):
             'ports': ['9900:9900'],
             'nics': [{'type': 'default'}],
         }
-        zdb.api.services.create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
+        zdb.api.services.find_or_create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         zdb.state.check('actions', 'install', 'ok')
 
     def test_start(self):
@@ -115,7 +115,8 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.start()
 
-        assert zdb.api.services.get.call_count == 2
+        zdb.api.services.get.assert_called_once_with(
+            template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
         zdb.zerodb_sal.start.assert_called_once_with()
         zdb.state.check('actions', 'start', 'ok')
 
@@ -229,26 +230,3 @@ class TestZerodbTemplate(TestCase):
         zdb.namespace_set('namespace', 'maxsize', 12)
 
         zdb.zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
-
-    def test_get_bind_address(self):
-        """
-        Test get_bind_address
-        """
-        zdb = Zerodb('zdb', data=self.valid_data)
-        ip = '0.0.0.0'
-        zdb._get_node_address = MagicMock(return_value=ip)
-        address = zdb.get_bind_address()
-        assert address == '{ip}:{port}'.format(ip=ip, port=self.valid_data['listenPort'])
-
-    def test_get_node_ip(self):
-        """
-        Test _get_node_ip
-        """
-        zdb = Zerodb('zdb', data=self.valid_data)
-        result = '0.0.0.0'
-        task = MagicMock(result=result)
-        node = MagicMock()
-        node.schedule_action = MagicMock(return_value=task)
-        zdb.api.services.get = MagicMock(return_value=node)
-
-        assert result == zdb._get_node_address()

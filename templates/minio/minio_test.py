@@ -23,7 +23,7 @@ class TestMinioTemplate(TestCase):
             'nsSecret': 'nsSecret',
             'login': 'login',
             'password': 'password',
-            'zerodbs': ['zerodb'],
+            'zerodbs': ['192.24.121.42:9900'],
             'privateKey': '',
             'resticPassword': 'pass',
             'resticRepo': 'repo',
@@ -104,7 +104,7 @@ class TestMinioTemplate(TestCase):
         Test install action
         """
         minio = Minio('minio', data=self.valid_data)
-        minio.api.services.create = MagicMock()
+        minio.api.services.find_or_create = MagicMock()
         minio._get_zdbs = MagicMock()
         minio.install()
 
@@ -118,7 +118,7 @@ class TestMinioTemplate(TestCase):
             'ports': ['9000:9000'],
             'nics': [{'type': 'default'}],
         }
-        minio.api.services.create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
+        minio.api.services.find_or_create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         minio.state.check('actions', 'install', 'ok')
 
     def test_start(self):
@@ -189,17 +189,3 @@ class TestMinioTemplate(TestCase):
                            message='uninstall action should raise an error if minio is not installed'):
             minio = Minio('minio', data=self.valid_data)
             minio.uninstall()
-
-    def test_get_zdbs(self):
-        """
-        Test _get_zdbs returns expected value
-        """
-        minio = Minio('minio', data=self.valid_data)
-        zdb = MagicMock()
-        result = '0.0.0.0:9900'
-        task = MagicMock(result=result)
-        zdb.schedule_action = MagicMock(return_value=task)
-        minio.api.services.get = MagicMock(return_value=zdb)
-
-        zdbs = minio._get_zdbs()
-        assert zdbs == [result]
