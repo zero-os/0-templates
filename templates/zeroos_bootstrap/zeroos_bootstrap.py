@@ -28,7 +28,7 @@ class ZeroosBootstrap(TemplateBase):
         self.recurring_action('bootstrap', 10)
         self.recurring_action('_refresh_password', 1200)  # every 20 minutes
 
-    @timeout(2, error_message="_refresh_password timeout")
+    @timeout(10, error_message="_refresh_password timeout")
     def _refresh_password(self):
         """
         this method is responsible to automatically refresh a jwt token used as password
