@@ -51,7 +51,7 @@ class Node(TemplateBase):
     @timeout(30, error_message="_refresh_password timeout")
     def _refresh_password(self):
         """
-        this method is reponsible to automaticly refresh a jwt token used as password
+        this method is responsible to automatically refresh a jwt token used as password
         """
         if not self.data.get('redisPassword'):
             return
@@ -115,6 +115,14 @@ class Node(TemplateBase):
 
         self.state.set('status', 'running', 'ok')
 
+        # configure networks
+        tasks = []
+        for nw in self.data.get('networks', []):
+            network = self.api.services.get(name=nw)
+            self.logger.info("configure network %s", nw)
+            tasks.append(network.schedule_action('configure', args={'node_name': self.name}))
+        self._wait_all(tasks, timeout=120, die=True)
+
         mounts = self.node_sal.partition_and_mount_disks(poolname)
         port = 9900
         tasks = []
@@ -134,7 +142,7 @@ class Node(TemplateBase):
             tasks.append(zdb.schedule_action('start'))
             port += 1
 
-        self._wait_all(tasks)
+        self._wait_all(tasks, timeout=120, die=True)
         self.state.set('actions', 'install', 'ok')
 
     def reboot(self):
@@ -219,9 +227,9 @@ class Node(TemplateBase):
         # TODO
         pass
 
-    def _wait_all(self, tasks, timeout=60):
+    def _wait_all(self, tasks, timeout=60, die=False):
         for t in tasks:
-            t.wait(timeout)
+            t.wait(timeout=timeout, die=die)
 
 
 def _update(service, healcheck_result):
@@ -235,11 +243,6 @@ def _update(service, healcheck_result):
             tag = ('%s-%s' % (healcheck_result['id'], msg['id'])).lower()
             status = msg['status'].lower()
             service.state.set(category, tag, status)
-    else:
-        # probably something wrong in the format of the healthcheck
-        service.logger.warning('no message in healthcheck result for %s-%s',
-                               healcheck_result['category'], healcheck_result['id'])
-        return
 
 
 def _update_healthcheck_state(service, healthcheck):

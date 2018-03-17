@@ -9,11 +9,10 @@ struct Schema {
     # for discover ZeroOs node
 
     wipeDisks @2 :Bool=false;
-    # networks @2 :List(Text);
+    networks @3 :List(Text);
     # networks the new node needs to consume
-    # Not implemented yet
 
-    redisPassword @3 :Text;
+    redisPassword @4 :Text;
     # jwt token used as password when
     # connecting to the node
 
