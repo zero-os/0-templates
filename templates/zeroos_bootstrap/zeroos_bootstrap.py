@@ -17,16 +17,25 @@ class ZeroosBootstrap(TemplateBase):
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-        if not self.data['zerotierClient']:
-            raise RuntimeError("no zerotier instance specified")
-
         if self.data['redisPassword']:
             self._refresh_password()
 
-        self.zt = j.clients.zerotier.get(self.data['zerotierClient'])
         # start recurring action
         self.recurring_action('bootstrap', 10)
         self.recurring_action('_refresh_password', 1200)  # every 20 minutes
+
+    def validate(self):
+        if not self.data['zerotierClient']:
+            raise RuntimeError("no zerotier instance specified")
+
+        if self.data['networks']:
+            for name in self.data['networks']:
+                # validate the network service on which we depend actually exists
+                self.api.services.get(name=name)
+
+    @property
+    def _zt(self):
+        return j.clients.zerotier.get(self.data['zerotierClient'])
 
     @timeout(10, error_message="_refresh_password timeout")
     def _refresh_password(self):
@@ -44,7 +53,7 @@ class ZeroosBootstrap(TemplateBase):
 
         netid = self.data['zerotierNetID']
 
-        resp = self.zt.client.network.listMembers(netid)
+        resp = self._zt.client.network.listMembers(netid)
         members = resp.json()
 
         for member in members:
@@ -58,20 +67,20 @@ class ZeroosBootstrap(TemplateBase):
         self.logger.info("authorize new member %s", member['nodeId'])
         netid = self.data['zerotierNetID']
         member['config']['authorized'] = True
-        self.zt.client.network.updateMember(member, member['nodeId'], netid)
+        self._zt.client.network.updateMember(member, member['nodeId'], netid)
 
     def _unauthorize_member(self, member):
         self.logger.info("unauthorize new member %s", member['nodeId'])
         netid = self.data['zerotierNetID']
         member['config']['authorized'] = False
-        self.zt.client.network.updateMember(member, member['nodeId'], netid)
+        self._zt.client.network.updateMember(member, member['nodeId'], netid)
 
     @timeout(20, error_message='Node did not get an ip assigned')
     def _wait_member_ip(self, member):
         self.logger.info("wait ip for member %s", member['nodeId'])
         netid = self.data['zerotierNetID']
 
-        resp = self.zt.client.network.getMember(member['nodeId'], netid)
+        resp = self._zt.client.network.getMember(member['nodeId'], netid)
         member = resp.json()
 
         while True:
@@ -79,7 +88,7 @@ class ZeroosBootstrap(TemplateBase):
             if len(member['config']['ipAssignments']):
                 break
             sleep(1)
-            resp = self.zt.client.network.getMember(member['nodeId'], netid)
+            resp = self._zt.client.network.getMember(member['nodeId'], netid)
             member = resp.json()
 
         zerotier_ip = member['config']['ipAssignments'][0]
@@ -148,7 +157,7 @@ class ZeroosBootstrap(TemplateBase):
         member['name'] = name
         member['description'] = node_sal.client.info.os().get('hostname', '')
         member['config']['authorized'] = True  # make sure we don't unauthorize
-        self.zt.client.network.updateMember(member, member['nodeId'], netid)
+        self._zt.client.network.updateMember(member, member['nodeId'], netid)
 
         # TODO: this should be configurable
         results = self.api.services.find(template_name='node', name=name)
@@ -173,7 +182,7 @@ class ZeroosBootstrap(TemplateBase):
 
         data = {
             'status': 'running',
-            # 'networks': networks,
+            'networks': self.data.get('networks', []),
             'hostname': hostname,
             'redisAddr': zerotier_ip,
             'redisPassword': self.data.get('redisPassword', ''),
@@ -201,7 +210,7 @@ class ZeroosBootstrap(TemplateBase):
         this method will be called from the node.zero-os to remove the node from zerotier
         """
         netid = self.data['zerotierNetID']
-        resp = self.zt.client.network.listMembers(netid)
+        resp = self._zt.client.network.listMembers(netid)
         members = resp.json()
 
         for member in members:
