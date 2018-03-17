@@ -8,6 +8,7 @@ import pytest
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zeroos_bootstrap import ZeroosBootstrap
+from zerorobot.template.state import StateCheckError
 
 
 def mockdecorator(func):
@@ -198,6 +199,26 @@ class TestBootstrapTemplate(TestCase):
         bootstrap._authorize_member.assert_called_once_with(self.member)
         assert hw.schedule_action.call_count == 1
         assert node.schedule_action.call_count == 1
+
+    def test_add_node_already_exists_install_not_ok(self):
+        """
+        Test adding a node that already exists in the services but install state is not ok
+        """
+        self.member['online'] = True
+        self.member['config']['authorized'] = False
+        bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
+        bootstrap._authorize_member = MagicMock()
+        bootstrap._wait_member_ip = MagicMock()
+        bootstrap._get_node_sal = MagicMock()
+        bootstrap._ping_node = MagicMock()
+        hw = MagicMock()
+        node = MagicMock()
+        node.state.check.side_effect = StateCheckError
+
+        bootstrap.api.services.find = MagicMock(side_effect=[[hw], [node], []])
+        bootstrap.api.services.create = MagicMock()
+        bootstrap._add_node(self.member)
+        assert node.delete.call_count == 1
 
     def test_add_node(self):
         """
