@@ -3,6 +3,7 @@ from gevent import sleep
 from js9 import j
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.decorator import timeout
+from zerorobot.template.state import StateCheckError
 
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
 ERP_TEMPLATE_UID = 'github.com/zero-os/0-templates/erp_registeration/0.0.1'
@@ -165,8 +166,13 @@ class ZeroosBootstrap(TemplateBase):
             # the node already exists
             self.logger.info("service for node %s already exists, updating model", name)
             node = results[0]
-            node.schedule_action('update_data', args={'data': {'redisAddr': zerotier_ip}})
-            return
+            try:
+                node.state.check('actions', 'install', 'ok')
+                node.schedule_action('update_data', args={'data': {'redisAddr': zerotier_ip}})
+                return
+            except StateCheckError:
+                # node wasn't installed properly let's start from scratch
+                node.delete()
 
         # create and install the node.zero-os service
         if self.data['wipeDisks']:
