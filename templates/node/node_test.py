@@ -19,6 +19,7 @@ def mockdecorator(func):
         return func(*args, **kwargs)
     return wrapper
 
+
 patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mockdecorator)).start()
 patch("zerorobot.template.decorator.retry", MagicMock(return_value=mockdecorator)).start()
 patch("gevent.sleep", MagicMock()).start()
@@ -179,7 +180,10 @@ class TestNodeTemplate(TestCase):
         task = MagicMock()
         node._wait_all([task])
 
-        task.wait.assert_called_once_with(60)
+        task.wait.assert_called_with(timeout=60, die=False)
+
+        node._wait_all([task], timeout=30, die=True)
+        task.wait.assert_called_with(timeout=30, die=True)
 
     def test_healthcheck(self):
         """
@@ -247,15 +251,6 @@ class TestNodeTemplate(TestCase):
         healthcheck = MagicMock()
         _update_healthcheck_state(MagicMock(), healthcheck)
         assert update.call_count == 1
-
-    def test_update_warning(self):
-        """
-        Test called with invalid message
-        """
-        healthcheck = {'messages': [], 'category': 'category', 'id': 'id'}
-        service = MagicMock()
-        _update(service, healthcheck)
-        assert service.logger.warning.called
 
     def test_update_one_message(self):
         """

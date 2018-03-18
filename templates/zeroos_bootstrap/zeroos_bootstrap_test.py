@@ -15,6 +15,7 @@ def mockdecorator(func):
         return func(*args, **kwargs)
     return wrapper
 
+
 patch('zerorobot.template.decorator.timeout', MagicMock(return_value=mockdecorator)).start()
 patch("gevent.sleep", MagicMock()).start()
 
@@ -23,7 +24,7 @@ class TestBootstrapTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': '', 'redisPassword': ''}
+        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': '', 'redisPassword': '', 'networks': ['storage']}
         cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
         cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
 
@@ -48,7 +49,8 @@ class TestBootstrapTemplate(TestCase):
         Test creating service with invalid data
         """
         with pytest.raises(RuntimeError, message='Template should raise error if data is invalid'):
-            ZeroosBootstrap('bootstrap', data={})
+            bootstrap = ZeroosBootstrap('bootstrap', data={})
+            bootstrap.validate()
 
     def test_valid_data(self):
         """
@@ -67,7 +69,7 @@ class TestBootstrapTemplate(TestCase):
         bootstrap._unauthorize_member = MagicMock()
         resp = MagicMock()
         resp.json = MagicMock(return_value=['member1', 'member2'])
-        bootstrap.zt.client.network.listMembers = MagicMock(return_value=resp)
+        bootstrap._zt.client.network.listMembers = MagicMock(return_value=resp)
         bootstrap.bootstrap()
 
         bootstrap._unauthorize_member.assert_called_once_with('member1')
@@ -79,7 +81,7 @@ class TestBootstrapTemplate(TestCase):
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         bootstrap._authorize_member(self.member)
 
-        bootstrap.zt.client.network.updateMember.called_once_with(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
+        bootstrap._zt.client.network.updateMember.called_once_with(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
 
     def test_unauthorize_member(self):
         """
@@ -88,7 +90,7 @@ class TestBootstrapTemplate(TestCase):
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         bootstrap._unauthorize_member(self.member)
 
-        bootstrap.zt.client.network.updateMember.called_once_with(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
+        bootstrap._zt.client.network.updateMember.called_once_with(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
 
     def test_wait_member_ip(self):
         """
@@ -101,11 +103,11 @@ class TestBootstrapTemplate(TestCase):
         resp.json = MagicMock(return_value=self.member)
         resp2 = MagicMock()
         resp2.json = MagicMock(return_value=self.member2)
-        bootstrap.zt.client.network.getMember = MagicMock(side_effect=[resp, resp2])
+        bootstrap._zt.client.network.getMember = MagicMock(side_effect=[resp, resp2])
         zerotier_ip = bootstrap._wait_member_ip(self.member)
 
         assert zerotier_ip == '127.0.0.1'
-        assert bootstrap.zt.client.network.getMember.call_count == 2
+        assert bootstrap._zt.client.network.getMember.call_count == 2
 
     def test_get_node_sal(self):
         """
@@ -150,7 +152,7 @@ class TestBootstrapTemplate(TestCase):
         bootstrap._unauthorize_member = MagicMock()
         resp = MagicMock()
         resp.json = MagicMock(return_value=[self.member, self.member2])
-        bootstrap.zt.client.network.listMembers = MagicMock(return_value=resp)
+        bootstrap._zt.client.network.listMembers = MagicMock(return_value=resp)
         bootstrap.delete_node('127.0.0.1')
 
         bootstrap._unauthorize_member.assert_called_with(self.member2)
@@ -220,7 +222,7 @@ class TestBootstrapTemplate(TestCase):
         bootstrap._add_node(self.member)
 
         bootstrap._authorize_member.assert_called_once_with(self.member)
-        bootstrap.zt.client.network.updateMember(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
+        bootstrap._zt.client.network.updateMember(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
         node_sal.wipedisks.assert_called_once_with()
         erp.schedule_action.assert_called_once_with('register', args={'node_name': node_sal.name})
 
