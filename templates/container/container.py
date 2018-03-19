@@ -53,7 +53,7 @@ class Container(TemplateBase):
         for env in self.data['env']:
             envs[env['name']] = env['value']
 
-        self.node_sal.containers.create(self.name, self.data['flist'], hostname=None,
+        self.node_sal.containers.create(self.name, self.data['flist'], hostname=self.data['hostname'],
                                         mounts=mounts, nics=self.data['nics'],
                                         host_network=self.data['hostNetworking'],
                                         ports=ports, storage=self.data['storage'],

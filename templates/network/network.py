@@ -1,7 +1,6 @@
 from js9 import j
 
 from zerorobot.template.base import TemplateBase
-import netaddr
 
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
