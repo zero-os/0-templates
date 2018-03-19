@@ -59,6 +59,22 @@ class Container(TemplateBase):
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
 
+    def add_nic(self, nic):
+        for existing_nic in self.data['nics']:
+            if self._compare_objects(existing_nic, nic, 'type', 'id'):
+                raise ValueError('Nic with same type/id combination already exists')
+        self.data['nics'].append(nic)
+        self.container_sal.add_nic(nic)
+
+    def remove_nic(self, nicname):
+        self.container_sal.remove_nic(nicname)
+
+    def _compare_objects(self, obj1, obj2, *keys):
+        for key in keys:
+            if obj1[key] != obj2[key]:
+                return False
+        return True
+
     def start(self, node_name=None):
         if node_name and self.data['node'] != node_name:
             return
