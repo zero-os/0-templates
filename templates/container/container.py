@@ -40,10 +40,7 @@ class Container(TemplateBase):
             raise RuntimeError("no connection to the zero-os node")
 
         # convert "src:dst" to {src:dst}
-        ports = {}
-        for p in self.data['ports']:
-            src, dst = p.split(":")
-            ports[int(src)] = int(dst)
+        ports = j.clients.zero_os.sal.format_ports(self.data['ports'])
 
         mounts = {}
         for mount in self.data['mounts']:
