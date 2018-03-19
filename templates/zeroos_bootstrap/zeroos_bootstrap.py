@@ -18,12 +18,8 @@ class ZeroosBootstrap(TemplateBase):
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-        if self.data['redisPassword']:
-            self._refresh_password()
-
         # start recurring action
         self.recurring_action('bootstrap', 10)
-        self.recurring_action('_refresh_password', 1200)  # every 20 minutes
 
     def validate(self):
         if not self.data['zerotierClient']:
@@ -37,17 +33,6 @@ class ZeroosBootstrap(TemplateBase):
     @property
     def _zt(self):
         return j.clients.zerotier.get(self.data['zerotierClient'])
-
-    @timeout(10, error_message="_refresh_password timeout")
-    def _refresh_password(self):
-        """
-        this method is responsible to automatically refresh a jwt token used as password
-        """
-        if not self.data.get('redisPassword'):
-            return
-
-        # refresh jwt
-        self.data['redisPassword'] = j.clients.itsyouonline.refresh_jwt_token(self.data['redisPassword'], validity=3600)
 
     def bootstrap(self):
         self.logger.info("start discovering new members")

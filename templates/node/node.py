@@ -18,12 +18,9 @@ class Node(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self._validate_input()
-
-        self._refresh_password()
         self._ensure_client_config()
 
         self.recurring_action('_monitor', 30)  # every 30 seconds
-        self.recurring_action('_refresh_password', 1200)  # every 20 minutes
 
     def _validate_input(self):
         for param in ['redisAddr', 'redisPort']:
@@ -48,19 +45,6 @@ class Node(TemplateBase):
 
         cl.config.save()
 
-    @timeout(30, error_message="_refresh_password timeout")
-    def _refresh_password(self):
-        """
-        this method is responsible to automatically refresh a jwt token used as password
-        """
-        if not self.data.get('redisPassword'):
-            return
-
-        # refresh jwt
-        self.data['redisPassword'] = j.clients.itsyouonline.refresh_jwt_token(self.data['redisPassword'], validity=3600)
-        # update the configuration of the client
-        self._ensure_client_config()
-
     def update_data(self, data):
         self.data.update(data)
         # force recreation of the connection to the node
@@ -77,9 +61,10 @@ class Node(TemplateBase):
         return j.clients.zero_os.sal.node_get(self.name)
 
     def _monitor(self):
+        self.logger.info('Monitoring node %s' % self.name)
         self.state.check('actions', 'install', 'ok')
 
-        if not self.node_sal.is_running():
+        if not self.node_sal.is_running(300):
             self.state.delete('status', 'running')
             return
 
@@ -168,17 +153,17 @@ class Node(TemplateBase):
             # FIXME: not ideal cause we're leaking data info to other service
             bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait(die=True)
 
-    @timeout(5, error_message='info action timeout')
+    @timeout(30, error_message='info action timeout')
     def info(self):
         self.state.check('status', 'running', 'ok')
         return self.node_sal.client.info.os()
 
-    @timeout(5, error_message='stats action timeout')
+    @timeout(30, error_message='stats action timeout')
     def stats(self):
         self.state.check('status', 'running', 'ok')
         return self.node_sal.client.aggregator.query()
 
-    @timeout(5, error_message='processes action timeout')
+    @timeout(30, error_message='processes action timeout')
     def processes(self):
         self.state.check('status', 'running', 'ok')
         return self.node_sal.client.process.list()
