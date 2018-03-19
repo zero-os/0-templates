@@ -68,13 +68,6 @@ class TestNodeTemplate(TestCase):
         self.client_get.zero_os.get.assert_called_with(instance=node.name, data=data, create=True, die=True)
         self.client_get.itsyouonline.refresh_jwt_token.assert_not_called()
 
-    def test_refresh_password(self):
-        """
-        Test refresh password when password is set
-        """
-        Node(name='node', data={'redisAddr': 'localhost', 'redisPassword': 'token'})
-        self.client_get.itsyouonline.refresh_jwt_token.assert_called_with('token', validity=3600)
-
     def test_update_data(self):
         """
         test update_data with new data
