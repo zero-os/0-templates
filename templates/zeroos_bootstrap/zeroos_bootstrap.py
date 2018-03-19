@@ -179,9 +179,6 @@ class ZeroosBootstrap(TemplateBase):
             self.logger.info("wipe disk")
             node_sal.wipedisks()
 
-        # NETWORK NOT IMPLEMENTED YET
-        # networks = [n.name for n in service.producers.get('network', [])]
-
         hostname = node_sal.client.info.os()['hostname']
         if hostname == 'zero-os':
             hostname = 'zero-os-%s' % name
