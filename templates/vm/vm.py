@@ -50,16 +50,13 @@ class Vm(TemplateBase):
         }
 
         self._hypervisor = self.api.services.create(template_uid=HV_TEMPLATE, service_name=self.hv_name, data=data)
-
-        port = {int(k): int(v) for k, v in self.data.get('port', {}).items()}
         args = {
-            # 'media': self.data['vdisks'],
+            'media': self.data['media'],
             'flist': self.data['flist'],
             'cpu': self.data['cpu'],
             'memory': self.data['memory'],
             'nics': self.data['nics'],
-            'port': port,
-            # 'mount': self.data['mount'],
+            'port': j.clients.zero_os.sal.format_ports(self.data['ports']),
             # 'tags': self.data['tags']
         }
 

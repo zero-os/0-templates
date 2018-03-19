@@ -25,7 +25,9 @@ class TestVmTemplate(TestCase):
              'nics': [],
              'node': 'node',
              'vdisks': [],
-             'vnc': -1
+             'vnc': -1,
+            'ports': [],
+            'media': [],
         }
 
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')

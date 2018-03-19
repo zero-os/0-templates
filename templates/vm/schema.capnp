@@ -11,7 +11,18 @@ struct Schema {
     vdisks @4: List(DiskLink);
     flist @5: Text; # if specified, the vm will boot from an flist and not a vdisk
     vnc @6: Int32 = -1; # the vnc port the machine is listening to
+    ports @7:List(Text); # List of node to vm port mappings. e.g: 8080:80
+    media @8: List(Media); # list of media to attach to the vm
 
+    struct Media {
+      type @0: MediaType;
+      url @1: Text;
+    }
+
+    enum MediaType {
+      disk @0;
+      cdrom @1;
+    }
 
     struct NicLink {
       id @0: Text; # VxLan or VLan id
