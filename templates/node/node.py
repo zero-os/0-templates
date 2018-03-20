@@ -9,7 +9,6 @@ VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
 BOOTSTRAP_TEMPLATE_UID = 'github.com/zero-os/0-templates/zeroos_bootstrap/0.0.1'
 ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
 
-
 class Node(TemplateBase):
 
     version = '0.0.1'
@@ -216,8 +215,11 @@ class Node(TemplateBase):
         for t in tasks:
             t.wait(timeout=timeout, die=die)
 
-
 def _update(service, healcheck_result):
+    for rprtr in service.data.get('alerta', []):
+        reporter = service.api.services.get(name=rprtr)
+        reporter.schedule_action('process_healthcheck', args={'name': service.name, 'healcheck_result': healcheck_result})
+
     category = healcheck_result['category'].lower()
     if len(healcheck_result['messages']) == 1:
         tag = healcheck_result['id'].lower()
@@ -228,7 +230,6 @@ def _update(service, healcheck_result):
             tag = ('%s-%s' % (healcheck_result['id'], msg['id'])).lower()
             status = msg['status'].lower()
             service.state.set(category, tag, status)
-
 
 def _update_healthcheck_state(service, healthcheck):
     if isinstance(healthcheck, list):
