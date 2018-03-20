@@ -10,6 +10,8 @@ This template is responsible for managing a zero-os node.
 - `redisPort`: the redis port the client uses to connect to the node. Defaults to 6379.
 - `redisPassword`: the redis password the client uses to connect to the node.
 - `version`: the version of the zero-os. It set by the template.
+- `networks`: network configuration
+- `alerta`: refers to an alerta service which will handle healthcheck reporting
 
 
 ### Actions
