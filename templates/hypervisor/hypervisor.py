@@ -24,7 +24,7 @@ class Hypervisor(TemplateBase):
 
     @property
     def hypervisor_sal(self):
-        return j.clients.zero_os.sal.get_hypervisor(self.name, self.data['uid'], self.node_sal)
+        return j.clients.zero_os.sal.get_hypervisor(self.name, self.data['uuid'], self.node_sal)
 
     def create(self, media=None, flist=None, cpu=2, memory=512, nics=None, port=None, mount=None, tags=None):
         self.logger.info('Creating hypervisor %s' % self.name)
@@ -39,14 +39,14 @@ class Hypervisor(TemplateBase):
             'tags': tags,
         }
         resp = self.hypervisor_sal.create(**args)
-        self.data['uid'] = resp.data[1:-1]
+        self.data['uuid'] = resp.data[1:-1]
         self.state.set('actions', 'create', 'ok')
 
     def destroy(self):
         self.logger.info('Destroying hypervisor %s' % self.name)
         self.state.check('actions', 'create', 'ok')
         self.hypervisor_sal.destroy()
-        del self.data['uid']
+        del self.data['uuid']
         self.state.delete('actions', 'create')
 
     def shutdown(self):

@@ -4,4 +4,5 @@
 struct Schema {
     node @0: Text; # pointer to the node the hyperviser is running on
     vm @1: Text; # pointer to the vm service managing this hyperviser
+    uuid @2: Text; # hypervisor uuid on node
 }

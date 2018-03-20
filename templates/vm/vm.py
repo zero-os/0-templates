@@ -65,7 +65,8 @@ class Vm(TemplateBase):
         }
 
         t = self._hypervisor.schedule_action('create', args)
-        t.wait(die=True)
+        t.wait()
+
         if t.state != 'ok':
             # cleanup if hypervisor failed to start
             if self._hypervisor.guid in self.api.services.guids:
