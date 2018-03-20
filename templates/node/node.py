@@ -174,6 +174,11 @@ class Node(TemplateBase):
         self.state.check('status', 'running', 'ok')
         return self.node_sal.client.process.list()
 
+    @timeout(30, error_message='processes action version')
+    def os_version(self):
+        self.state.check('status', 'running', 'ok')
+        return self.node_sal.client.ping()[13:].strip()
+
     def _healthcheck(self):
         node_sal = self.node_sal
         _update_healthcheck_state(self, node_sal.healthcheck.openfiledescriptors())

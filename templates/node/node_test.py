@@ -345,3 +345,21 @@ class TestNodeTemplate(TestCase):
         node._monitor()
 
         node.node_sal.is_running.assert_called_once_with(30)
+
+    def test_os_version(self):
+        """
+        Test os_version action when node is running
+        """
+        node = Node(name='node', data=self.valid_data)
+        node.state.set('status', 'running', 'ok')
+        node.node_sal.client.ping = MagicMock(return_value='PONG Version: main @Revision: 41f7eb2e94f6fc9a447f9dec83c67de23537f119')
+        node.os_version() == 'main @Revision: 41f7eb2e94f6fc9a447f9dec83c67de23537f119'
+
+    def test_os_version_not_running(self):
+        """
+        Test os_version action when node is not running
+        """
+        node = Node(name='node', data=self.valid_data)
+        with pytest.raises(StateCheckError,
+                           message='os_version action should fail in the node is not running'):
+            node.os_version()
