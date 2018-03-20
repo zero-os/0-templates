@@ -41,6 +41,7 @@ class TestVmTemplate(TestCase):
 
     def setUp(self):
         patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        patch('js9.j.clients.zero_os.sal.get_vm', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -251,58 +252,18 @@ class TestVmTemplate(TestCase):
 
         vm.hypervisor.schedule_action.assert_called_with('reset')
 
-    def test_get_vnc_port(self):
-        """
-        Test _get_vnc_port when there is a vnc port
-        """
-        vm = Vm('vm', data=self.valid_data)
-        vm.node_sal.client.kvm.list = MagicMock(return_value=[{'name': vm.hv_name, 'vnc': self.vnc_port}])
-        assert vm._get_vnc_port() == self.vnc_port
-
-    def test_get_vnc_port_no_port(self):
-        """
-        Test _get_vnc_port when there is no vnc port
-        """
-        vm = Vm('vm', data=self.valid_data)
-        vm.node_sal.client.kvm.list = MagicMock(return_value=[])
-        assert vm._get_vnc_port() is None
-
     def test_enable_vnc(self):
         """
         Test enable_vnc when there is a vnc port
         """
         vm = Vm('vm', data=self.valid_data)
-        vm._get_vnc_port = MagicMock(return_value=self.vnc_port)
-        vm.node_sal.client.nft.open_port = MagicMock()
         vm.enable_vnc()
-        vm.node_sal.client.nft.open_port.assert_called_with(self.vnc_port)
-
-    def test_enable_vnc_no_port(self):
-        """
-        Test enable_vnc when there is no vnc port
-        """
-        vm = Vm('vm', data=self.valid_data)
-        vm._get_vnc_port = MagicMock(return_value=None)
-        vm.node_sal.client.nft.open_port = MagicMock()
-        vm.enable_vnc()
-        vm.node_sal.client.nft.open_port.assert_not_called()
+        vm.vm_sal.enable_vnc.assert_called_with()
 
     def test_disable_vnc(self):
         """
         Test disable_vnc when there is a vnc port
         """
         vm = Vm('vm', data=self.valid_data)
-        vm._get_vnc_port = MagicMock(return_value=self.vnc_port)
-        vm.node_sal.client.nft.drop_port = MagicMock()
         vm.disable_vnc()
-        vm.node_sal.client.nft.drop_port.assert_called_with(self.vnc_port)
-
-    def test_disable_vnc_no_port(self):
-        """
-        Test disable_vnc when there is no vnc port
-        """
-        vm = Vm('vm', data=self.valid_data)
-        vm._get_vnc_port = MagicMock(return_value=None)
-        vm.node_sal.client.nft.drop_port = MagicMock()
-        vm.disable_vnc()
-        vm.node_sal.client.nft.drop_port.assert_not_called()
+        vm.vm_sal.disable_vnc.assert_called_with()

@@ -24,7 +24,7 @@ class Hypervisor(TemplateBase):
 
     @property
     def hypervisor_sal(self):
-        return j.clients.zero_os.sal.get_hypervisor(self.name, self.data['uuid'], self.node_sal)
+        return j.clients.zero_os.sal.get_hypervisor(self.name, self.data.get('uuid', ''), self.node_sal)
 
     def create(self, media=None, flist=None, cpu=2, memory=512, nics=None, port=None, mount=None, tags=None):
         self.logger.info('Creating hypervisor %s' % self.name)
