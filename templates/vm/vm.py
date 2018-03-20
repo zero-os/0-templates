@@ -33,6 +33,10 @@ class Vm(TemplateBase):
         return j.clients.zero_os.sal.node_get(self.data['node'])
 
     @property
+    def vm_sal(self):
+        return j.clients.zero_os.sal.get_vm(self.hv_name, self.node_sal)
+
+    @property
     def hypervisor(self):
         if self._hypervisor is None:
             self._hypervisor = self.api.services.get(name=self.hv_name, template_uid=HV_TEMPLATE)
@@ -96,21 +100,10 @@ class Vm(TemplateBase):
         self.logger.info('Resetting vm %s' % self.name)
         self.hypervisor.schedule_action('reset')
 
-    def _get_vnc_port(self):
-        # Fix me: client.kvm should provide a way to get
-        # the info without listing all vms
-        for vm in self.node_sal.client.kvm.list():
-            if vm['name'] == self.hv_name:
-                return vm['vnc']
-
     def enable_vnc(self):
         self.logger.info('Enable vnc for vm %s' % self.name)
-        port = self._get_vnc_port()
-        if port:
-            self.node_sal.client.nft.open_port(port)
+        self.vm_sal.enable_vnc()
 
     def disable_vnc(self):
         self.logger.info('Disable vnc for vm %s' % self.name)
-        port = self._get_vnc_port()
-        if port:
-            self.node_sal.client.nft.drop_port(port)
+        self.vm_sal.disable_vnc()
