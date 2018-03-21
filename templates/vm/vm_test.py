@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 import tempfile
 import shutil
 import os
@@ -28,6 +28,9 @@ class TestVmTemplate(TestCase):
              'vnc': -1,
             'ports': [],
             'media': [],
+            'mount': {},
+            'tags': [],
+            'uuid': '444d10d7-77f8-4b33-a6df-feb76e34dbc4',
         }
 
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
@@ -40,7 +43,9 @@ class TestVmTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        mock = MagicMock()
+        self.node = mock.return_value
+        patch('js9.j.clients.zero_os.sal.node_get', mock).start()
         patch('js9.j.clients.zero_os.sal.get_vm', MagicMock()).start()
 
     def tearDown(self):
@@ -103,43 +108,20 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        task = MagicMock(state='ok')
-        hyperviser = MagicMock()
-        hyperviser.schedule_action = MagicMock(return_value=task)
-        vm.api.services.create = MagicMock(return_value=hyperviser)
         vm.install()
+        assert 'uuid' in vm.data
 
     def test_install_vm_fail(self):
         """
         Test vm install fails and hypervisor guid not in services list
         """
+        vm = Vm('vm', data=self.valid_data)
+        vm.api.services = MagicMock()
+        vm.api.services.get.return_value.state.check.side_effect = RuntimeError('Boom!')
         with pytest.raises(RuntimeError,
                            message='install action should raise an error if the hypervisor state is not ok'):
-            vm = Vm('vm', data=self.valid_data)
-            vm.api.services = MagicMock()
             vm.install()
-            assert vm._hypervisor is not None
 
-    def test_install_vm_fail_hypervisor_delete(self):
-        """
-        Test vm install fails and hypervisor guid in services list
-        """
-        with pytest.raises(RuntimeError,
-                           message='install action should raise an error if the hypervisor state is not ok'):
-            vm = Vm('vm', data=self.valid_data)
-            vm.api.services = MagicMock(guids={'guid': MagicMock()})
-            vm.api.services.create = MagicMock(guid='guid')
-            vm.install()
-            assert vm._hypervisor is None
-
-    def test_uninstall_vm_hypervisor_not_created(self):
-        """
-        Test uninstalling the vm without creation
-        """
-        with pytest.raises(scol.ServiceNotFoundError, message='Uninstall vm before install should raise an error'):
-            vm = Vm('vm', data=self.valid_data)
-            vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
-            vm.uninstall()
 
     def test_uninstall_vm(self):
         """
@@ -147,16 +129,15 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        vm.hypervisor.schedule_action = MagicMock()
         vm.uninstall()
 
-        vm.hypervisor.schedule_action.assert_called_with('destroy')
+        self.node.hypervisor.get.return_value.destroy.assert_called_with()
 
     def test_shutdown_vm_hypervisor_not_created(self):
         """
         Test shutting down the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Shuting down vm before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Shuting down vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.shutdown()
@@ -167,16 +148,16 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        vm.hypervisor.schedule_action = MagicMock()
+        vm.state = MagicMock()
         vm.shutdown()
+        self.node.hypervisor.get.return_value.shutdown.assert_called_with()
 
-        vm.hypervisor.schedule_action.assert_called_with('shutdown')
 
     def test_pause_vm_hypervisor_not_created(self):
         """
         Test pausing the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Pausing vm before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Pausing vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.pause()
@@ -187,16 +168,16 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        vm.hypervisor.schedule_action = MagicMock()
+        vm.state = MagicMock()
         vm.pause()
+        self.node.hypervisor.get.return_value.pause.assert_called_with()
 
-        vm.hypervisor.schedule_action.assert_called_with('pause')
 
     def test_resume_vm_hypervisor_not_created(self):
         """
         Test resume the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Resuming vm before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Resuming vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.resume()
@@ -207,16 +188,16 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        vm.hypervisor.schedule_action = MagicMock()
+        vm.state = MagicMock()
         vm.resume()
+        self.node.hypervisor.get.return_value.resume.assert_called_with()
 
-        vm.hypervisor.schedule_action.assert_called_with('resume')
 
     def test_reboot_vm_hypervisor_not_created(self):
         """
         Test reboot the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Rebooting vm before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Rebooting vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.reboot()
@@ -227,16 +208,16 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        vm.hypervisor.schedule_action = MagicMock()
+        vm.state = MagicMock()
         vm.reboot()
+        self.node.hypervisor.get.return_value.reboot.assert_called_with()
 
-        vm.hypervisor.schedule_action.assert_called_with('reboot')
 
     def test_reset_vm_hypervisor_not_created(self):
         """
         Test reset the vm without creation
         """
-        with pytest.raises(scol.ServiceNotFoundError, message='Resetting vm before install should raise an error'):
+        with pytest.raises(StateCheckError, message='Resetting vm before install should raise an error'):
             vm = Vm('vm', data=self.valid_data)
             vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
             vm.reset()
@@ -247,23 +228,25 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.api.services.get = MagicMock()
-        vm.hypervisor.schedule_action = MagicMock()
+        vm.state = MagicMock()
         vm.reset()
+        self.node.hypervisor.get.return_value.reset.assert_called_with()
 
-        vm.hypervisor.schedule_action.assert_called_with('reset')
 
     def test_enable_vnc(self):
         """
         Test enable_vnc when there is a vnc port
         """
         vm = Vm('vm', data=self.valid_data)
+        vm.state = MagicMock()
         vm.enable_vnc()
-        vm.vm_sal.enable_vnc.assert_called_with()
+        self.node.hypervisor.get.return_value.enable_vnc.assert_called_with()
 
     def test_disable_vnc(self):
         """
         Test disable_vnc when there is a vnc port
         """
         vm = Vm('vm', data=self.valid_data)
+        vm.state = MagicMock()
         vm.disable_vnc()
-        vm.vm_sal.disable_vnc.assert_called_with()
+        self.node.hypervisor.get.return_value.disable_vnc.assert_called_with()
