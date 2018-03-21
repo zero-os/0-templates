@@ -43,7 +43,7 @@ class Gateway(TemplateBase):
             'nics': contnics,
             'hostname': self.data['hostname'],
             'hostNetworking': False,
-            "privileged": True
+            'privileged': True
         }
         contservice = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self.name, containerdata)
         contservice.schedule_action('install').wait(die=True)
