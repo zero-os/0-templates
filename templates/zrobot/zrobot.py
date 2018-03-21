@@ -4,8 +4,7 @@ from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 
 
-#Temporary flist needs to be updated to offical 0-robot flist
-FLIST_ZROBOT = 'https://hub.gig.tech/fastgeert/jumpscale-0-robot-latest.flist'
+FLIST_ZROBOT = 'https://hub.gig.tech/gig-official-apps/jumpscale-0-robot-latest.flist'
 NODE_TEMPLATE = 'github.com/zero-os/0-templates/node/0.0.1'
 CONTAINER_TEMPLATE = 'github.com/zero-os/0-templates/container/0.0.1'
 
@@ -17,9 +16,9 @@ class Zrobot(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._validate_input()
+        self.validate()
     
-    def _validate_input(self):
+    def validate(self):
         if not self.data['node']:
             raise ValueError("parameter node not valid: %s" % (str(self.data['node'])))
 
@@ -49,7 +48,7 @@ class Zrobot(TemplateBase):
 
     def _get_zrobot_client(self, contservice):
         container = self.node_sal.containers.get(contservice.name)
-        return j.clients.zero_os.sal.get_zerorobot(container=container)
+        return j.clients.zero_os.sal.get_zerorobot(container=container, port=6600, template_repos=self.data['templates'])
 
     def install(self, force=False):
         try:
@@ -63,7 +62,7 @@ class Zrobot(TemplateBase):
         contservice.schedule_action('install').wait(die=True)
 
         zrobot_sal = self._get_zrobot_client(contservice)
-        zrobot_sal.start(port=6600, template_repos=self.data['templates'])
+        zrobot_sal.start()
         self.state.set('actions', 'install', 'ok')
 
     def uninstall(self):
@@ -71,5 +70,7 @@ class Zrobot(TemplateBase):
         contservice = self._get_container()
         zrobot_sal = self._get_zrobot_client(contservice)
         zrobot_sal.stop()
+        contservice.schedule_action('uninstall').wait(die=True)
+        contservice.delete()
         self.state.delete('actions', 'install')
         
