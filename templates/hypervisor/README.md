@@ -7,6 +7,7 @@ This template is responsible for managing a zero-os kvm hypervisor.
 
 - `node`: the name of the node the hypervisor is on.
 - `vm`: the name of the vm.
+- `uuid`: hypervisor uuid on the node. This is set by the template.
 
 
 ### Actions

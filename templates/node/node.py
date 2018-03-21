@@ -63,7 +63,14 @@ class Node(TemplateBase):
         self.logger.info('Monitoring node %s' % self.name)
         self.state.check('actions', 'install', 'ok')
 
-        if not self.node_sal.is_running(300):
+        # if node was previously running set timeout to 300 else 30
+        try:
+            self.state.check('status', 'running', 'ok')
+            timeout = 300
+        except StateCheckError:
+            timeout = 30
+
+        if not self.node_sal.is_running(timeout):
             self.state.delete('status', 'running')
             return
 
