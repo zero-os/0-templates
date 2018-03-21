@@ -323,3 +323,26 @@ class TestNodeTemplate(TestCase):
         assert not node._start_all_vms.called
         assert not node.install.called
         node._healthcheck.assert_called_with()
+
+    def test_monitor_node_previously_running(self):
+        """
+        Test _monitor action called when node was previously running
+        """
+        node = Node(name='node', data=self.valid_data)
+        node.state.set('actions', 'install', 'ok')
+        node.state.set('status', 'running', 'ok')
+        node.node_sal.is_running = MagicMock()
+        node._monitor()
+
+        node.node_sal.is_running.assert_called_once_with(300)
+
+    def test_monitor_node_previously_not_running(self):
+        """
+        Test _monitor action called when node was previously running
+        """
+        node = Node(name='node', data=self.valid_data)
+        node.state.set('actions', 'install', 'ok')
+        node.node_sal.is_running = MagicMock()
+        node._monitor()
+
+        node.node_sal.is_running.assert_called_once_with(30)
