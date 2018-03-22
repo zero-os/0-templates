@@ -13,7 +13,7 @@ struct Schema {
     vnc @6: Int32 = -1; # the vnc port the machine is listening to
     ports @7:List(Text); # List of node to vm port mappings. e.g: 8080:80
     media @8: List(Media); # list of media to attach to the vm
-    tags @9: List(Media); # list of media to attach to the vm
+    tags @9: List(Text); # list of tags
 
     struct Media {
       type @0: MediaType;
