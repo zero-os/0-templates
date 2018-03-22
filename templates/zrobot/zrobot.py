@@ -40,7 +40,6 @@ class Zrobot(TemplateBase):
             'flist': FLIST_ZROBOT,
             'nics': nics,
             'hostname': self.name,
-            'hostNetworking': False,
             'privileged': True,
             'ports': ports
         }
