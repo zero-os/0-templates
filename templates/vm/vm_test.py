@@ -45,7 +45,7 @@ class TestVmTemplate(TestCase):
     def setUp(self):
         mock = MagicMock()
         self.node = mock.return_value
-        patch('js9.j.clients.zero_os.sal.node_get', mock).start()
+        patch('js9.j.clients.zero_os.sal.get_node', mock).start()
         patch('js9.j.clients.zero_os.sal.get_vm', MagicMock()).start()
 
     def tearDown(self):
@@ -56,16 +56,15 @@ class TestVmTemplate(TestCase):
         Test creating a vm with invalid data
         """
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the node'):
-            Vm(name='vm', data={})
-
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the node'):
-            Vm(name='vm', data={'node': 'node'})
+            vm = Vm(name='vm', data={})
+            vm.validate()
 
     def test_valid_data(self):
         """
         Test creating a vm service with valid data
         """
         vm = Vm('vm', data=self.valid_data)
+        vm.validate()
         assert vm.data == self.valid_data
 
     def test_node_sal(self):
@@ -74,11 +73,11 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.node_get',  MagicMock(return_value=node_sal_return)).start()
+        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
         node_sal = vm.node_sal
 
         assert node_sal == node_sal_return
-        j.clients.zero_os.sal.node_get.assert_called_with(self.valid_data['node'])
+        j.clients.zero_os.sal.get_node.assert_called_with(self.valid_data['node'])
 
     def test_install_vm_node_not_found(self):
         """

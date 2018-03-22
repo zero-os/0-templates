@@ -37,44 +37,39 @@ class TestErpRegisterationTemplate(TestCase):
     def tearDown(self):
         patch.stopall()
 
+    def _test_create_erp_invalid(self, data, missing_key):
+        with pytest.raises(
+                ValueError, message='template should fail to instantiate if data dict is missing the %s' % missing_key):
+            erp = ErpRegisteration(name='erp', data=data)
+            erp.validate()
+
     def test_invalid_data(self):
         """
         Test create with invalid data
         :return:
         """
         data = {}
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the url'):
-            ErpRegisteration(name='erp', data=data)
+        # sequentially add expected data and verify that the validation raises an error for missing keys
+        keys = {
+            '': 'url',
+            'url': 'db',
+            'db': 'username',
+            'username': 'password',
+            'password': 'productId',
+            'productId': 'botToken',
+            'botToken': 'chatId'
+        }
 
-        data['url'] = 'url'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the db'):
-            ErpRegisteration(name='erp', data=data)
-
-        data['db'] = 'db'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the username'):
-            ErpRegisteration(name='erp', data=data)
-
-        data['username'] = 'username'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the password'):
-            ErpRegisteration(name='erp', data=data)
-
-        data['password'] = 'password'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the productId'):
-            ErpRegisteration(name='erp', data=data)
-
-        data['productId'] = 'productId'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the botToken'):
-            ErpRegisteration(name='erp', data=data)
-
-        data['botToken'] = 'botToken'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the chatId'):
-            ErpRegisteration(name='erp', data=data)
+        for key, missing_key in keys.items():
+            data[key] = key
+            self._test_create_erp_invalid(data, missing_key)
 
     def test_create_valid_data(self):
         """
         Test create ErpRegisteration with valid data
         """
         erp = ErpRegisteration(name='erp', data=self.valid_data)
+        erp.validate()
         assert erp.data == self.valid_data
 
     def test_get_erp_client(self):

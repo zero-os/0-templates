@@ -15,6 +15,8 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+
+    def validate(self):
         for param in ['node']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
@@ -23,7 +25,7 @@ class Zerodb(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.node_get(self.data['node'])
+        return j.clients.zero_os.sal.get_node(self.data['node'])
 
     @property
     def container_sal(self):

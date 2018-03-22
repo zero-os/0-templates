@@ -12,16 +12,15 @@ class Container(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._validate_input()
 
-    def _validate_input(self):
+    def validate(self):
         for param in ['node', 'flist']:
             if not self.data[param]:
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.node_get(self.data['node'])
+        return j.clients.zero_os.sal.get_node(self.data['node'])
 
     @property
     def container_sal(self):

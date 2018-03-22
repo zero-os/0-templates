@@ -36,7 +36,7 @@ class Network(TemplateBase):
         return container_name
 
     def configure(self, node_name):
-        node_sal = j.clients.zero_os.sal.node_get(node_name)
+        node_sal = j.clients.zero_os.sal.get_node(node_name)
 
         self.logger.info("install OpenVSwitch container")
         container_name = self._ensure_ovs_container(node_name)

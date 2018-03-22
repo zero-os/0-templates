@@ -12,9 +12,8 @@ class HardwareCheck(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._validate_input()
 
-    def _validate_input(self):
+    def validate(self):
         for param in ['botToken', 'chatId', 'supported']:
             if not self.data[param]:
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
