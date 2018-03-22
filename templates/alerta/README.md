@@ -26,7 +26,7 @@ services:
     envname: "{envname}"
 
 - github.com/zero-os/0-templates/node/0.0.1__525400123456:
-    redisAddr: 172.17.0.
+    redisAddr: 172.17.0.1
     redisPort: 6379
     hostname: "myzeros"
     alerta: ['reporter']
