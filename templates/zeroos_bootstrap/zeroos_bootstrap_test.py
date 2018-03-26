@@ -9,7 +9,7 @@ from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zeroos_bootstrap import ZeroosBootstrap
 from zerorobot.template.state import StateCheckError
-
+from zerorobot.service_collection import ServiceNotFoundError
 
 def mockdecorator(func):
     def wrapper(*args, **kwargs):
@@ -53,11 +53,18 @@ class TestBootstrapTemplate(TestCase):
             bootstrap = ZeroosBootstrap('bootstrap', data={})
             bootstrap.validate()
 
+        # test that the network service doesn't exist
+        with pytest.raises(ServiceNotFoundError, message='Template should raise error if network service doesn\'t exist'):
+            bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
+            bootstrap.validate()
+
     def test_valid_data(self):
         """
         Test creating service with valid data
         """
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
+        bootstrap.api.services = MagicMock()
+        bootstrap.validate()
         assert bootstrap.data == self.valid_data
 
     def test_bootstrap(self):
@@ -125,7 +132,7 @@ class TestBootstrapTemplate(TestCase):
             'ssl': True,
             'timeout': 120,
         }
-        node_sal = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node')).start()
+        node_sal = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
         node = bootstrap._get_node_sal(ip)
 
         zero_os.called_once_with(instance='bootstrap', data=data, create=True, die=True)

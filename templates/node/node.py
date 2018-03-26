@@ -16,12 +16,12 @@ class Node(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._validate_input()
-        self._ensure_client_config()
+        self.validate()
 
+        self._ensure_client_config()
         self.recurring_action('_monitor', 30)  # every 30 seconds
 
-    def _validate_input(self):
+    def validate(self):
         for param in ['redisAddr', 'redisPort']:
             if not self.data[param]:
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
@@ -57,7 +57,7 @@ class Node(TemplateBase):
         """
         connection to the node
         """
-        return j.clients.zero_os.sal.node_get(self.name)
+        return j.clients.zero_os.sal.get_node(self.name)
 
     def _monitor(self):
         self.logger.info('Monitoring node %s' % self.name)

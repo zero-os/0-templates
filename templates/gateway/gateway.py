@@ -15,12 +15,12 @@ class Gateway(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-    def validate_input(self):
+    def validate(self):
         GatewaySal.validate_input(self.data)
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.node_get(self.data['node'])
+        return j.clients.zero_os.sal.get_node(self.data['node'])
 
     def _get_gateway(self):
         container = self.node_sal.containers.get(self.name)

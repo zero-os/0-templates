@@ -34,40 +34,44 @@ class TestHardwareCheckTemplate(TestCase):
     def tearDown(self):
         patch.stopall()
 
+    def _test_create_hw_invalid(self, data, missing_key):
+        with pytest.raises(
+                ValueError, message='template should fail to instantiate if data dict is missing the %s' % missing_key):
+            hw = HardwareCheck(name='hw', data=data)
+            hw.validate()
+
     def test_invalid_data(self):
         data = {}
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the botToken'):
-            HardwareCheck(name='hw', data=data)
+        # sequentially add expected data and verify that the validation raises an error for missing keys
+        keys = {
+            '': 'botToken',
+            'chatId': 'supported',
+        }
 
-        data['botToken'] = 'botToken'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the chatId'):
-            HardwareCheck(name='hw', data=data)
+        for key, missing_key in data.items():
+            data[key] = key
+            self._test_create_hw_invalid(data, missing_key)
 
-        data['chatId'] = 'chatId'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the supported'):
-            HardwareCheck(name='hw', data=data)
+        # sequentially add expected data in the "supported" schema field and verify that the validation raises an error
+        # for missing keys
 
-        data['supported'] = [{'ssdCount': 2}]
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the hddCount'):
-            HardwareCheck(name='hw', data=data)
+        keys = {
+            'hddCount':  [{'ssdCount': 2}],
+            'ram': [{'ssdCount': 2, 'hddCount': 2}],
+            'cpu': [{'ssdCount': 2, 'hddCount': 2, 'ram': 4}],
+            'name': [{'ssdCount': 2, 'hddCount': 2, 'ram': 4, 'cpu': 4}],
+        }
 
-        data['supported'] = [{'ssdCount': 2, 'hddCount': 2}]
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the ram'):
-            HardwareCheck(name='hw', data=data)
-
-        data['supported'] = [{'ssdCount': 2, 'hddCount': 2, 'ram': 4}]
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the cpu'):
-            HardwareCheck(name='hw', data=data)
-
-        data['supported'] = [{'ssdCount': 2, 'hddCount': 2, 'ram': 4, 'cpu': 4}]
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the name'):
-            HardwareCheck(name='hw', data=data)
+        for missing_key, supported_data in keys.items():
+            data['supported'] = supported_data
+            self._test_create_hw_invalid(data, missing_key)
 
     def test_valid_data(self):
         """
         Test HardwareCheck creation with valid data
         """
         hw = HardwareCheck(name='hw', data=self.valid_data)
+        hw.validate()
         assert hw.data == self.valid_data
 
     def test_get_bot_client(self):

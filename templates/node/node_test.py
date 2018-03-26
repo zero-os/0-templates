@@ -52,9 +52,9 @@ class TestNodeTemplate(TestCase):
                            message='template should fail to instantiate if data dict is missing the redisAddr'):
             Node(name='node')
 
-    def test_create_with_valid_data_no_password(self):
+    def test_create_with_valid_data(self):
         """
-        Test create node service and password is not refreshed
+        Test create node service
         """
         node = Node(name='node', data=self.valid_data)
         data = {
@@ -66,7 +66,6 @@ class TestNodeTemplate(TestCase):
             'timeout': 120,
         }
         self.client_get.zero_os.get.assert_called_with(instance=node.name, data=data, create=True, die=True)
-        self.client_get.itsyouonline.refresh_jwt_token.assert_not_called()
 
     def test_update_data(self):
         """
@@ -90,10 +89,10 @@ class TestNodeTemplate(TestCase):
         """
         Test node_sal property
         """
-        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
         node = Node(name='node', data=self.valid_data)
         node_sal = node.node_sal
-        node_get.assert_called_with(node.name)
+        get_node.assert_called_with(node.name)
         assert node_sal == 'node_sal'
 
     def test_install(self):

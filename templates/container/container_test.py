@@ -44,7 +44,7 @@ class TestContainerTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -54,23 +54,26 @@ class TestContainerTemplate(TestCase):
         Test Container creation with invalid data
         """
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the node'):
-            Container(name='container', data={'flist': 'flist'})
+            container = Container(name='container', data={'flist': 'flist'})
+            container.validate()
 
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the flist'):
-            Container(name='container', data={'node': 'node'})
+            container = Container(name='container', data={'node': 'node'})
+            container.validate()
 
     def test_create_valid_data(self):
         container = Container(name='container', data=self.valid_data)
+        container.validate()
         assert container.data == self.valid_data
 
     def test_node_sal(self):
         """
         Test the node_sal property
         """
-        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node')).start()
+        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
         container = Container('container', data=self.valid_data)
         node_sal = container.node_sal
-        assert node_get.called
+        assert get_node.called
         assert node_sal == 'node'
 
     def test_container_sal_container_installed(self):
@@ -110,7 +113,7 @@ class TestContainerTemplate(TestCase):
                            message='install action should raise an error if there is no connection to the node'):
             container = Container('container', data=self.valid_data)
             container.api.services.get = MagicMock()
-            patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value=None)).start()
+            patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=None)).start()
             container.install()
 
     def test_install_container_node_not_found(self):

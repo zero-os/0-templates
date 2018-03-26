@@ -27,7 +27,7 @@ class Vm(TemplateBase):
         """
         connection to the zos node
         """
-        return j.clients.zero_os.sal.node_get(self.data['node'])
+        return j.clients.zero_os.sal.get_node(self.data['node'])
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)

@@ -16,6 +16,10 @@ class Minio(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+
+        self.recurring_action('_backup_minio', 30)
+
+    def validate(self):
         for param in ['node', 'zerodbs', 'namespace', 'login', 'password']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
@@ -23,11 +27,9 @@ class Minio(TemplateBase):
         if not self.data['resticRepo'].endswith('/'):
             self.data['resticRepo'] += '/'
 
-        self.recurring_action('_backup_minio', 30)
-
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.node_get(self.data['node'])
+        return j.clients.zero_os.sal.get_node(self.data['node'])
 
     @property
     def container_sal(self):

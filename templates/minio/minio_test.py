@@ -44,44 +44,45 @@ class TestMinioTemplate(TestCase):
     def tearDown(self):
         patch.stopall()
 
+    def _test_create_minio_invalid(self, data, missing_key):
+        with pytest.raises(
+                ValueError, message='template should fail to instantiate if data contains no %s' % missing_key):
+            minio = Minio(name="minio", data=data)
+            minio.validate()
+
     def test_create_invalid_data(self):
         """
         Test initializing minio service with
         """
         data = {}
-        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no node'):
-            Minio(name="minio", data=data)
-
-        data['node'] = 'node'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no zerodbs'):
-            Minio(name="minio", data=data)
-
-        data['zerodbs'] = ['zerodb']
-        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no namespace'):
-            Minio(name="minio", data=data)
-        data['namespace'] = 'namespace'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no login'):
-            Minio(name="minio", data=data)
-        data['login'] = 'login'
-        with pytest.raises(ValueError, message='template should fail to instantiate if data contains no password'):
-            Minio(name="minio", data=data)
+        keys = {
+            '': 'node',
+            'node': 'zerodbs',
+            'zerodbs': 'namespace',
+            'namespace': 'login',
+            'login': 'password',
+        }
+        for key, missing_key in keys.items():
+            data[key] = key
+            self._test_create_minio_invalid(data, missing_key)
 
     def test_create_valid_data(self):
         minio = Minio('minio', data=self.valid_data)
+        minio.validate()
         assert minio.data == self.valid_data
 
     def test_node_sal(self):
         """
         Test node_sal property
         """
-        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
         minio = Minio('minio', data=self.valid_data)
 
         assert minio.node_sal == 'node_sal'
-        node_get.assert_called_once_with(minio.data['node'])
+        get_node.assert_called_once_with(minio.data['node'])
 
     def test_container_sal(self):
-        node_get = patch('js9.j.clients.zero_os.sal.node_get', MagicMock()).start()
+        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
         minio = Minio('minio', data=self.valid_data)
         minio.node_sal.containers.get = MagicMock(return_value='container')
 
