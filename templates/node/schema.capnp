@@ -8,4 +8,5 @@ struct Schema {
     version @4 :Text;
     networks @5 :List(Text); # network configuration
     alerta @6 :List(Text); # reporter service for reporting healthchecks to alerta
+    uptime @7: Float64; # node up time in seconds
 }
