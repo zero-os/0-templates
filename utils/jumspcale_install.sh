@@ -27,6 +27,8 @@ popd
 
 
 # create ssh key for jumpscale config manager
+sudo chown -R ${USER}:${USER} /root
+
 mkdir -p /root/.ssh
 ssh-keygen -f /root/.ssh/id_rsa -P ''
 eval `ssh-agent -s`

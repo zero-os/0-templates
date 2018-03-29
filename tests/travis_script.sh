@@ -15,8 +15,6 @@ if [[ ${action} == "setup" ]]; then
 
     echo "[+] Creating ${number_of_nodes} Zero-OS node(s) on packet.net"
     python3 tests/utils.py -a create_nodes -t ${packet_token} -b ${zero_os_branch} -k ${job_key} -z ${zerotier_network} -n ${number_of_nodes}
-
-    sudo chown -R ${USER}:${USER} /root
     
     echo "[+] Installing JumpScale9 ..."
     ./utils/jumspcale_install.sh ${js9_branch}
