@@ -33,7 +33,7 @@ if [[ ${action} == "setup" ]]; then
     zrobot robot connect main http://localhost:6600
 
     pushd /tmp
-    python3 -m http.server 5555
+    python3 -m http.server 5555 &> /dev/null &
     popd
 
     echo "[+] Start bootstrap service ..."
