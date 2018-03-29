@@ -109,33 +109,21 @@ class TestContainerTemplate(TestCase):
         """
         Test installing a container with no connection to the node
         """
-        with pytest.raises(RuntimeError,
+        with pytest.raises(StateCheckError,
                            message='install action should raise an error if there is no connection to the node'):
             container = Container('container', data=self.valid_data)
             container.api.services.get = MagicMock()
             patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=None)).start()
             container.install()
 
-    def test_install_container_node_not_found(self):
-        """
-        Test installing a container with no service found for the node
-        """
-        with pytest.raises(scol.ServiceNotFoundError,
-                           message='install action should raise an error if node service is not found'):
-            container = Container('container', data=self.valid_data)
-            container.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
-            container.install()
-
     def test_install_container_node_not_installed(self):
         """
-        Test installing the container without the node being installed
+        Test installing the container without the node being running
         """
         with pytest.raises(StateCheckError,
-                           message='install action should raise an error if node is not installed'):
+                           message='install action should raise an error if node is not running'):
             container = Container('container', data=self.valid_data)
-            node = MagicMock()
-            container.api.services.get = MagicMock(return_value=node)
-            node.state.check = MagicMock(side_effect=StateCheckError)
+            container.node_sal.is_running = MagicMock(return_value=False)
             container.install()
 
     def test_install_container_success(self):
@@ -145,6 +133,7 @@ class TestContainerTemplate(TestCase):
         container = Container('container', data=self.valid_data)
         container.api.services.get = MagicMock()
         container.node_sal.containers.create = MagicMock()
+        container.node_sal.is_running = MagicMock()
 
         container.install()
 
@@ -153,7 +142,7 @@ class TestContainerTemplate(TestCase):
         assert container.node_sal.containers.create.called
         assert container.node_sal.containers.create.call_args[1]['ports'] == {80: 80}, \
             "ports forward list should have been converted to dict of int"
-        assert container.api.services.get.called
+        assert container.node_sal.is_running.called
 
     def test_start_container_wrong_node(self):
         """
