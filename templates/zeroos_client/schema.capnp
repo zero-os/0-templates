@@ -8,4 +8,5 @@ struct Schema {
     ssl @3: Bool; # enable/disable redis ssl
     db @4: UInt32 = 0; # redis db number
     timeout @5: UInt32 = 120; # redis socket timeout
+    unixSocket @6: Text; # unix socket path
 }

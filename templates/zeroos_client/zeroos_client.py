@@ -27,6 +27,7 @@ class ZeroosClient(TemplateBase):
             'ssl': self.data['ssl'],
             'db': self.data['db'],
             'timeout': self.data['timeout'],
+            'unixsocket': self.data['unixSocket'],
         }
         # this will create a configuration for this instance
         _ = j.clients.zero_os.get(self.name, data=client_data)

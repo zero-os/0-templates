@@ -11,6 +11,7 @@ This template is responsible for configuring a zeroos client on jumpscale.
 - `ssl`: boolean indicating if ssl is enabled or not
 - `db`: redis database number. Defaults to 0
 - `timeout`: redis socket timeout
+- `unixSocket`: unix socket path
 
 ### Actions:
 - `delete`: delete the client from jumpscale.

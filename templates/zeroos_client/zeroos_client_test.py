@@ -21,7 +21,8 @@ class TestZeroosClientTemplate(TestCase):
             'ssl': False,
             'db': 0,
             'port': 6379,
-            'host': '127.0.0.1'
+            'host': '127.0.0.1',
+            'unixSocket': '',
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         ZeroosClient.template_uid = TemplateUID.parse(
@@ -53,6 +54,7 @@ class TestZeroosClientTemplate(TestCase):
             'ssl': self.valid_data['ssl'],
             'db': self.valid_data['db'],
             'timeout': self.valid_data['timeout'],
+            'unixsocket': self.valid_data['unixSocket'],
         }
 
         self.list.assert_called_with()
