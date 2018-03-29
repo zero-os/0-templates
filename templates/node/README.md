@@ -12,6 +12,7 @@ This template is responsible for managing a zero-os node.
 - `version`: the version of the zero-os. It set by the template.
 - `networks`: network configuration
 - `alerta`: refers to an alerta service which will handle healthcheck reporting
+- `uptime`: node uptime in seconds
 
 
 ### Actions
