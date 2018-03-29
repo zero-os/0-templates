@@ -16,10 +16,9 @@ class ZeroosClient(TemplateBase):
             return
 
         # create the client instance
-        if not self.data.get('host'):
-            raise ValueError('no host specified in service data')
+        if not (self.data.get('host') and self.data['port']) and not self.data.get('unixSocket'):
+            raise ValueError('Either host/port or unixSocket need to be supplied')
 
-        print(self.data)
         client_data = {
             'host': self.data['host'],
             'port': self.data['port'],

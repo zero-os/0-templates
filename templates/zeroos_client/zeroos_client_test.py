@@ -41,8 +41,9 @@ class TestZeroosClientTemplate(TestCase):
         patch.stopall()
 
     def test_create_invalid_data(self):
-        with pytest.raises(ValueError, message='template should fail to instantiate if data is None'):
-            ZeroosClient(name="zos", data=None)
+        with pytest.raises(
+                ValueError, message='template should fail to instantiate if neither host nor unixSocket are supplied'):
+            ZeroosClient(name="zos", data={'host': '', 'unixSocket': '', 'port': ''})
 
     def test_create(self):
         get = patch('js9.j.clients.zero_os.get', MagicMock()).start()
