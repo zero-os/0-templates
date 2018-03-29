@@ -9,6 +9,7 @@ VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
 BOOTSTRAP_TEMPLATE_UID = 'github.com/zero-os/0-templates/zeroos_bootstrap/0.0.1'
 ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
 
+
 class Node(TemplateBase):
 
     version = '0.0.1'
@@ -74,10 +75,11 @@ class Node(TemplateBase):
             self.state.delete('status', 'running')
             return
 
-        if not self.node_sal.is_configured(self.name):
+        self.state.set('status', 'running', 'ok')
+        if self.node_sal.uptime() < self.data['uptime']:
             self.install()
 
-        self.state.set('status', 'running', 'ok')
+        self.data['uptime'] = self.node_sal.uptime()
 
         try:
             # check if the node was rebooting and start containers and vms
@@ -95,11 +97,6 @@ class Node(TemplateBase):
         self.logger.info('Installing node %s' % self.name)
         self.data['version'] = '{branch}:{revision}'.format(**self.node_sal.client.info.version())
 
-        poolname = '{}_fscache'.format(self.name)
-
-        self.logger.debug('create storage pool for fuse cache')
-        self.node_sal.ensure_persistance(poolname)
-
         # Set host name
         self.node_sal.client.system('hostname %s' % self.data['hostname']).get()
         self.node_sal.client.bash('echo %s > /etc/hostname' % self.data['hostname']).get()
@@ -114,7 +111,7 @@ class Node(TemplateBase):
             tasks.append(network.schedule_action('configure', args={'node_name': self.name}))
         self._wait_all(tasks, timeout=120, die=True)
 
-        mounts = self.node_sal.partition_and_mount_disks(poolname)
+        mounts = self.node_sal.partition_and_mount_disks()
         port = 9900
         tasks = []
         for mount in mounts:
@@ -134,6 +131,7 @@ class Node(TemplateBase):
             port += 1
 
         self._wait_all(tasks, timeout=120, die=True)
+        self.data['uptime'] = self.node_sal.uptime()
         self.state.set('actions', 'install', 'ok')
 
     def reboot(self):
@@ -227,6 +225,7 @@ class Node(TemplateBase):
         for t in tasks:
             t.wait(timeout=timeout, die=die)
 
+
 def _update(service, healcheck_result):
     for rprtr in service.data.get('alerta', []):
         reporter = service.api.services.get(name=rprtr)
@@ -242,6 +241,7 @@ def _update(service, healcheck_result):
             tag = ('%s-%s' % (healcheck_result['id'], msg['id'])).lower()
             status = msg['status'].lower()
             service.state.set(category, tag, status)
+
 
 def _update_healthcheck_state(service, healthcheck):
     if isinstance(healthcheck, list):
