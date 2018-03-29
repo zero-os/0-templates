@@ -29,7 +29,7 @@ class TestNodeTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'redisAddr': 'localhost'}
+        cls.valid_data = {'redisAddr': 'localhost', 'uptime': '30.0'}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Node.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
 
@@ -292,7 +292,7 @@ class TestNodeTemplate(TestCase):
         node.state.set('actions', 'install', 'ok')
         node.state.set('status', 'rebooting', 'ok')
         node.node_sal.is_running = MagicMock(return_value=True)
-        node.node_sal.is_configured = MagicMock(return_value=False)
+        node.node_sal.uptime = MagicMock(return_value='10.0')
         node._monitor()
 
         node._start_all_containers.assert_called_once_with()
@@ -306,7 +306,7 @@ class TestNodeTemplate(TestCase):
 
     def test_monitor_node(self):
         """
-        Test _monitor action called after node rebooted
+        Test _monitor action without reboot
         """
         node = Node(name='node', data=self.valid_data)
         node.install = MagicMock()
@@ -315,7 +315,7 @@ class TestNodeTemplate(TestCase):
         node._healthcheck = MagicMock()
         node.state.set('actions', 'install', 'ok')
         node.node_sal.is_running = MagicMock(return_value=True)
-        node.node_sal.is_configured = MagicMock(return_value=True)
+        node.node_sal.uptime = MagicMock(return_value='40.0')
         node._monitor()
 
         assert not node._start_all_containers.called
@@ -331,6 +331,7 @@ class TestNodeTemplate(TestCase):
         node.state.set('actions', 'install', 'ok')
         node.state.set('status', 'running', 'ok')
         node.node_sal.is_running = MagicMock()
+        node.node_sal.uptime = MagicMock(return_value='30.0')
         node._monitor()
 
         node.node_sal.is_running.assert_called_once_with(300)
@@ -342,6 +343,7 @@ class TestNodeTemplate(TestCase):
         node = Node(name='node', data=self.valid_data)
         node.state.set('actions', 'install', 'ok')
         node.node_sal.is_running = MagicMock()
+        node.node_sal.uptime = MagicMock(return_value='30.0')
         node._monitor()
 
         node.node_sal.is_running.assert_called_once_with(30)
