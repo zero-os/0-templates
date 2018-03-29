@@ -32,6 +32,10 @@ if [[ ${action} == "setup" ]]; then
     echo "[+] Connecting to the 0-robot server ..."
     zrobot robot connect main http://localhost:6600
 
+    pushd /tmp
+    python3 -m http.server 5555
+    popd
+
     echo "[+] Start bootstrap service ..."
     python3 -u tests/utils.py -a bootstrap -z ${zerotier_network} -s ${zerotier_token} -n ${number_of_nodes}
 
