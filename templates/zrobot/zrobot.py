@@ -40,7 +40,15 @@ class Zrobot(TemplateBase):
         nics = self.data.get('nics')
         if not nics:
             nics = [{'type': 'default'}]
-            ports = ['6600:6600']
+
+            port = self.data.get('port')
+            if not port:
+                freeports = self.node_sal.freeports(baseport=6600, nrports=1)
+                if not freeports:
+                    raise RuntimeError("can't find a free port to expose the robot")
+                self.data['port'] = freeports[0]
+
+            ports = ['%s:6600' % self.data['port']]
 
         data = {
             'node': self.data['node'],
