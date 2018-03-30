@@ -76,6 +76,9 @@ class Node(TemplateBase):
             return
 
         self.state.set('status', 'running', 'ok')
+        self._rename_cache()
+
+
         if self.node_sal.uptime() < self.data['uptime']:
             self.install()
 
@@ -91,6 +94,35 @@ class Node(TemplateBase):
             pass
 
         self._healthcheck()
+
+    def _rename_cache(self):
+        """Rename old cache storage pool to new convention if needed"""
+        try:
+            self.state.check("migration", "fs_cache_renamed", "ok")
+            return 
+        except StateCheckError:
+            pass
+
+        poolname = '{}_fscache'.format(self.node_sal.name)
+        try:
+            sp = self.node_sal.storagepools.get(poolname)
+        except ValueError:
+            self.logger.info("storage pool %s doesn't exist on node %s" % (poolname, self.node_sal.name))
+            return
+
+        if sp.mountpoint:
+            self.logger.info("rename mounted volume %s..." % poolname)
+            cmd = 'btrfs filesystem label %s sp_zos-cache' % sp.mountpoint
+        else:
+            self.logger.info("rename unmounted volume %s..." % poolname)
+            cmd = 'btrfs filesystem label %s sp_zos-cache' % sp.devices[0]
+        result = self.node_sal.client.system(cmd).get()
+        if result.state == "SUCCESS":
+            self.logger.info("Rebooting %s ..." % self.node_sal.name)
+            self.state.set("migration", "fs_cache_renamed", "ok")
+            self.reboot()
+            raise RuntimeWarning("Aborting monitor because system is rebooting for a migration.")
+        self.logger.error('error: %s' % result.stderr)
 
     @retry(Exception, tries=2, delay=2)
     def install(self):
