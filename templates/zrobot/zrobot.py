@@ -5,7 +5,7 @@ from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-FLIST_ZROBOT = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-robot-master-5a2ca16570.flist'
+FLIST_ZROBOT = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-robot-master-1ea632bf67.flist'
 NODE_TEMPLATE = 'github.com/zero-os/0-templates/node/0.0.1'
 CONTAINER_TEMPLATE = 'github.com/zero-os/0-templates/container/0.0.1'
 
