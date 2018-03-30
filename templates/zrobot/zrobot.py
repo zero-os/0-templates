@@ -133,6 +133,24 @@ class Zrobot(TemplateBase):
         self.state.delete('actions', 'start')
         self.state.delete('status', 'running')
 
+    def upgrade(self):
+        """
+        upgrade the container with an updated flist
+        this is done by stopping the container and respawn again with the updated flist
+        """
+        # stop the robot process
+        self.stop()
+
+        # force to stop the container
+        try:
+            contservice = self.api.services.get(name=self._container_name)
+            contservice.schedule_action('stop').wait(die=True)
+        except (ServiceNotFoundError, LookupError):
+            pass
+
+        # restart the robot in a new container
+        self.start()
+
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
         try:
