@@ -95,7 +95,7 @@ class Zrobot(TemplateBase):
 
     def _get_zrobot_client(self, contservice):
         container = self.node_sal.containers.get(contservice.name)
-        return j.clients.zero_os.sal.get_zerorobot(container=container, port=6600, template_repos=self.data['templates'])
+        return j.clients.zero_os.sal.get_zerorobot(container=container, port=6600, template_repos=self.data['templates'], organization=(self.data.get('organization') or None))
 
     def install(self, force=False):
         try:
