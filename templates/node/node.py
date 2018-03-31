@@ -78,6 +78,11 @@ class Node(TemplateBase):
         self.state.set('status', 'running', 'ok')
         self._rename_cache()
 
+        # make sure cache is always mounted
+        sp = self.node_sal.storagepools.get('zos-cache')
+        if not sp.mountpoint:
+            self.node_sal.ensure_persistance()
+
         if self.node_sal.uptime() < self.data['uptime']:
             self.install()
 
