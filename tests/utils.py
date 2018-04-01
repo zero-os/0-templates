@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     elif options.action == 'create_ctrl':
         packet_client = Packet(token=options.packet_token)
-        hostname = 'ctrl-{}'.format(options.job_key)
+        hostname = 'travis-ctrl-{}'.format(options.job_key)
 
         with open(os.path.join(os.environ['HOME'], '.ssh/id_rsa.pub'), 'r') as f:
             sshkey = f.read().strip()
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     elif options.action == 'create_nodes':
         packet_client = Packet(token=options.packet_token)
         for i in range(options.number_of_nodes):
-            hostname = 'node-{}-{}'.format(str(i), options.job_key) 
+            hostname = 'travis-node-{}-{}'.format(str(i), options.job_key) 
             packet_client.create_node(hostname, options.zero_os_branch, options.zerotier_network)
 
     elif options.action == 'delete_nodes':

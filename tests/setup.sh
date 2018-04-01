@@ -13,7 +13,8 @@ number_of_nodes=${6}
 echo "[+] Installing requirements"
 apt update
 #install python packages
-apt install git python3-pip python-pip python-dev python3-dev libffi-dev build-essential libssl-dev libxml2-dev libxslt1-dev zlib1g-dev requests, argparse -y
+apt install git python3-pip python-pip -y
+apt install python-dev python3-dev libffi-dev build-essential libssl-dev libxml2-dev libxslt1-dev zlib1g-dev requests, argparse -y
 pip3 install -y python-dateutil requests zerotier git+https://github.com/gigforks/packet-python.git
 # install zerotier
 curl -s https://install.zerotier.com/ | sudo bash
