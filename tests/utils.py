@@ -60,7 +60,7 @@ class Packet:
 
     
     def delete_ssh_keys(self, label):
-        ssh_keys = self.manager.list_ssh_keys(self.project)
+        ssh_keys = self.manager.list_ssh_keys()
         for ssh_key in ssh_keys:
             if label in ssh_key.label:
                 self.manager.call_api('ssh-keys/%s' % ssh_key.id, type='DELETE')
