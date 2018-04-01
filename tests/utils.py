@@ -93,6 +93,7 @@ if __name__ == '__main__':
     
     if options.action == 'create_zerotier_network':
         zerotier_network = create_zerotier_network(options.zerotier_token)
+        os.system('printf "{}" > /tmp/zerotier_network.txt'.format(zerotier_network))
         print(zerotier_network)
 
     elif options.action == 'create_ctrl':

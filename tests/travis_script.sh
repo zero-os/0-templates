@@ -18,6 +18,7 @@ if [[ ${action} == "setup" ]]; then
 
 elif [[ ${action} == "test" ]]; then
 
+    zerotier_network=$(cat /tmp/zerotier_network.txt)
     ctrl_ipaddress=$(cat /tmp/device_ipaddress.txt)
     scp -o StrictHostKeyChecking=no tests/setup.sh root@${ctrl_ipaddress}:/root/
     ssh -t -o StrictHostKeyChecking=no root@${ctrl_ipaddress} "bash setup.sh ${zero_templates_branch} ${js9_branch} ${zrobot_branch} ${zerotier_network} ${zerotier_token} ${number_of_nodes}"   

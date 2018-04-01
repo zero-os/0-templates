@@ -9,7 +9,6 @@ matrix:
       install:
         - pip3 install python-dateutil requests zerotier
         - pip3 install git+https://github.com/gigforks/packet-python.git
-        - curl -s https://install.zerotier.com/ | sudo bash
 
       before_script:
         - bash tests/travis_script.sh setup
