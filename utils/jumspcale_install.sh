@@ -27,15 +27,13 @@ popd
 
 
 # create ssh key for jumpscale config manager
-sudo chown -R ${USER}:${USER} /root
-
-mkdir -p /root/.ssh
-ssh-keygen -f /root/.ssh/id_rsa -P ''
+mkdir -p ~/.ssh
+ssh-keygen -f ~/.ssh/id_rsa -P ''
 eval `ssh-agent -s`
-ssh-add /root/.ssh/id_rsa
+ssh-add ~/.ssh/id_rsa
 
 # initialize jumpscale config manager
 mkdir -p /opt/code/config_test
 git init /opt/code/config_test
 touch /opt/code/config_test/.jsconfig
-js9_config init --silent --path /opt/code/config_test/ --key /root/.ssh/id_rsa
+js9_config init --silent --path /opt/code/config_test/ --key ~/.ssh/id_rsa

@@ -1,4 +1,4 @@
-import requests, argparse, sys, packet, random, zerotier, time, uuid
+import requests, argparse, sys, packet, random, zerotier, time, uuid, os
 
 class Packet:
     def __init__(self, token):
@@ -15,8 +15,20 @@ class Packet:
                 pass
         else:
             return None
+
+    
+    def create_machine(self, hostname, plan='baremetal_0'):
+        facility = self.get_available_facility(plan=plan)
+        device = self.manager.create_device(
+            project_id=self.project,
+            hostname=hostname,
+            plan=plan,
+            operating_system='ubuntu_16_04',
+            facility=facility
+        )
+        return device
                 
-    def create_machine(self, hostname, branch, zerotier_network, plan='baremetal_0'):
+    def create_node(self, hostname, branch, zerotier_network, plan='baremetal_0'):
         ipxe_script_url = 'http://unsecure.bootstrap.gig.tech/ipxe/%s/%s' % (branch, zerotier_network)
         facility = self.get_available_facility(plan=plan)
         device = self.manager.create_device(
@@ -28,6 +40,17 @@ class Packet:
             facility=facility
         )
         return device
+
+    
+    def wait_for_ipaddress(self, deviceId, timeout=300):
+        for _ in range(timeout):
+            device = self.manager.get_device(deviceId)
+            if device.state == 'active':
+                return device.ip_addresses[0]['address']
+            else:
+                time.sleep(1)
+        else:
+            raise RuntimeError('packet machine creation timeout')
 
     def delete_devices(self, hostname):
         devices = self.manager.list_devices(self.project)
@@ -55,7 +78,6 @@ def create_zerotier_network(token):
 
     response = session.post(url='https://my.zerotier.com/api/network', json=data)
     return response.json()['id']
-
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -72,12 +94,30 @@ if __name__ == '__main__':
     if options.action == 'create_zerotier_network':
         zerotier_network = create_zerotier_network(options.zerotier_token)
         print(zerotier_network)
+
+    elif options.action == 'create_ctrl':
+        packet_client = Packet(token=options.packet_token)
+        hostname = 'ctrl-{}'.format(options.job_key)
+
+        with open(os.path.join(os.environ['HOME'], '.ssh/id_rsa.pub'), 'r') as f:
+            sshkey = f.read().strip()
+
+        ssh_label = 'sshkey-{}'.format(options.job_key)
+        packet_client.manager.create_ssh_key(ssh_label, sshkey)
         
+        device = packet_client.create_machine(hostname)
+        device_ipaddress = packet_client.wait_for_ipaddress(device.id)
+
+        os.system('printf "{}" > /tmp/device_id.txt'.format(device.id))        
+        os.system('printf "{}" > /tmp/device_ipaddress.txt'.format(device_ipaddress))
+
+        print(device_ipaddress)
+
     elif options.action == 'create_nodes':
         packet_client = Packet(token=options.packet_token)
         for i in range(options.number_of_nodes):
-            hostname = options.job_key + str(i)
-            packet_client.create_machine(hostname, options.zero_os_branch, options.zerotier_network)
+            hostname = 'node-{}-{}'.format(str(i), options.job_key) 
+            packet_client.create_node(hostname, options.zero_os_branch, options.zerotier_network)
 
     elif options.action == 'delete_nodes':
         packet_client = Packet(token=options.packet_token)
