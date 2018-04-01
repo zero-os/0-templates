@@ -6,26 +6,20 @@ export LC_TYPE=en_US.UTF-8
 zero_templates_branch=${1} 
 js9_branch=${2}
 zrobot_branch=${3}
-zerotier_token=${4}
-number_of_nodes=${5}
+zerotier_network=${4}
+zerotier_token=${5}
+number_of_nodes=${6}
 
 echo "[+] Installing requirements"
 apt update
 #install python packages
-apt install git python3-pip python-pip python-dev \
-python3-dev libffi-dev build-essential libssl-dev \
-libxml2-dev libxslt1-dev zlib1g-dev requests, argparse -y
-pip3 install python-dateutil requests zerotier \
-git+https://github.com/gigforks/packet-python.git
+apt install git python3-pip python-pip python-dev python3-dev libffi-dev build-essential libssl-dev libxml2-dev libxslt1-dev zlib1g-dev requests, argparse -y
+pip3 install -y python-dateutil requests zerotier git+https://github.com/gigforks/packet-python.git
 # install zerotier
 curl -s https://install.zerotier.com/ | sudo bash
 
-echo "[+] Creating zerotier network"
-zerotier_network=$(python3 -u 0-templates/tests/utils.py -a create_zerotier_network -s ${zerotier_token}); sleep 5
-printf ${zerotier_network} > /tmp/zerotier_network.txt
-
 echo "[+] Joining zerotier network: ${zerotier_network}"
-sudo zerotier-cli join ${zerotier_network}; sleep 15
+sudo zerotier-cli join ${zerotier_network}; sleep 10
 memberid=$(sudo zerotier-cli info | awk '{print $3}')
 curl -s -H "Content-Type: application/json" -H "Authorization: Bearer ${zerotier_token}" -X POST -d '{"config": {"authorized": true}}' https://my.zerotier.com/api/network/${zerotier_network}/member/${memberid} > /dev/null
 
@@ -40,7 +34,8 @@ echo "[+] Installing 0-robot"
 
 echo "[+] Stating 0-robot server"
 zrobot server start -T https://github.com/zero-os/0-templates.git -D https://github.com/ahmedelsayed-93/data-repo &> /tmp/zrobot.log &
-sleep 5; zrobot robot connect main http://localhost:6600
+sleep 30
+zrobot robot connect main http://localhost:6600
 
 echo "[+] Start bootstrap service"
 python3 -u 0-templates/tests/utils.py -a bootstrap -z ${zerotier_network} -s ${zerotier_token} -n ${number_of_nodes}

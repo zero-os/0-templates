@@ -7,6 +7,9 @@ if [[ ${action} == "setup" ]]; then
     echo "[+] Generating ssh key ..."
     ssh-keygen -f ~/.ssh/id_rsa -P ''
 
+    echo "[+] Creating zerotier network"
+    zerotier_network=$(python3 -u tests/utils.py -a create_zerotier_network -s ${zerotier_token}); sleep 5
+
     echo "[+] Creating ctrl ..."
     python3 -u tests/utils.py -a create_ctrl -t ${packet_token} -k ${job_key}
 
@@ -17,6 +20,6 @@ elif [[ ${action} == "test" ]]; then
 
     ctrl_ipaddress=$(cat /tmp/device_ipaddress.txt)
     scp -o StrictHostKeyChecking=no tests/setup.sh root@${ctrl_ipaddress}:/root/
-    ssh -t -o StrictHostKeyChecking=no root@${ctrl_ipaddress} "bash setup.sh ${zero_templates_branch} ${js9_branch} ${zrobot_branch} ${zerotier_token} ${number_of_nodes}"   
+    ssh -t -o StrictHostKeyChecking=no root@${ctrl_ipaddress} "bash setup.sh ${zero_templates_branch} ${js9_branch} ${zrobot_branch} ${zerotier_network} ${zerotier_token} ${number_of_nodes}"   
 
 fi
