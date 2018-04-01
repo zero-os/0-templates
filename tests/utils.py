@@ -58,6 +58,12 @@ class Packet:
             if hostname in device.hostname:
                 self.manager.call_api('devices/%s' % device.id, type='DELETE')
 
+    
+    def delete_ssh_keys(self, label):
+        ssh_keys = self.manager.list_ssh_keys(self.project)
+        for ssh_key in ssh_keys:
+            if label in ssh_key.label:
+                self.manager.call_api('ssh-keys/%s' % ssh_key.id, type='DELETE')
 
 
 def create_zerotier_network(token):
@@ -120,9 +126,10 @@ if __name__ == '__main__':
             hostname = 'travis-node-{}-{}'.format(str(i), options.job_key) 
             packet_client.create_node(hostname, options.zero_os_branch, options.zerotier_network)
 
-    elif options.action == 'delete_nodes':
+    elif options.action == 'teardown':
         packet_client = Packet(token=options.packet_token)
         packet_client.delete_devices(options.job_key)
+        packet_client.delete_ssh_keys(options.job_key)
 
     elif options.action == 'bootstrap':
         from zerorobot.dsl import ZeroRobotAPI
@@ -154,4 +161,4 @@ if __name__ == '__main__':
             else:
                 time.sleep(60)
         else:
-            sys.exit('[-] Cannot authorized all nodes')
+            sys.exit('[-] Cannot install Zero-OS nodes')

@@ -15,7 +15,8 @@ matrix:
       script:
         - bash tests/travis_script.sh test
       after_script:
-        - python3 tests/utils.py -a delete_nodes -t ${packet_token} -k ${TRAVIS_JOB_NUMBER}
+        - python3 tests/utils.py -a teardown -t ${packet_token} -k ${TRAVIS_JOB_NUMBER}
+
 
     - language: python
       sudo: required
