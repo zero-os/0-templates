@@ -27,7 +27,7 @@ install_jumpscale(){
     done
 
     for target in core9 lib9; do
-        git clone --depth=1 -b ${BRANCH} https://github.com/jumpscale/${target} -d /opt/code/github/jumpscale/${target}
+        git clone --depth=1 -b ${BRANCH} https://github.com/jumpscale/${target} /opt/code/github/jumpscale/${target}
         pip3 install -e /opt/code/github/jumpscale/${target}
     done
 }
