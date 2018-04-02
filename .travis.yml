@@ -17,21 +17,20 @@ matrix:
       after_script:
         - python3 tests/utils.py -a teardown -t ${packet_token} -k ${TRAVIS_JOB_NUMBER}
 
+    - language: python
+      sudo: required
+      dist: trusty
 
-    # - language: python
-    #   sudo: required
-    #   dist: trusty
+      python: 3.5
 
-    #   python: 3.5
+      install:
+        - pip3 install codecov pytest pytest-cov
+        - pip3 install -r requirements.txt
+        - ./utils/jumspcale_install.sh
+        - ./utils/zrobot_install.sh
 
-    #   install:
-    #     - pip3 install codecov pytest pytest-cov
-    #     - pip3 install -r requirements.txt
-    #     - ./utils/jumspcale_install.sh
-    #     - ./utils/zrobot_install.sh
+      script:
+        - make test
 
-    #   script:
-    #     - make test
-
-    #   after_success:
-    #     - codecov
+      after_success:
+        - codecov
