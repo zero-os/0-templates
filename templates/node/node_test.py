@@ -1,14 +1,12 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import tempfile
 import shutil
 import os
 
 import pytest
 
-from js9 import j
-from node import Node, _update_healthcheck_state, _update
-from zerorobot import service_collection as scol
+from node import Node
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
@@ -31,7 +29,8 @@ class TestNodeTemplate(TestCase):
     def setUpClass(cls):
         cls.valid_data = {'redisAddr': 'localhost', 'uptime': '30.0'}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Node.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
+        Node.template_uid = TemplateUID.parse(
+            'github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
 
     @classmethod
     def tearDownClass(cls):
@@ -177,19 +176,6 @@ class TestNodeTemplate(TestCase):
         node._wait_all([task], timeout=30, die=True)
         task.wait.assert_called_with(timeout=30, die=True)
 
-    def test_healthcheck(self):
-        """
-        Test node healthcheck if node is running
-        """
-        healthcheck = patch('node._update_healthcheck_state', MagicMock()).start()
-        node = Node(name='node', data=self.valid_data)
-
-        # could be the recurring action already kicked in
-        # so we count the difference in call count
-        pre_exec = healthcheck.call_count
-        node._healthcheck()
-        assert healthcheck.call_count == pre_exec + 13
-
     def test_uninstall(self):
         """
         Test node uninstall
@@ -226,47 +212,6 @@ class TestNodeTemplate(TestCase):
             node.reboot()
             assert not node.node_sal.client.raw.called
 
-    def test_update_healthcheck_state_list(self):
-        """
-        Test called with list
-        """
-        update = patch('node._update', MagicMock()).start()
-        healthcheck = MagicMock()
-        _update_healthcheck_state(MagicMock(), [healthcheck, healthcheck])
-        assert update.call_count == 2
-
-    def test_update_healthcheck_state(self):
-        """
-        Test called with one healthcheck
-        """
-        update = patch('node._update', MagicMock()).start()
-        healthcheck = MagicMock()
-        _update_healthcheck_state(MagicMock(), healthcheck)
-        assert update.call_count == 1
-
-    def test_update_one_message(self):
-        """
-        Test called with one message
-        """
-        healthcheck = {'messages': [{'status': 'status'}], 'category': 'category', 'id': 'id'}
-        service = MagicMock()
-        _update(service, healthcheck)
-        service.state.set.assert_called_once_with('category', 'id', 'status')
-
-    def test_update_multiple_messages(self):
-        """
-        Test called with one message
-        """
-        healthcheck = {
-            'messages': [{'status': 'status', 'id': 1},
-                         {'status': 'status', 'id': 2}],
-            'category': 'category',
-            'id': 'id'
-        }
-        service = MagicMock()
-        _update(service, healthcheck)
-        service.state.set.assert_has_calls([call('category', 'id-1', 'status'), call('category', 'id-2', 'status')])
-
     def test_monitor_node_is_not_running(self):
         """
         Test _monitor action called when node is not running
@@ -288,7 +233,6 @@ class TestNodeTemplate(TestCase):
         node.install = MagicMock()
         node._start_all_containers = MagicMock()
         node._start_all_vms = MagicMock()
-        node._healthcheck = MagicMock()
         node.state.set('actions', 'install', 'ok')
         node.state.set('status', 'rebooting', 'ok')
         node.node_sal.is_running = MagicMock(return_value=True)
@@ -298,7 +242,6 @@ class TestNodeTemplate(TestCase):
         node._start_all_containers.assert_called_once_with()
         node._start_all_vms.assert_called_once_with()
         node.install.assert_called_once_with()
-        node._healthcheck.assert_called_with()
 
         with pytest.raises(StateCheckError,
                            message='template should remove the rebooting status after monitoring'):
@@ -312,7 +255,6 @@ class TestNodeTemplate(TestCase):
         node.install = MagicMock()
         node._start_all_containers = MagicMock()
         node._start_all_vms = MagicMock()
-        node._healthcheck = MagicMock()
         node.state.set('actions', 'install', 'ok')
         node.node_sal.is_running = MagicMock(return_value=True)
         node.node_sal.uptime = MagicMock(return_value='40.0')
@@ -321,7 +263,6 @@ class TestNodeTemplate(TestCase):
         assert not node._start_all_containers.called
         assert not node._start_all_vms.called
         assert not node.install.called
-        node._healthcheck.assert_called_with()
 
     def test_monitor_node_previously_running(self):
         """
@@ -354,7 +295,8 @@ class TestNodeTemplate(TestCase):
         """
         node = Node(name='node', data=self.valid_data)
         node.state.set('status', 'running', 'ok')
-        node.node_sal.client.ping = MagicMock(return_value='PONG Version: main @Revision: 41f7eb2e94f6fc9a447f9dec83c67de23537f119')
+        node.node_sal.client.ping = MagicMock(
+            return_value='PONG Version: main @Revision: 41f7eb2e94f6fc9a447f9dec83c67de23537f119')
         node.os_version() == 'main @Revision: 41f7eb2e94f6fc9a447f9dec83c67de23537f119'
 
     def test_os_version_not_running(self):

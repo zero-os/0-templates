@@ -16,7 +16,7 @@ class Healthcheck(TemplateBase):
         if not self.data['node']:
             raise ValueError('Invalid node value')
 
-        self.recurring_action('monitor', 30)
+        self.recurring_action('_monitor', 30)
 
     @property
     def node_sal(self):
@@ -25,7 +25,7 @@ class Healthcheck(TemplateBase):
         """
         return j.clients.zero_os.sal.get_node(self.data['node'])
 
-    def monitor(self):
+    def _monitor(self):
         self.logger.info('Monitoring node %s health check' % self.name)
 
         node = self.api.services.get(name=self.data['node'], template_uid=NODE_TEMPLATE_UID)
