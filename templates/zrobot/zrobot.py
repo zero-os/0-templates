@@ -17,7 +17,6 @@ class Zrobot(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self.validate()
         self.recurring_action('_monitor', 30)  # every 30 seconds
 
     def validate(self):
@@ -29,7 +28,7 @@ class Zrobot(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.node_get(self.data['node'])
+        return j.clients.zero_os.sal.get_node(self.data['node'])
 
     @property
     def _container_name(self):
@@ -92,10 +91,11 @@ class Zrobot(TemplateBase):
         ]
 
         return self.api.services.find_or_create(CONTAINER_TEMPLATE, self._container_name, data)
-
-    def _get_zrobot_client(self, contservice):
-        container = self.node_sal.containers.get(contservice.name)
-        return j.clients.zero_os.sal.get_zerorobot(container=container, port=6600, template_repos=self.data['templates'], organization=(self.data.get('organization') or None))
+    
+    @property
+    def zrobot_sal(self):
+        container_sal = self.node_sal.containers.get(self._container_name)
+        return j.clients.zero_os.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], organization=(self.data.get('organization') or None))
 
     def install(self, force=False):
         try:
@@ -105,29 +105,26 @@ class Zrobot(TemplateBase):
         except StateCheckError:
             pass
 
-        contservice = self._get_container()
-        contservice.schedule_action('install').wait(die=True)
+        container = self._get_container()
+        container.schedule_action('install').wait(die=True)
 
-        zrobot_sal = self._get_zrobot_client(contservice)
-        zrobot_sal.start()
+        self.zrobot_sal.start()
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
         self.state.set('status', 'running', 'ok')
 
     def start(self):
-        contservice = self._get_container()
-        contservice.schedule_action('start').wait(die=True)
+        container = self._get_container()
+        container.schedule_action('start').wait(die=True)
 
-        zrobot_sal = self._get_zrobot_client(contservice)
-        zrobot_sal.start()
+        self.zrobot_sal.start()
         self.state.set('actions', 'start', 'ok')
         self.state.set('status', 'running', 'ok')
 
     def stop(self):
+        self.state.check('actions', 'start', 'ok')
         try:
-            contservice = self.api.services.get(name=self._container_name)
-            zrobot_sal = self._get_zrobot_client(contservice)
-            zrobot_sal.stop()
+            self.zrobot_sal.stop()
         except (ServiceNotFoundError, LookupError):
             pass
         self.state.delete('actions', 'start')
@@ -136,19 +133,18 @@ class Zrobot(TemplateBase):
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
         try:
-            contservice = self.api.services.get(name=self._container_name)
-            zrobot_sal = self._get_zrobot_client(contservice)
-            zrobot_sal.stop()
-            contservice.schedule_action('uninstall').wait(die=True)
-            contservice.delete()
+            container = self.api.services.get(name=self._container_name)
+            self.zrobot_sal.stop()
+            container.schedule_action('uninstall').wait(die=True)
+            container.delete()
         except (ServiceNotFoundError, LookupError):
             pass
 
         try:
             # cleanup filesystem used by this robot
-            sp = self.node_sal.storagepools.get('zos-cache')
-            fs = sp.get(self.guid)
-            fs.delete()
+            storagepool_sal = self.node_sal.storagepools.get('zos-cache')
+            fs_sal = storagepool_sal.get(self.guid)
+            fs_sal.delete()
         except ValueError:
             # filesystem doesn't exist, nothing else to do
             pass
@@ -160,16 +156,13 @@ class Zrobot(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self.state.check('actions', 'start', 'ok')
 
-        zrobot_sal = None
         try:
-            contservice = self.api.services.get(name=self._container_name)
-            zrobot_sal = self._get_zrobot_client(contservice)
+            self.api.services.get(name=self._container_name) # check that container service exists
+            if self.zrobot_sal and self.zrobot_sal.is_running():
+                self.state.set('status', 'running', 'ok')
+                return
         except (ServiceNotFoundError, LookupError):
             self.state.delete('status', 'running')
-
-        if zrobot_sal and zrobot_sal.is_running():
-            self.state.set('status', 'running', 'ok')
-            return
 
         # try to start
         self.start()
