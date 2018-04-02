@@ -10,13 +10,19 @@ This template will start a 0-robot on a node inside a container.
 
 - `templates`: 0-robot repo templates to be loaded on process starts.
 
-- `nics`: configuration of the attached nics to the container. If left empty will use default nic and create a portforward on the container exposing the 0-robot port.
+- `organization`: optional, if specified enable JWT authentication for this organization
+
+- `nics`: configuration of the attached nics to the container. If left empty will use default nic and create a port forward on the container exposing the 0-robot port.
 
 ### Actions
 
 - `install`: will create a container using the 0-robot flist and will run 0-robot inside the container.
 
-- `uninstall`: will stop the running 0-robot process.
+- `uninstall`: will stop the running 0-robot process, delete the container and delete the persistent data of the robot.
+
+- `start`: start the 0-robot process
+
+- `stop`: stop the 0-robot process
 
 Following yaml file is to install the node service:
 

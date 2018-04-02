@@ -1,4 +1,5 @@
 from zerorobot.template.base import TemplateBase
+from zerorobot.template.state import StateCheckError
 from js9 import j
 
 
@@ -31,12 +32,11 @@ class Container(TemplateBase):
             return self.node_sal.containers.get(self.name)
 
     def install(self):
-        node_name = self.data['node']
-        node = self.api.services.get(name=node_name, template_uid=NODE_TEMPLATE_UID)
-        node.state.check('status', 'running', 'ok')
-
         if self.node_sal is None:
-            raise RuntimeError("no connection to the zero-os node")
+            raise StateCheckError("no connection to the zero-os node")
+
+        if not self.node_sal.is_running():
+            raise StateCheckError("node is not running")
 
         # convert "src:dst" to {src:dst}
         ports = j.clients.zero_os.sal.format_ports(self.data['ports'])
@@ -96,5 +96,3 @@ class Container(TemplateBase):
         self.logger.info('Uninstalling container %s' % self.name)
         self.stop()
         self.state.delete('actions', 'install')
-
-

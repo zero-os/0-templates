@@ -3,7 +3,8 @@
 struct Schema {
     node @0 :Text;
     templates @1 :List(Text);
-    nics @2 :List(Nic); # Configuration of the attached nics to the container
+    organization @2 :Text; # optional, if specified enable JWT authentication for this organization
+    nics @3 :List(Nic); # Configuration of the attached nics to the container
 
     struct Nic {
         type @0: NicType;
