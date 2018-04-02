@@ -2,7 +2,7 @@
 set -e
 
 # settings
-export BRANCH=${1:-development}
+export BRANCH="development"
 
 for target in /usr/local /opt /opt/cfg /opt/code/github/jumpscale /opt/var/capnp /opt/var/log $HOME/js9host/cfg; do
     mkdir -p $target
@@ -20,7 +20,7 @@ done
 # installing core and plugins
 for target in core9 lib9; do
     pushd ${target}
-    pip3 install -e .
+    pip3 install .
     popd
 done
 popd
