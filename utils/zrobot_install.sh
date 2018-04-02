@@ -2,7 +2,7 @@
 set -e
 
 # settings
-export "master"
+export BRANCH="master"
 
 mkdir -p /opt/code/github/jumpscale
 pushd /opt/code/github/jumpscale
