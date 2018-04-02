@@ -13,7 +13,7 @@ matrix:
       before_script:
         - bash tests/bootstrap/before_test.sh
       script:
-        - bash tests/bootstrap/test.sh
+        - bash tests/bootstrap/run_test.sh
       after_script:
         - python3 tests/utils.py -a teardown -t ${packet_token} -k ${TRAVIS_JOB_NUMBER}
 
