@@ -11,9 +11,9 @@ matrix:
         - pip3 install git+https://github.com/gigforks/packet-python.git
 
       before_script:
-        - bash tests/travis_script.sh setup
+        - bash tests/bootstrap/before_test.sh
       script:
-        - bash tests/travis_script.sh test
+        - bash tests/bootstrap/test.sh
       after_script:
         - python3 tests/utils.py -a teardown -t ${packet_token} -k ${TRAVIS_JOB_NUMBER}
 

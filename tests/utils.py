@@ -162,3 +162,53 @@ if __name__ == '__main__':
                 time.sleep(60)
         else:
             sys.exit('[-] Cannot install Zero-OS nodes')
+
+
+    elif options.action == 'minio':
+        from zerorobot.dsl import ZeroRobotAPI
+        from zeroos.core0.client import Client
+
+        apis = ZeroRobotAPI.ZeroRobotAPI()
+        api = apis.robots['main']
+        zerotier_client = zerotier.APIClient()
+        zerotier_client.set_auth_header('Bearer {}'.format(options.zerotier_token))
+
+        members = zerotier_client.network.listMembers(options.zerotier_network).json()
+        node = [{'name':member['name'], 'ip':member['config']['ipAssignments'][0]} for member in members if options.job_key in member['description']][0]
+
+        core0_client = Client(node['ip'])
+        
+        for _ in range(30):
+            print('Check 0-db container')
+            if core0_client.container.list():
+                break
+            else:
+                time.sleep(3)
+        else:
+            sys.exit('[-] Error in bootstrap service')
+
+        ### create namespace
+        zdbs = api.services.find(template_uid='github.com/zero-os/0-templates/zerodb/0.0.1')
+        for zdb in zdbs:
+            zdb.schedule_action('namespace_create', {'name': 'namespace'})
+
+        time.sleep(30)
+
+        ### install minio service
+        data = {
+            'node':node['name'],
+            'zerodbs':['{}:9900'.format(node['ip'])],
+            'login':'admin',
+            'password':'password',
+            'namespace':'namespace',
+            'privateKey':'ab345678901234567890123456789012'
+        }
+        api.services.create(template_uid='github.com/zero-os/0-templates/minio/0.0.1', service_name='minioserver', data=data)
+
+        ### start minio server
+        minio = api.services.get(name='minio')
+        minio.schedule_action('install')
+        time.sleep(20)
+        minio.schedule_action('start')
+
+        os.system('printf "{}:9000" > /tmp/nodeip'.format(node['ip']))
