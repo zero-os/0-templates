@@ -48,7 +48,7 @@ Every new template should be accompanied by a test file. Please use other tests 
 
 
 
-### Templates checklist
+## Templates checklist
 After creating/editing a template, please go through this checklist before creating a PR:
 
 - [ ] Template code follows naming [conventions](#naming-conventions).
