@@ -23,19 +23,18 @@ struct Schema {
 
 ### Templates
 
-- Use template name for service instances.
+Use template name for service instances.
 
 ```python
  container = self.api.services.create(CONTAINER_TEMPLATE_UID, name, args)
 
 ```
 
-- Use <template>_sal for sal variables.
+Use <template>_sal for sal variables.
 ```python
 node_sal = j.clients.zero_os.sal.node_get("bootstrap")
 
 ```
-
 
 ## Documentation
 Every new template should be accompanied by a README.md explaining the different fields of the schema, the available actions and any other information that might help the user.
