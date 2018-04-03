@@ -21,7 +21,7 @@ struct Schema {
 }
 ```
 
-### Templates:
+### Templates
 
 - Use template name for service instances.
 
@@ -43,7 +43,7 @@ The documentation should also include blueprints and zrobot examples.
 Please use other documentation as a reference.
 
 
-## Tests:
+## Tests
 Every new template should be accompanied by a test file. Please use other tests as a reference.
 
 
