@@ -36,10 +36,12 @@ node_sal = j.clients.zero_os.sal.node_get("bootstrap")
 
 ```
 
-## Documentation:
+
+## Documentation
 Every new template should be accompanied by a README.md explaining the different fields of the schema, the available actions and any other information that might help the user.
 The documentation should also include blueprints and zrobot examples.
 Please use other documentation as a reference.
+
 
 ## Tests:
 Every new template should be accompanied by a test file. Please use other tests as a reference.
@@ -47,7 +49,7 @@ Every new template should be accompanied by a test file. Please use other tests 
 
 
 
-### Templates checklist:
+### Templates checklist
 After creating/editing a template, please go through this checklist before creating a PR:
 
 - [ ] Template code follows naming [conventions](#naming-conventions).
