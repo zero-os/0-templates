@@ -38,7 +38,12 @@ node_sal = j.clients.zero_os.sal.node_get("bootstrap")
 
 ## Documentation
 Every new template should be accompanied by a README.md explaining the different fields of the schema, the available actions and any other information that might help the user.
-The documentation should also include blueprints and zrobot examples.
+The documentation should also include the following examples:
+
+    1. Usage example via the 0-robot DSL
+
+    2. Usage example via the 0-robot CLI
+
 Please use other documentation as a reference.
 
 
@@ -55,4 +60,4 @@ After creating/editing a template, please go through this checklist before creat
 - [ ] Unittests for the template are up-to-date with the changes in the PR.
 - [ ] The template should have the basic expected actions if applicable (install, uninstall, start, stop, upgrade, monitor).
 - [ ] [README.md](#documentation) is present for the template and modified according to new changes.
-- [ ] Any repitive/management code should be added to the [sal](https://github.com/Jumpscale/lib9/tree/development/JumpScale9Lib/clients/zero_os/sal) instead of the template.
+- [ ] Any repitive/management code should be added to the sal.
