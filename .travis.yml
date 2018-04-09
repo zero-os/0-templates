@@ -1,18 +1,36 @@
-language: python
-sudo: required
-dist: trusty
+matrix:
+  include:
+    - language: python
+      sudo: true
+      dist: trusty
+      python: 3.5
+      if: type IN (api, cron)
 
-python:
-  - "3.5"
+      install:
+        - pip3 install python-dateutil requests zerotier
+        - pip3 install git+https://github.com/gigforks/packet-python.git
 
-install:
-  - pip3 install codecov pytest pytest-cov
-  - pip3 install -r requirements.txt
-  - ./utils/jumspcale_install.sh
-  - ./utils/zrobot_install.sh
+      before_script:
+        - bash tests/bootstrap/before_test.sh
+      script:
+        - bash tests/bootstrap/run_test.sh
+      after_script:
+        - python3 tests/utils.py -a teardown -t ${packet_token} -k ${TRAVIS_JOB_NUMBER}
 
-script:
-  - make test
+    - language: python
+      sudo: required
+      dist: trusty
 
-after_success:
-  - codecov
+      python: 3.5
+
+      install:
+        - pip3 install codecov pytest pytest-cov
+        - pip3 install -r requirements.txt
+        - ./utils/jumspcale_install.sh
+        - ./utils/zrobot_install.sh
+
+      script:
+        - make test
+
+      after_success:
+        - codecov
