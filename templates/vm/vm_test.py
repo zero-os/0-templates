@@ -22,10 +22,10 @@ class TestVmTemplate(TestCase):
             'cpu': 1,
             'flist': 'flist',
             'memory': 128,
-             'nics': [],
-             'node': 'node',
-             'vdisks': [],
-             'vnc': -1,
+            'nics': [],
+            'node': 'node',
+            'vdisks': [],
+            'vnc': -1,
             'ports': [],
             'media': [],
             'mount': {},
@@ -121,7 +121,6 @@ class TestVmTemplate(TestCase):
                            message='install action should raise an error if the hypervisor state is not ok'):
             vm.install()
 
-
     def test_uninstall_vm(self):
         """
         Test successfully destroying the vm
@@ -151,7 +150,6 @@ class TestVmTemplate(TestCase):
         vm.shutdown()
         self.node.hypervisor.get.return_value.shutdown.assert_called_with()
 
-
     def test_pause_vm_hypervisor_not_created(self):
         """
         Test pausing the vm without creation
@@ -170,7 +168,6 @@ class TestVmTemplate(TestCase):
         vm.state = MagicMock()
         vm.pause()
         self.node.hypervisor.get.return_value.pause.assert_called_with()
-
 
     def test_resume_vm_hypervisor_not_created(self):
         """
@@ -191,7 +188,6 @@ class TestVmTemplate(TestCase):
         vm.resume()
         self.node.hypervisor.get.return_value.resume.assert_called_with()
 
-
     def test_reboot_vm_hypervisor_not_created(self):
         """
         Test reboot the vm without creation
@@ -211,7 +207,6 @@ class TestVmTemplate(TestCase):
         vm.reboot()
         self.node.hypervisor.get.return_value.reboot.assert_called_with()
 
-
     def test_reset_vm_hypervisor_not_created(self):
         """
         Test reset the vm without creation
@@ -230,7 +225,6 @@ class TestVmTemplate(TestCase):
         vm.state = MagicMock()
         vm.reset()
         self.node.hypervisor.get.return_value.reset.assert_called_with()
-
 
     def test_enable_vnc(self):
         """
