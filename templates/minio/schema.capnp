@@ -15,4 +15,5 @@ struct Schema {
     resticUsername @10: Text="zaibon"; # rustic username
     resticPassword @11: Text="coucou01"; # rustic password
     privateKey @12: Text; # encryption private key
+    blockSize @13: UInt32=1048576; # block size used by 0-stor
 }

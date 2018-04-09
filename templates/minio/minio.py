@@ -5,7 +5,7 @@ from zerorobot.template.base import TemplateBase
 ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 
-MINIO_FLIST = 'https://hub.gig.tech/gig-official-apps/minio.flist'
+MINIO_FLIST = 'https://hub.gig.tech/gig-autobuilder/gigforks-minio-zerostor.flist'
 META_DIR = '/bin/zerostor_meta'
 
 
@@ -44,7 +44,8 @@ class Minio(TemplateBase):
             'namespace_secret': self.data['nsSecret'],
             'zdbs': self.data['zerodbs'],
             'port': self.data['listenPort'],
-            'private_key': self.data['privateKey']
+            'private_key': self.data['privateKey'],
+            'block_size': self.data['blockSize']
         }
         return j.clients.zero_os.sal.get_minio(**kwargs)
 
@@ -89,7 +90,9 @@ class Minio(TemplateBase):
             CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
         container.schedule_action('install').wait(die=True)
 
+        # write minio configuration to the container
         self.minio_sal.create_config()
+
         if not self.data['resticRepoPassword']:
             self.data['resticRepoPassword'] = j.data.idgenerator.generateXCharID(10)
         self.restic_sal.init_repo(password=self.data['resticRepoPassword'])
@@ -115,6 +118,7 @@ class Minio(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Stopping minio %s' % self.name)
         self.minio_sal.stop()
+        self.restic_sal.backup(META_DIR)
         self.state.delete('actions', 'start')
 
     def uninstall(self):
@@ -123,4 +127,5 @@ class Minio(TemplateBase):
         self.stop()
         container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
         container.schedule_action('uninstall').wait(die=True)
+        container.delete()
         self.state.delete('actions', 'install')
