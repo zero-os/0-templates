@@ -54,5 +54,6 @@ class BasicTests(ZOS_BaseTest):
         cont1 = [c for c in conts.values() if c['container']['arguments']['name'] == self.cont1_name][0]
         self.assertTrue(cont1['container']['arguments']['storage'], self.cont_storage)
         self.assertTrue(cont1['container']['arguments']['root'], self.cont_flist)
+        self.assertTrue(cont1['container']['arguments']['hostname'], self.cont_flist)
 
         self.log('%s ENDED' % self._testID)
