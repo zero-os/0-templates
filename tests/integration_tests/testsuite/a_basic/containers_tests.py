@@ -42,7 +42,8 @@ class BasicTests(ZOS_BaseTest):
                                              'flist': self.cont_flist,
                                              'storage': self.cont_storage}}
 
-        self.create_container(containers=self.containers, temp_actions=self.temp_actions)
+        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
+        self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(self.cont1_name, res[self.cont1_name]['install'])
         self.wait_for_service_action_status(self.cont2_name, res[self.cont2_name]['install'])
 
