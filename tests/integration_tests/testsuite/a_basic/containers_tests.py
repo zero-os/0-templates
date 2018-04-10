@@ -37,10 +37,10 @@ class BasicTests(ZOS_BaseTest):
                                              'storage': self.cont_storage}}
 
         self.cont2_name = self.random_string()
-        self.containers = {self.cont2_name: {'node': self.zos_node_name,
-                                             'hostname': self.cont2_name,
-                                             'flist': self.cont_flist,
-                                             'storage': self.cont_storage}}
+        self.containers.update({self.cont2_name: {'node': self.zos_node_name,
+                                                  'hostname': self.cont2_name,
+                                                  'flist': self.cont_flist,
+                                                  'storage': self.cont_storage}})
 
         res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
         self.assertEqual(type(res), type(dict()))
@@ -48,7 +48,11 @@ class BasicTests(ZOS_BaseTest):
         self.wait_for_service_action_status(self.cont2_name, res[self.cont2_name]['install'])
 
         self.log('Check that the container have been created.')
-        self.assertEqual(self.zos_client.containers.list(), 3)
-        ## make sure they exist by name and the params are reflected correctly
+        conts = self.zos_client.container.list()
+        self.assertTrue([c for c in conts.values() if c['container']['arguments']['name'] == self.cont1_name])
+        self.assertTrue([c for c in conts.values() if c['container']['arguments']['name'] == self.cont2_name])
+        cont1 = [c for c in conts.values() if c['container']['arguments']['name'] == self.cont1_name][0]
+        self.assertTrue(cont1['container']['arguments']['storage'], self.cont_storage)
+        self.assertTrue(cont1['container']['arguments']['root'], self.cont_flist)
 
         self.log('%s ENDED' % self._testID)
