@@ -147,28 +147,27 @@ class Node(TemplateBase):
             tasks.append(network.schedule_action('configure', args={'node_name': self.name}))
         self._wait_all(tasks, timeout=120, die=True)
 
-        # FIXME: need to be configurable base on the type of node
-        # disabled for now
-        # mounts = self.node_sal.partition_and_mount_disks()
-        # port = 9900
-        # tasks = []
-        # for mount in mounts:
-        #     zdb_name = 'zdb_%s_%s' % (self.name, mount['disk'])
-        #     zdb_data = {
-        #         'node': self.name,
-        #         'nodeMountPoint': mount['mountpoint'],
-        #         'containerMountPoint': '/zerodb',
-        #         'listenPort': port,
-        #         'admin': j.data.idgenerator.generateXCharID(10),
-        #         'mode': 'direct',
-        #     }
+        if self.data['deployZdb']:
+            mounts = self.node_sal.partition_and_mount_disks()
+            port = 9900
+            tasks = []
+            for mount in mounts:
+                zdb_name = 'zdb_%s_%s' % (self.name, mount['disk'])
+                zdb_data = {
+                    'node': self.name,
+                    'nodeMountPoint': mount['mountpoint'],
+                    'containerMountPoint': '/zerodb',
+                    'listenPort': port,
+                    'admin': j.data.idgenerator.generateXCharID(10),
+                    'mode': 'direct',
+                }
 
-        #     zdb = self.api.services.find_or_create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
-        #     tasks.append(zdb.schedule_action('install'))
-        #     tasks.append(zdb.schedule_action('start'))
-        #     port += 1
+                zdb = self.api.services.find_or_create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
+                tasks.append(zdb.schedule_action('install'))
+                tasks.append(zdb.schedule_action('start'))
+                port += 1
 
-        self._wait_all(tasks, timeout=120, die=True)
+            self._wait_all(tasks, timeout=120, die=True)
         self.data['uptime'] = self.node_sal.uptime()
         self.state.set('actions', 'install', 'ok')
 

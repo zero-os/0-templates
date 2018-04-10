@@ -13,6 +13,7 @@ This template is responsible for managing a zero-os node.
 - `networks`: network configuration
 - `alerta`: refers to an alerta service which will handle healthcheck reporting
 - `uptime`: node uptime in seconds
+- `deployZdb`: a boolean indicating whether 0-db should be installed on each disk or not upon the node install. 
 
 
 ### Actions
