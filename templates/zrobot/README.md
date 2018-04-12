@@ -24,21 +24,29 @@ This template will start a 0-robot on a node inside a container.
 
 - `stop`: stop the 0-robot process
 
-Following yaml file is to install the node service:
 
-```yaml
-services:
-- github.com/zero-os/0-templates/node/0.0.1__525400123456:
-    redisAddr: 172.17.0.1
-    redisPort: 6379
-    hostname: "myzeros"
-    alerta: ['reporter']
+### Usage example via the 0-robot DSL
 
-actions:
-    - actions: ['install']
+```python
+from zerorobot.dsl import ZeroRobotAPI
+api = ZeroRobotAPI.ZeroRobotAPI()
+robot = api.robots['main']
+
+args = {
+    'node': '525400123456',
+    'templates': ["https://github.com/zero-os/0-templates.git"],
+}
+zrobot = robot.services.create('github.com/zero-os/0-templates/zrobot/0.0.1', 'zrobot', data=args)
+zrobot.schedule_action('install')
+
+zrobot.schedule_action('start')
+zrobot.schedule_action('stop')
+zrobot.schedule_action('uninstall')
 ```
 
-To deploy 0-robot on the node:
+### Usage example via the 0-robot CLI
+
+To deploy 0-robot `robot2` on the node `525400123456`:
 
 ```yaml
 services:
@@ -50,3 +58,33 @@ actions:
     - actions: ['install']
 
 ```
+
+To start 0-robot `robot2`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/zrobot/0.0.1'
+      service: 'robot2'
+      actions: ['start']
+```
+
+To stop 0-robot `robot2`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/zrobot/0.0.1'
+      service: 'robot2'
+      actions: ['stop']
+
+```
+
+To uninstall 0-robot `robot2`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/zrobot/0.0.1'
+      service: 'robot2'
+      actions: ['uninstall']
+
+```
+

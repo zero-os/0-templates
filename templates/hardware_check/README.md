@@ -22,7 +22,15 @@ HWCombo:
     - `node_name`: the name of the node service.
 
 
+### Usage example via the 0-robot DSL
+
+To check if node `node1` has supported hardware specs
+
 ```python
+from zerorobot.dsl import ZeroRobotAPI
+api = ZeroRobotAPI.ZeroRobotAPI()
+robot = api.robots['main']
+
 args = {
     'supported':[{
         'hddCount': 2,
@@ -34,6 +42,31 @@ args = {
     'botToken': 'thisisabottoken',
     'chatId': '1823737123',
 }
-hw_check= self.api.services.create('github.com/zero-os/0-templates/hardware_check/0.0.1', 'hw_check', args)
+hw_check= robot.api.services.create('github.com/zero-os/0-templates/hardware_check/0.0.1', 'hw_check', args)
 hw_check.schedule_action('check', args={'node_name':'node1'})
+```
+
+### Usage example via the 0-robot CLI
+
+To check if node `node1` has supported hardware specs
+
+
+```yaml
+services:
+    - github.com/zero-os/0-templates/hardware_check/0.0.1__hc:
+        supported:
+          - hddCount: 2
+            ssdCount: 2
+            ram: 7150,
+            cpu: 'intel'
+            name: 'name'
+        botToken: 'thisisabottoken'
+        chatId': '1823737123'
+
+actions:
+    - template: github.com/zero-os/0-templates/hardware_check/0.0.1
+      service: 'hc'
+      actions: ['check']
+      args:
+        node_name: 'node1'
 ```

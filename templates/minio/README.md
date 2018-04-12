@@ -24,3 +24,83 @@ This template is responsible for managing [minio](https://minio.io/) server inst
 - `start`: starts the container and the minio process. 
 - `stop`: stops minio process.
 - `uninstall`: stop the minio server and remove the container from the node. Executing this action will make you loose all data stored on minio
+
+
+### Usage example via the 0-robot DSL
+
+To create instance `erp` then register `node1`
+
+```python
+from zerorobot.dsl import ZeroRobotAPI
+api = ZeroRobotAPI.ZeroRobotAPI()
+robot = api.robots['main']
+
+args = {
+    'node': '547c5d299411',
+    'zerodbs': [
+    '192.168.122.87:9900',
+    '192.168.122.87:9901',
+    '192.168.122.87:9902',
+    ],
+    'login': 'admin',
+    'password': 'password',
+    'namespace': 'namespace',
+    'privateKey': 'ab345678901234567890123456789012s',
+}
+minio = api.services.create('github.com/zero-os/0-templates/minio/0.0.1', 'minio', args)
+minio.schedule_action('install')
+minio.schedule_action('start')
+minio.schedule_action('stop')
+minio.schedule_action('uninstall')
+
+```
+
+### Usage example via the 0-robot CLI
+
+To install instance `minio` on node `547c5d299411`
+
+```yaml
+services:
+    - github.com/zero-os/0-templates/minio/0.0.1__minio:
+          node: 547c5d299411
+          zerodbs:
+            - 192.168.122.87:9900
+            - 192.168.122.87:9901
+            - 192.168.122.87:9902
+          login: admin
+          password: password
+          namespace: namespace
+          privateKey: ab345678901234567890123456789012
+
+actions:
+    - template: github.com/zero-os/0-templates/minio/0.0.1
+      service: 'minio'
+      actions: ['install']
+```
+
+To start instance `minio`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/minio/0.0.1'
+      service: 'minio'
+      actions: ['start']
+```
+
+To stop instance `minio`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/minio/0.0.1'
+      service: 'minio'
+      actions: ['stop']
+```
+
+To uninstall instance `minio`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/minio/0.0.1'
+      service: 'minio'
+      actions: ['uninstall']
+```
