@@ -4,6 +4,7 @@ from zerorobot.template.base import TemplateBase
 
 
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
+NODE_CLIENT = 'local'
 
 
 class Healthcheck(TemplateBase):
@@ -13,8 +14,6 @@ class Healthcheck(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        if not self.data['node']:
-            raise ValueError('Invalid node value')
 
         self.recurring_action('_monitor', 30)
 
@@ -23,14 +22,10 @@ class Healthcheck(TemplateBase):
         """
         connection to the node
         """
-        return j.clients.zero_os.sal.get_node(self.data['node'])
+        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     def _monitor(self):
         self.logger.info('Monitoring node %s health check' % self.name)
-
-        node = self.api.services.get(name=self.data['node'], template_uid=NODE_TEMPLATE_UID)
-        node.state.check('status', 'running', 'ok')
-
         self._healthcheck()
 
     def _healthcheck(self):

@@ -8,6 +8,7 @@ CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
 BOOTSTRAP_TEMPLATE_UID = 'github.com/zero-os/0-templates/zeroos_bootstrap/0.0.1'
 ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
+NODE_CLIENT = 'local'
 
 
 class Node(TemplateBase):
@@ -17,64 +18,19 @@ class Node(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self.validate()
 
-        self._ensure_client_config()
         self.recurring_action('_monitor', 30)  # every 30 seconds
-
-    def validate(self):
-        for param in ['redisAddr', 'redisPort']:
-            if not self.data[param]:
-                raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
-
-    def _ensure_client_config(self):
-        data = {
-            'host': self.data['redisAddr'],
-            'port': self.data['redisPort'],
-            'password_': self.data['redisPassword'],
-            'ssl': True,
-            'db': 0,
-            'timeout': 120,
-        }
-        # make sure the config exists
-        cl = j.clients.zero_os.get(
-            instance=self.name,
-            data=data,
-            create=True,
-            die=True)
-
-        cl.config.save()
-
-    def update_data(self, data):
-        self.data.update(data)
-        # force recreation of the connection to the node
-        for key in ['redisAddr', 'redisPort', 'redisPassword']:
-            if data.get(key) != self.data[key]:
-                self._ensure_client_config()
-                break
 
     @property
     def node_sal(self):
         """
         connection to the node
         """
-        return j.clients.zero_os.sal.get_node(self.name)
+        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     def _monitor(self):
         self.logger.info('Monitoring node %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-
-        # if node was previously running set timeout to 300 else 30
-        try:
-            self.state.check('status', 'running', 'ok')
-            timeout = 300
-        except StateCheckError:
-            timeout = 30
-
-        if not self.node_sal.is_running(timeout):
-            self.state.delete('status', 'running')
-            return
-
         self.state.set('status', 'running', 'ok')
         self._rename_cache()
 
@@ -137,13 +93,14 @@ class Node(TemplateBase):
 
         self.state.set('status', 'running', 'ok')
 
+        # @todo rethink the network cycle
         # configure networks
-        tasks = []
-        for nw in self.data.get('networks', []):
-            network = self.api.services.get(name=nw)
-            self.logger.info("configure network %s", nw)
-            tasks.append(network.schedule_action('configure', args={'node_name': self.name}))
-        self._wait_all(tasks, timeout=120, die=True)
+        # tasks = []
+        # for nw in self.data.get('networks', []):
+        #     network = self.api.services.get(name=nw)
+        #     self.logger.info("configure network %s", nw)
+        #     tasks.append(network.schedule_action('configure', args={'node_name': self.name}))
+        # self._wait_all(tasks, timeout=120, die=True)
 
         # FIXME: need to be configurable base on the type of node
         # disabled for now
@@ -166,7 +123,7 @@ class Node(TemplateBase):
         #     tasks.append(zdb.schedule_action('start'))
         #     port += 1
 
-        self._wait_all(tasks, timeout=120, die=True)
+        # self._wait_all(tasks, timeout=120, die=True)
         self.data['uptime'] = self.node_sal.uptime()
         self.state.set('actions', 'install', 'ok')
 
@@ -180,18 +137,6 @@ class Node(TemplateBase):
         self.logger.info('Rebooting node %s' % self.name)
         self.node_sal.client.raw('core.reboot', {})
         self.state.set('status', 'rebooting', 'ok')
-
-    def uninstall(self):
-        self.logger.info('Uninstalling node %s' % self.name)
-
-        self._stop_all_containers()
-        self._stop_all_vms()
-
-        # allow to search per template
-
-        for bootstrap in self.api.services.find(template_uid=BOOTSTRAP_TEMPLATE_UID):
-            # FIXME: not ideal cause we're leaking data info to other service
-            bootstrap.schedule_action('delete_node', args={'redis_addr': self.data['redisAddr']}).wait(die=True)
 
     @timeout(30, error_message='info action timeout')
     def info(self):
@@ -215,7 +160,7 @@ class Node(TemplateBase):
 
     def _start_all_containers(self):
         for container in self.api.services.find(template_uid=CONTAINER_TEMPLATE_UID):
-            container.schedule_action('start', args={'node_name': self.name})
+            container.schedule_action('start')
 
     def _start_all_vms(self):
         # TODO
@@ -224,7 +169,7 @@ class Node(TemplateBase):
     def _stop_all_containers(self):
         tasks = []
         for container in self.api.services.find(template_uid=CONTAINER_TEMPLATE_UID):
-            tasks.append(container.schedule_action('stop', args={'node_name': self.name}))
+            tasks.append(container.schedule_action('stop'))
         self._wait_all(tasks)
 
     def _stop_all_vms(self):
