@@ -80,10 +80,10 @@ class BasicTests(ZOS_BaseTest):
                                              'flist': self.cont_flist,
                                              'storage': self.cont_storage,
                                              'env': {'name': env_name, 'value': env_value},
-                                             'ports': '8080:80',
+                                             'ports': [8080:80'],
                                              'privileged': True,
-                                             'nics': {{'type': 'default'},
-                                                      {'type': 'bridge', 'id': bridge_name}}
+                                             'nics': [{'type': 'default'},
+                                                      {'type': 'bridge', 'id': bridge_name}],
                                              'hostNetworking': True}}
 
         res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
@@ -95,7 +95,7 @@ class BasicTests(ZOS_BaseTest):
         self.assertTrue([c for c in conts.values() if c['container']['arguments']['name'] == self.cont1_name])
 
         (cont1_id, cont1) = [c for c in conts.items() if c[1]['container']['arguments']['name'] == self.cont1_name][0]
-        cont1_cl = client.container.client(cont1_id)
+        cont1_cl = self.zos_client.container.client(cont1_id)
         self.assertTrue(cont1_cl.bash('echo $%s' % env_name).get().stdout.strip(), env_value)
         self.assertTrue(cont1['container']['arguments']['host_network'], True)
         self.assertTrue(cont1['container']['arguments']['port'], {'8080': 80})
