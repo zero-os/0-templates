@@ -43,7 +43,6 @@ class Vm(TemplateBase):
 
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
-        # TODO: deal with vdisks
         if self.data.get('uuid'):
             self.node_sal.hypervisor.get(self.data['uuid']).destroy()
 
