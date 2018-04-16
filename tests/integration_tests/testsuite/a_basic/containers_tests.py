@@ -80,7 +80,7 @@ class BasicTests(ZOS_BaseTest):
                                              'flist': self.cont_flist,
                                              'storage': self.cont_storage,
                                              'env': {'name': env_name, 'value': env_value},
-                                             'ports': [8080:80'],
+                                             'ports': ['8080:80'],
                                              'privileged': True,
                                              'nics': [{'type': 'default'},
                                                       {'type': 'bridge', 'id': bridge_name}],
