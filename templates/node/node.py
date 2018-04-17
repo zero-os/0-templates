@@ -144,7 +144,7 @@ class Node(TemplateBase):
     def processes(self):
         return self.node_sal.client.process.list()
 
-    @timeout(30, error_message='processes action version')
+    @timeout(30, error_message='os_version action timeout')
     def os_version(self):
         return self.node_sal.client.ping()[13:].strip()
 
