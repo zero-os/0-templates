@@ -5,7 +5,7 @@ import shutil
 import os
 import pytest
 
-from zerodb import Zerodb, CONTAINER_TEMPLATE_UID, ZERODB_FLIST
+from zerodb import Zerodb, CONTAINER_TEMPLATE_UID, ZERODB_FLIST, NODE_CLIENT
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
@@ -16,16 +16,11 @@ class TestZerodbTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.valid_data = {
-            'container': 'container_zdb',
-            'node': 'node',
-            'dataDir': '/zerodb/data',
-            'indexDir': '/zerodb/index',
-            'listenPort': 9900,
+            'nodePort': 9900,
             'mode': 'user',
             'sync': False,
-            'nodeMountPoint': '',
-            'containerMountPoint': '',
             'admin': '',
+            'disk': '/dev/sda1',
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Zerodb.template_uid = TemplateUID.parse(
@@ -42,25 +37,6 @@ class TestZerodbTemplate(TestCase):
     def tearDown(self):
         patch.stopall()
 
-    def _test_create_zdb_invalid(self, data, message):
-        with pytest.raises(ValueError, message=message):
-            zdb = Zerodb(name="zdb", data=data)
-            zdb.validate()
-
-    def test_create_invalid_data(self):
-        """
-        Test initializing zerodb service with invalid data
-        :return:
-        """
-        self._test_create_zdb_invalid(None, 'template should fail to instantiate if data contains no container')
-        self._test_create_zdb_invalid(
-            {'node': 'node', 'containerMountPoint': 'mountpoint'},
-            'template should fail to instantiate if either containerMountPoint or nodeMountPoint is defined while the other is not.'
-        )
-        self._test_create_zdb_invalid(
-            {'node': 'node', 'nodeMountPoint': 'mountpoint'},
-            'template should fail to instantiate if either containerMountPoint or nodeMountPoint is defined while the other is not.')
-
     def test_create_valid_data(self):
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.validate()
@@ -74,14 +50,14 @@ class TestZerodbTemplate(TestCase):
         zdb = Zerodb('zdb', data=self.valid_data)
 
         assert zdb._node_sal == 'node_sal'
-        get_node.assert_called_once_with(zdb.data['node'])
+        get_node.assert_called_once_with(NODE_CLIENT)
 
     def test_container_sal(self):
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb._node_sal.containers.get = MagicMock(return_value='container')
 
         assert zdb._container_sal == 'container'
-        zdb._node_sal.containers.get.assert_called_once_with(zdb.data['container'])
+        zdb._node_sal.containers.get.assert_called_once_with(zdb._container_name)
 
     def test_zerodb_sal(self):
         """
@@ -100,17 +76,12 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.api.services.find_or_create = MagicMock()
+        zdb._node_sal.freeports = MagicMock(return_value=[9900])
+
         zdb.install()
 
-        container_data = {
-            'flist': ZERODB_FLIST,
-            'mounts':  [{}],
-            'node': self.valid_data['node'],
-            'ports': ['9900:9900'],
-            'nics': [{'type': 'default'}],
-        }
         zdb.api.services.find_or_create.assert_called_once_with(
-            CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
+            CONTAINER_TEMPLATE_UID, zdb._container_name, data=zdb._container_data)
         zdb.state.check('actions', 'install', 'ok')
 
     def test_start(self):
@@ -120,10 +91,11 @@ class TestZerodbTemplate(TestCase):
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'install', 'ok')
         zdb.api.services.get = MagicMock()
+        zdb._node_sal.freeports = MagicMock(return_value=[9900])
         zdb.start()
 
         zdb.api.services.get.assert_called_once_with(
-            template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
+            template_uid=CONTAINER_TEMPLATE_UID, name=zdb._container_name)
         zdb._zerodb_sal.start.assert_called_once_with()
         zdb.state.check('actions', 'start', 'ok')
 

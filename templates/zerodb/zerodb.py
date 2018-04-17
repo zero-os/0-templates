@@ -104,7 +104,7 @@ class Zerodb(TemplateBase):
         self._node_sal.client.nft.drop_port(self.data['nodePort'])
 
         try:
-            container = self.api.service.get(self._container_name)
+            container = self.api.services.get(self._container_name)
             container.schedule_action('stop').wait(die=True)
             container.delete()
         except ServiceNotFoundError:
