@@ -2,11 +2,6 @@
 
 struct Schema {
     hostname @0: Text;
-    redisAddr @1 :Text; # redis addr for client
-    redisPort @2 :UInt32 = 6379; # redis port for client
-    redisPassword @3 :Text; # redis password for client
-    version @4 :Text;
-    networks @5 :List(Text); # network configuration
-    alerta @6 :List(Text); # reporter service for reporting healthchecks to alerta
-    uptime @7: Float64; # node up time in seconds
+    version @1 :Text;
+    uptime @2: Float64; # node up time in seconds
 }

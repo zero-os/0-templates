@@ -28,7 +28,8 @@ class TestZerodbTemplate(TestCase):
             'admin': '',
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Zerodb.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Zerodb.template_name, Zerodb.version))
+        Zerodb.template_uid = TemplateUID.parse(
+            'github.com/zero-os/0-templates/%s/%s' % (Zerodb.template_name, Zerodb.version))
 
     @classmethod
     def tearDownClass(cls):
@@ -76,7 +77,6 @@ class TestZerodbTemplate(TestCase):
         get_node.assert_called_once_with(zdb.data['node'])
 
     def test_container_sal(self):
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb._node_sal.containers.get = MagicMock(return_value='container')
 
@@ -109,7 +109,8 @@ class TestZerodbTemplate(TestCase):
             'ports': ['9900:9900'],
             'nics': [{'type': 'default'}],
         }
-        zdb.api.services.find_or_create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
+        zdb.api.services.find_or_create.assert_called_once_with(
+            CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         zdb.state.check('actions', 'install', 'ok')
 
     def test_start(self):
