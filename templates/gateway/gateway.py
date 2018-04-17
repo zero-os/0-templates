@@ -6,6 +6,7 @@ import copy
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
 FLIST = 'https://hub.gig.tech/gig-official-apps/zero-os-gw-master.flist'
+NODE_CLIENT = 'local'
 
 
 class Gateway(TemplateBase):
@@ -20,7 +21,7 @@ class Gateway(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.get_node(self.data['node'])
+        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     def _get_gateway(self):
         container = self.node_sal.containers.get(self.name)
@@ -38,7 +39,6 @@ class Gateway(TemplateBase):
                         'name': 'z-{}'.format(nic['name']), 'token': zerotierbridge.get('token', '')
                     })
         containerdata = {
-            'node': self.data['node'],
             'flist': FLIST,
             'nics': contnics,
             'hostname': self.data['hostname'],

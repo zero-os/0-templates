@@ -27,7 +27,6 @@ class TestContainerTemplate(TestCase):
             'initProcesses': [],
             'mounts': [],
             'nics': [],
-            'node': 'node',
             'ports': ['80:80'],
             'privileged': False,
             'storage': '',
@@ -53,12 +52,8 @@ class TestContainerTemplate(TestCase):
         """
         Test Container creation with invalid data
         """
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the node'):
-            container = Container(name='container', data={'flist': 'flist'})
-            container.validate()
-
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the flist'):
-            container = Container(name='container', data={'node': 'node'})
+            container = Container(name='container')
             container.validate()
 
     def test_create_valid_data(self):
@@ -105,27 +100,6 @@ class TestContainerTemplate(TestCase):
         assert container.install.called
         assert container.node_sal.containers.get.call_count == 2
 
-    def test_install_container_no_node_connection(self):
-        """
-        Test installing a container with no connection to the node
-        """
-        with pytest.raises(StateCheckError,
-                           message='install action should raise an error if there is no connection to the node'):
-            container = Container('container', data=self.valid_data)
-            container.api.services.get = MagicMock()
-            patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=None)).start()
-            container.install()
-
-    def test_install_container_node_not_installed(self):
-        """
-        Test installing the container without the node being running
-        """
-        with pytest.raises(StateCheckError,
-                           message='install action should raise an error if node is not running'):
-            container = Container('container', data=self.valid_data)
-            container.node_sal.is_running = MagicMock(return_value=False)
-            container.install()
-
     def test_install_container_success(self):
         """
         Test successfully installing a container
@@ -133,26 +107,13 @@ class TestContainerTemplate(TestCase):
         container = Container('container', data=self.valid_data)
         container.api.services.get = MagicMock()
         container.node_sal.containers.create = MagicMock()
-        container.node_sal.is_running = MagicMock()
 
         container.install()
 
         container.state.check('actions', 'start', 'ok')
-        container.state.check('actions', 'start', 'ok')
         assert container.node_sal.containers.create.called
         assert container.node_sal.containers.create.call_args[1]['ports'] == {80: 80}, \
             "ports forward list should have been converted to dict of int"
-        assert container.node_sal.is_running.called
-
-    def test_start_container_wrong_node(self):
-        """
-        Test starting a container that belongs to another node
-        """
-        container = Container('container', data=self.valid_data)
-        container.state.check = MagicMock()
-        container.start(node_name='node2')
-
-        assert container.state.check.called is False
 
     def test_start_container_before_install(self):
         """
@@ -172,16 +133,6 @@ class TestContainerTemplate(TestCase):
 
         assert container.state.check('actions', 'start', 'ok')
         assert container.container_sal.start.called
-
-    def test_stop_container_wrong_node(self):
-        """
-        Test stopping a container that belongs to another node
-        """
-        container = Container('container', data=self.valid_data)
-        container.state.check = MagicMock()
-        container.stop(node_name='node2')
-
-        assert container.state.check.called is False
 
     def test_stop_container_before_install(self):
         """

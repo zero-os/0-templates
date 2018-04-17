@@ -11,6 +11,7 @@ from zeroos_bootstrap import ZeroosBootstrap
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
+
 def mockdecorator(func):
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
@@ -25,9 +26,17 @@ class TestBootstrapTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'zerotierClient': 'zt', 'wipeDisks': False, 'zerotierNetID': '', 'redisPassword': '', 'networks': ['storage']}
-        cls.member = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []}, 'online': False, 'name': 'name'}
-        cls.member2 = {'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}}
+        cls.valid_data = {
+            'zerotierClient': 'zt', 'wipeDisks': False,
+            'zerotierNetID': '', 'redisPassword': '', 'networks': ['storage']
+        }
+        cls.member = {
+            'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': []},
+            'online': False, 'name': 'name'
+        }
+        cls.member2 = {
+            'nodeId': 'id', 'config': {'authorized': False, 'ipAssignments': ['127.0.0.1']}
+        }
 
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         ZeroosBootstrap.template_uid = TemplateUID.parse(
@@ -54,7 +63,8 @@ class TestBootstrapTemplate(TestCase):
             bootstrap.validate()
 
         # test that the network service doesn't exist
-        with pytest.raises(ServiceNotFoundError, message='Template should raise error if network service doesn\'t exist'):
+        with pytest.raises(
+                ServiceNotFoundError, message='Template should raise error if network service doesn\'t exist'):
             bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
             bootstrap.validate()
 
@@ -89,7 +99,8 @@ class TestBootstrapTemplate(TestCase):
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         bootstrap._authorize_member(self.member)
 
-        bootstrap._zt.client.network.updateMember.called_once_with(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
+        bootstrap._zt.client.network.updateMember.called_once_with(
+            self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
 
     def test_unauthorize_member(self):
         """
@@ -98,7 +109,8 @@ class TestBootstrapTemplate(TestCase):
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         bootstrap._unauthorize_member(self.member)
 
-        bootstrap._zt.client.network.updateMember.called_once_with(self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
+        bootstrap._zt.client.network.updateMember.called_once_with(
+            self.member, self.member['nodeId'], bootstrap.data['zerotierNetID'])
 
     def test_wait_member_ip(self):
         """
@@ -132,7 +144,7 @@ class TestBootstrapTemplate(TestCase):
             'ssl': True,
             'timeout': 120,
         }
-        node_sal = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
+        patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
         node = bootstrap._get_node_sal(ip)
 
         zero_os.called_once_with(instance='bootstrap', data=data, create=True, die=True)

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import tempfile
 import shutil
 import os
@@ -31,7 +31,8 @@ class TestMinioTemplate(TestCase):
             'resticUsername': 'username'
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Minio.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Minio.template_name, Minio.version))
+        Minio.template_uid = TemplateUID.parse(
+            'github.com/zero-os/0-templates/%s/%s' % (Minio.template_name, Minio.version))
 
     @classmethod
     def tearDownClass(cls):
@@ -82,7 +83,7 @@ class TestMinioTemplate(TestCase):
         get_node.assert_called_once_with(minio.data['node'])
 
     def test_container_sal(self):
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
         minio = Minio('minio', data=self.valid_data)
         minio.node_sal.containers.get = MagicMock(return_value='container')
 
@@ -119,7 +120,8 @@ class TestMinioTemplate(TestCase):
             'ports': ['9000:9000'],
             'nics': [{'type': 'default'}],
         }
-        minio.api.services.find_or_create.assert_called_once_with(CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
+        minio.api.services.find_or_create.assert_called_once_with(
+            CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         minio.state.check('actions', 'install', 'ok')
 
     def test_start(self):
@@ -132,7 +134,8 @@ class TestMinioTemplate(TestCase):
         minio._get_zdbs = MagicMock()
         minio.start()
 
-        minio.api.services.get.assert_called_once_with(template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
+        minio.api.services.get.assert_called_once_with(
+            template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
         minio.minio_sal.start.assert_called_once_with()
         minio.state.check('actions', 'start', 'ok')
 
