@@ -72,16 +72,16 @@ class TestZerodbTemplate(TestCase):
         get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
         zdb = Zerodb('zdb', data=self.valid_data)
 
-        assert zdb.node_sal == 'node_sal'
+        assert zdb._node_sal == 'node_sal'
         get_node.assert_called_once_with(zdb.data['node'])
 
     def test_container_sal(self):
         get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.node_sal.containers.get = MagicMock(return_value='container')
+        zdb._node_sal.containers.get = MagicMock(return_value='container')
 
-        assert zdb.container_sal == 'container'
-        zdb.node_sal.containers.get.assert_called_once_with(zdb.data['container'])
+        assert zdb._container_sal == 'container'
+        zdb._node_sal.containers.get.assert_called_once_with(zdb.data['container'])
 
     def test_zerodb_sal(self):
         """
@@ -91,7 +91,7 @@ class TestZerodbTemplate(TestCase):
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.api.services.get = MagicMock()
 
-        assert zdb.zerodb_sal == 'zdb_sal'
+        assert zdb._zerodb_sal == 'zdb_sal'
         assert zdb_sal.called
 
     def test_install(self):
@@ -123,7 +123,7 @@ class TestZerodbTemplate(TestCase):
 
         zdb.api.services.get.assert_called_once_with(
             template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
-        zdb.zerodb_sal.start.assert_called_once_with()
+        zdb._zerodb_sal.start.assert_called_once_with()
         zdb.state.check('actions', 'start', 'ok')
 
     def test_start_before_install(self):
@@ -144,7 +144,7 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.stop()
 
-        zdb.zerodb_sal.stop.assert_called_once_with()
+        zdb._zerodb_sal.stop.assert_called_once_with()
 
     def test_stop_before_install(self):
         """
@@ -173,7 +173,7 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.namespace_list()
 
-        zdb.zerodb_sal.list_namespaces.assert_called_once_with()
+        zdb._zerodb_sal.list_namespaces.assert_called_once_with()
 
     def test_namespace_info_before_start(self):
         """
@@ -193,7 +193,7 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.namespace_info('namespace')
 
-        zdb.zerodb_sal.get_namespace_info.assert_called_once_with('namespace')
+        zdb._zerodb_sal.get_namespace_info.assert_called_once_with('namespace')
 
     def test_namespace_create_before_start(self):
         """
@@ -213,8 +213,8 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.namespace_create('namespace', 12, 'secret')
 
-        zdb.zerodb_sal.create_namespace.assert_called_once_with('namespace')
-        zdb.zerodb_sal.set_namespace_property.assert_has_calls(
+        zdb._zerodb_sal.create_namespace.assert_called_once_with('namespace')
+        zdb._zerodb_sal.set_namespace_property.assert_has_calls(
             [call('namespace', 'maxsize', 12), call('namespace', 'password', 'secret')])
 
     def test_namespace_set_before_start(self):
@@ -235,4 +235,4 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.get = MagicMock()
         zdb.namespace_set('namespace', 'maxsize', 12)
 
-        zdb.zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
+        zdb._zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
