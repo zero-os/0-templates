@@ -6,12 +6,7 @@ This template is responsible for managing a zero-os node.
 ### Schema:
 
 - `hostname`: the name of the host. It will be automatically filled when the node is created by the `zero_os_bootstrap` service. **optional**
-- `redisAddr`: the redis address the client uses to connect to the node.
-- `redisPort`: the redis port the client uses to connect to the node. Defaults to 6379.
-- `redisPassword`: the redis password the client uses to connect to the node.
 - `version`: the version of the zero-os. It set by the template.
-- `networks`: network configuration
-- `alerta`: refers to an alerta service which will handle healthcheck reporting
 - `uptime`: node uptime in seconds
 
 
@@ -24,8 +19,6 @@ It waits for 60 seconds for the node to reboot then it starts the containers and
 
 ```yaml
 github.com/zero-os/0-templates/node/0.0.1__525400123456:
-  redisAddr: 172.17.0.1
-  redisPort: 6379
   hostname: "myzeros"
 
 actions:

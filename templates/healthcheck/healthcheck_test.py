@@ -9,14 +9,14 @@ from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
-from healthcheck import Healthcheck, _update_healthcheck_state, _update
+from healthcheck import Healthcheck, _update_healthcheck_state, _update, NODE_CLIENT
 
 
 class TestHealthcheckTemplate(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.valid_data = {'node': 'node'}
+        cls.valid_data = {'node': 'node', 'alerta': ['alerta']}
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Healthcheck.template_uid = TemplateUID.parse(
             'github.com/zero-os/0-templates/%s/%s' % (Healthcheck.template_name, Healthcheck.version))
@@ -31,14 +31,6 @@ class TestHealthcheckTemplate(TestCase):
 
     def tearDown(self):
         patch.stopall()
-
-    def test_create_invalid_data(self):
-        """
-        Test Healthcheck creation with invalid data
-        """
-        with pytest.raises(ValueError,
-                           message='template should fail to instantiate if data dict is missing the healthcheck'):
-            Healthcheck(name='healthcheck')
 
     def test_create_with_valid_data(self):
         """
@@ -55,7 +47,7 @@ class TestHealthcheckTemplate(TestCase):
         get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=node_sal_return)).start()
         healthcheck = Healthcheck(name='healthcheck', data=self.valid_data)
         node_sal = healthcheck.node_sal
-        get_node.assert_called_with(self.valid_data['node'])
+        get_node.assert_called_with(NODE_CLIENT)
         assert node_sal == node_sal_return
 
     def test_healthcheck(self):
@@ -111,18 +103,6 @@ class TestHealthcheckTemplate(TestCase):
         service = MagicMock()
         _update(service, healthcheck)
         service.state.set.assert_has_calls([call('category', 'id-1', 'status'), call('category', 'id-2', 'status')])
-
-    def test_monitor_node_is_not_running(self):
-        """
-        Test _monitor action called when node is not running
-        """
-        with pytest.raises(StateCheckError,
-                           message='template should raise a state error if node is not running'):
-            healthcheck = Healthcheck(name='healthcheck', data=self.valid_data)
-            node = MagicMock()
-            node.state.check = MagicMock(side_effect=StateCheckError)
-            healthcheck.api.services.get = MagicMock(return_value=node)
-            healthcheck._monitor()
 
     def test_monitor_healthcheck(self):
         """

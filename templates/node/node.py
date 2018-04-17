@@ -31,7 +31,6 @@ class Node(TemplateBase):
     def _monitor(self):
         self.logger.info('Monitoring node %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.state.set('status', 'running', 'ok')
         self._rename_cache()
 
         # make sure cache is always mounted
@@ -91,8 +90,6 @@ class Node(TemplateBase):
         self.node_sal.client.system('hostname %s' % self.data['hostname']).get()
         self.node_sal.client.bash('echo %s > /etc/hostname' % self.data['hostname']).get()
 
-        self.state.set('status', 'running', 'ok')
-
         # @todo rethink the network cycle
         # configure networks
         # tasks = []
@@ -128,34 +125,27 @@ class Node(TemplateBase):
         self.state.set('actions', 'install', 'ok')
 
     def reboot(self):
-        self.state.check('status', 'running', 'ok')
-        self.state.delete('status', 'running')
-
         self._stop_all_containers()
         self._stop_all_vms()
 
         self.logger.info('Rebooting node %s' % self.name)
-        self.node_sal.client.raw('core.reboot', {})
         self.state.set('status', 'rebooting', 'ok')
+        self.node_sal.client.raw('core.reboot', {})
 
     @timeout(30, error_message='info action timeout')
     def info(self):
-        self.state.check('status', 'running', 'ok')
         return self.node_sal.client.info.os()
 
     @timeout(30, error_message='stats action timeout')
     def stats(self):
-        self.state.check('status', 'running', 'ok')
         return self.node_sal.client.aggregator.query()
 
     @timeout(30, error_message='processes action timeout')
     def processes(self):
-        self.state.check('status', 'running', 'ok')
         return self.node_sal.client.process.list()
 
     @timeout(30, error_message='processes action version')
     def os_version(self):
-        self.state.check('status', 'running', 'ok')
         return self.node_sal.client.ping()[13:].strip()
 
     def _start_all_containers(self):

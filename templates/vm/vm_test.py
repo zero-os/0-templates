@@ -7,7 +7,7 @@ import os
 import pytest
 
 from js9 import j
-from vm import Vm
+from vm import Vm, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
 from zerorobot import config
@@ -23,8 +23,6 @@ class TestVmTemplate(TestCase):
             'flist': 'flist',
             'memory': 128,
             'nics': [],
-            'node': 'node',
-            'vdisks': [],
             'vnc': -1,
             'ports': [],
             'media': [],
@@ -77,29 +75,7 @@ class TestVmTemplate(TestCase):
         node_sal = vm.node_sal
 
         assert node_sal == node_sal_return
-        j.clients.zero_os.sal.get_node.assert_called_with(self.valid_data['node'])
-
-    def test_install_vm_node_not_found(self):
-        """
-        Test installing a vm with no service found for the node
-        """
-        with pytest.raises(scol.ServiceNotFoundError,
-                           message='install action should raise an error if node service is not found'):
-            vm = Vm('vm', data=self.valid_data)
-            vm.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
-            vm.install()
-
-    def test_install_vm_node_not_installed(self):
-        """
-        Test installing the vm without the node being installed
-        """
-        with pytest.raises(StateCheckError,
-                           message='install action should raise an error if the node is not installed'):
-            vm = Vm('vm', data=self.valid_data)
-            node = MagicMock()
-            vm.api.services.get = MagicMock(return_value=node)
-            node.state.check = MagicMock(side_effect=StateCheckError)
-            vm.install()
+        j.clients.zero_os.sal.get_node.assert_called_with(NODE_CLIENT)
 
     def test_install_vm(self):
         """
@@ -109,17 +85,6 @@ class TestVmTemplate(TestCase):
         vm.api.services.get = MagicMock()
         vm.install()
         assert 'uuid' in vm.data
-
-    def test_install_vm_fail(self):
-        """
-        Test vm install fails and hypervisor guid not in services list
-        """
-        vm = Vm('vm', data=self.valid_data)
-        vm.api.services = MagicMock()
-        vm.api.services.get.return_value.state.check.side_effect = RuntimeError('Boom!')
-        with pytest.raises(RuntimeError,
-                           message='install action should raise an error if the hypervisor state is not ok'):
-            vm.install()
 
     def test_uninstall_vm(self):
         """
