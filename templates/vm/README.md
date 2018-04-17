@@ -41,3 +41,35 @@ MediaType enum:
 - `reset`: reset the vm.
 - `enable_vnc`: if a vnc port is specified, it opens the port.
 - `disable_vnc`: if a vnc port is specified, it drops the port.
+
+### Examples:
+#### DSL (api interface):
+```python
+data = {
+    'memory': 256,
+    'cpu': 1,
+    'nics': [{'type':'default'}],
+    'flist': 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
+    'ports':["22:22"],
+}
+vm = robot.services.create('github.com/zero-os/0-templates/vm/0.0.1','vm1', data)
+vm.schedule_action('install')
+vm.schedule_action('start')
+```
+
+#### Blueprint (cli interface):
+```yaml
+services:
+    - github.com/zero-os/0-templates/vm/0.0.1__vm1:
+        flist: 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
+        memory: 256
+        cpu: 1
+        nics: 
+            - type: 'default'
+        ports:
+            - '22:22'
+
+actions:
+    - actions: ['install','start']
+      service: vm1
+```
