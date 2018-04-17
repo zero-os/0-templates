@@ -97,13 +97,25 @@ class TestNodeTemplate(TestCase):
 
     def test_install(self):
         """
-        Test node install
+        Test node install with deployZdb false
         """
         node = Node(name='node', data=self.valid_data)
         node.node_sal.client.info.version = MagicMock(return_value={'branch': 'master', 'revision': 'revision'})
         node.install()
 
         node.state.check('actions', 'install', 'ok')
+        assert node.node_sal.partition_and_mount_disks.call_count == 0
+
+    def test_install_with_zdb(self):
+        """
+        Test node install with deployZdb true
+        """
+        node = Node(name='node', data={'redisAddr': 'localhost', 'deployZdb': True})
+        node.node_sal.client.info.version = MagicMock(return_value={'branch': 'master', 'revision': 'revision'})
+        node.install()
+
+        node.state.check('actions', 'install', 'ok')
+        node.node_sal.partition_and_mount_disks.called_once_with()
 
     def test_node_info_node_running(self):
         """
