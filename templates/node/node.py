@@ -130,7 +130,7 @@ class Node(TemplateBase):
 
         self.logger.info('Rebooting node %s' % self.name)
         self.state.set('status', 'rebooting', 'ok')
-        self.node_sal.client.raw('core.reboot', {})
+        self.node_sal.reboot()
 
     @timeout(30, error_message='info action timeout')
     def info(self):
