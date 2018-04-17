@@ -126,7 +126,7 @@ class TestNodeTemplate(TestCase):
         node.node_sal.client.raw = MagicMock()
         node.reboot()
 
-        node.node_sal.client.raw.assert_called_with('core.reboot', {})
+        node.node_sal.reboot.assert_called_with()
 
     def test_monitor_node_reboot(self):
         """
