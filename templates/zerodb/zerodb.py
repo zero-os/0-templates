@@ -6,6 +6,7 @@ from zerorobot.service_collection import ServiceNotFoundError
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
 ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
+NODE_CLIENT = 'local'
 
 
 class Zerodb(TemplateBase):
@@ -19,7 +20,7 @@ class Zerodb(TemplateBase):
     @property
     def _node_sal(self):
         # hardcoded local instance, this service is only intended to be install by the node robot
-        return j.clients.zero_os.sal.get_node('local')
+        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     @property
     def _container_sal(self):
@@ -45,7 +46,7 @@ class Zerodb(TemplateBase):
         if len(ports) <= 0:
             raise RuntimeError("can't install 0-db, no free port available on the node")
 
-        self.data['port'] = ports[0]
+        self.data['nodePort'] = ports[0]
         mounts = {
             'source': self.data['disk'],
             'target': '/data',
@@ -54,8 +55,7 @@ class Zerodb(TemplateBase):
         return {
             'flist': ZERODB_FLIST,
             'mounts': [mounts],
-            'node': 'local',
-            'ports': ['%s:%s' % (self.data['port'], 9900)],
+            'ports': ['%s:%s' % (self.data['nodePort'], 9900)],
             'nics': [{'type': 'default'}],
         }
 
@@ -89,7 +89,7 @@ class Zerodb(TemplateBase):
         container.schedule_action('start').wait(die=True)
 
         self._zerodb_sal.start()
-        self._node_sal.client.nft.open_port(self.data['port'])
+        self._node_sal.client.nft.open_port(self.data['nodePort'])
         self.state.set('actions', 'start', 'ok')
 
     def stop(self):
@@ -101,7 +101,7 @@ class Zerodb(TemplateBase):
 
         self._zerodb_sal.stop()
 
-        self._node_sal.client.nft.drop_port(self.data['port'])
+        self._node_sal.client.nft.drop_port(self.data['nodePort'])
 
         try:
             container = self.api.service.get(self._container_name)

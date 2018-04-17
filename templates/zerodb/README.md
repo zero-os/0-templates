@@ -8,7 +8,7 @@ This template is responsible for managing 0-db.
 - `mode`: a value from enum Mode representing the 0-db mode.
 - `sync`: boolean indicating whether all write should be sync'd or not.
 - `disk`: path of the disk to use
-
+- `nodePort`: the node port used in port forwarding
 
 Mode enum:
 - `user`: the default user key-value mode.
