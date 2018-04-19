@@ -67,7 +67,7 @@ class Zerodb(TemplateBase):
         self.logger.info('Installing zerodb %s' % self.name)
 
         # generate admin password
-        if not self.data.get('admin'):
+        if not self.data['admin']:
             self.data['admin'] = j.data.idgenerator.generateXCharID(25)
 
         container = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self._container_name, data=self._container_data)

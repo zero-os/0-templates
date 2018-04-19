@@ -5,6 +5,7 @@ struct Schema {
     sync @1: Bool=false; # boolean indicating whether all write should be sync'd or not.
     disk @2: Text; # path of the disk to use
     nodePort @3: Int32; # the node port used in the portfowarding
+    admin @4: Text; # admin password
 
     enum Mode {
         user @0;
