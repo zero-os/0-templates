@@ -70,9 +70,9 @@ class TestZerodbTemplate(TestCase):
         assert zdb._zerodb_sal == 'zdb_sal'
         assert zdb_sal.called
 
-    def test_install(self):
+    def test_install_empty_password(self):
         """
-        Test install action
+        Test install action sets admin password if empty
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.api.services.find_or_create = MagicMock()
@@ -83,6 +83,24 @@ class TestZerodbTemplate(TestCase):
         zdb.api.services.find_or_create.assert_called_once_with(
             CONTAINER_TEMPLATE_UID, zdb._container_name, data=zdb._container_data)
         zdb.state.check('actions', 'install', 'ok')
+        assert zdb.data['admin'] != ''
+
+    def test_install_with_password(self):
+        """
+        Test install action with admin password
+        """
+        valid_data = self.valid_data.copy()
+        valid_data['admin'] = 'password'
+        zdb = Zerodb('zdb', data=valid_data)
+        zdb.api.services.find_or_create = MagicMock()
+        zdb._node_sal.freeports = MagicMock(return_value=[9900])
+
+        zdb.install()
+
+        zdb.api.services.find_or_create.assert_called_once_with(
+            CONTAINER_TEMPLATE_UID, zdb._container_name, data=zdb._container_data)
+        zdb.state.check('actions', 'install', 'ok')
+        assert zdb.data['admin'] == 'password'
 
     def test_start(self):
         """

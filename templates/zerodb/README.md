@@ -9,6 +9,7 @@ This template is responsible for managing 0-db.
 - `sync`: boolean indicating whether all write should be sync'd or not.
 - `disk`: path of the disk to use
 - `nodePort`: the node port used in port forwarding
+- `admin`: admin password. Set by the template if not supplied.
 
 Mode enum:
 - `user`: the default user key-value mode.
