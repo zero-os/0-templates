@@ -57,7 +57,7 @@ zdb.schedule_action('stop')
 
 ### Usage example via the 0-robot CLI
 
-To install zerodb `zerodb1` on node `525400123456`:
+To install zerodb `zerodb1`:
 
 ```yaml
 services:

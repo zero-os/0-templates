@@ -13,6 +13,7 @@ class Vm(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+
         self.recurring_action('_monitor', 30)  # every 30 seconds
 
     def validate(self):
@@ -31,6 +32,9 @@ class Vm(TemplateBase):
         return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     def _monitor(self):
+        self.logger.info('Monitor vm %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
+
         if self._hypervisor_sal.is_running():
             self.state.set('status', 'running', 'ok')
             try:
@@ -66,22 +70,22 @@ class Vm(TemplateBase):
 
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
-        if self.data.get('uuid'):
-            self._hypervisor_sal.destroy()
+        self.state.check('actions', 'install', 'ok')
+        self._hypervisor_sal.destroy()
         self.state.delete('actions', 'install')
 
     def shutdown(self):
         self.logger.info('Shuting down vm %s' % self.name)
-        self.state.check('state', 'running', 'ok')
+        self.state.check('status', 'running', 'ok')
         self._hypervisor_sal.shutdown()
-        self.state.delete('state', 'running')
-        self.state.set('state', 'shutdown', 'ok')
+        self.state.delete('status', 'running')
+        self.state.set('status', 'shutdown', 'ok')
 
     def pause(self):
         self.logger.info('Pausing vm %s' % self.name)
-        self.state.check('state', 'running', 'ok')
+        self.state.check('status', 'running', 'ok')
         self._hypervisor_sal.pause()
-        self.state.delete('state', 'running')
+        self.state.delete('status', 'running')
         self.state.set('actions', 'pause', 'ok')
 
     def resume(self):
@@ -95,7 +99,7 @@ class Vm(TemplateBase):
         self.logger.info('Rebooting vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
         self._hypervisor_sal.reboot()
-        self.state.set('state', 'rebooting', 'ok')
+        self.state.set('status', 'rebooting', 'ok')
 
     def reset(self):
         self.logger.info('Resetting vm %s' % self.name)
@@ -110,6 +114,7 @@ class Vm(TemplateBase):
 
     def disable_vnc(self):
         self.logger.info('Disable vnc for vm %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
         self.state.check('vnc', self._hypervisor_sal.info['vnc'], 'ok')
         self._hypervisor_sal.disable_vnc()
         self.state.delete('vnc', self._hypervisor_sal.info['vnc'])
