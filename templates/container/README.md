@@ -74,7 +74,6 @@ robot = api.robots['main']
 container_data = {
     'flist': 'https://hub.gig.tech/maxux/zero-db.flist',
     'mounts': [{'source': '/mnt/zdb/one', 'target': '/zdb'}],
-    'node': '525400123456',
     'nics': [{'type': 'default'}],
 }
 container = robot.services.create('github.com/zero-os/0-templates/container/0.0.1', 'zerodbcontainer', data=container_data)
@@ -92,7 +91,6 @@ To install container `zerodbcontainer` on node `525400123456`:
 services:
     - github.com/zero-os/0-templates/container/0.0.1__zerodbcontainer:
           flist: 'https://hub.gig.tech/maxux/zero-db.flist'
-          node: '525400123456'
           storage: 'ardb://hub.gig.tech:16379'
           nics:
             - type: 'default'

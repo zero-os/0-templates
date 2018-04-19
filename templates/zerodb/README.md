@@ -39,8 +39,6 @@ args = {
     'sync': True,
     'mode': 'user',
     'admin': 'password',
-    'nodeMountPoint': '/mnt/zdb/zdb1',
-    'containerMountPoint': '/zdb',
 }
 zdb = robot.services.create('github.com/zero-os/0-templates/zerodb/0.0.1', 'zerodb1', data=args)
 zdb.schedule_action('install')
@@ -66,8 +64,6 @@ services:
           sync: True
           mode: 'user'
           admin: 'password'
-          nodeMountPoint: '/mnt/zdb/zdb1'
-          containerMountPoint: '/zdb'
           
 actions:
     - template: 'github.com/zero-os/0-templates/zerodb/0.0.1'

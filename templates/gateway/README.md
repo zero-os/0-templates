@@ -6,7 +6,6 @@ It configures caddy, dnsmasq, nftables and cloud-init to work together to provid
 
 ### Schema:
 
-- `node`: name of the parent node.
 - `hostname`: container hostname.
 - `domain`: Domain for the private networks
 - `nics`: a list of type Nics. It specifies the configuration of the attached nics to the container.
