@@ -48,7 +48,7 @@ class TestHardwareCheckTemplate(TestCase):
             'chatId': 'supported',
         }
 
-        for key, missing_key in data.items():
+        for key, missing_key in keys.items():
             data[key] = key
             self._test_create_hw_invalid(data, missing_key)
 
@@ -187,7 +187,8 @@ class TestHardwareCheckTemplate(TestCase):
         hw._get_bot_client = MagicMock(return_value=client)
         hw.check('node')
 
-        client.send_message.assert_called_once_with('chatId', 'Node with id node has completed the hardwarecheck successfully.')
+        client.send_message.assert_called_once_with(
+            'chatId', 'Node with id node has completed the hardwarecheck successfully.')
 
     def test_check_fail(self):
         """
@@ -221,5 +222,6 @@ class TestHardwareCheckTemplate(TestCase):
 
         # check with no supported ssd
         hw._disk = MagicMock(return_value=(supported['hddCount'], 0))
-        with pytest.raises(j.exceptions.RuntimeError, message='Template should raise error if ssdCount is not supported'):
+        with pytest.raises(
+                j.exceptions.RuntimeError, message='Template should raise error if ssdCount is not supported'):
             hw.check('node')

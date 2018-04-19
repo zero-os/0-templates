@@ -5,17 +5,10 @@ This template is responsible for managing 0-db.
 
 ### Schema:
 
-- `listenPort`: listen port (default 9900)
-- `dataDir`: data file directory (default /zerodb/)
-- `indexDir`: index file directory (default /zerodb/)
 - `mode`: a value from enum Mode representing the 0-db mode.
 - `sync`: boolean indicating whether all write should be sync'd or not.
-- `container`: reference to the container running the zerodb. This is set by the template.
-- `node`: reference to the node running the zerdb container
-- `nodeMountPoint`: the node mountpoint that will be mounted at containerMountPoint.
-- `containerMountPoint`: the container destination where hostMountPoint will be mounted.
-- `admin`: admin password
-
+- `disk`: path of the disk to use
+- `nodePort`: the node port used in port forwarding
 
 Mode enum:
 - `user`: the default user key-value mode.
@@ -31,6 +24,7 @@ Mode enum:
 - `namespace_info`: returns basic information about a namespace
 - `namespace_list`: returns an array of all available namespaces.
 - `namespace_set`: change a namespace setting/property. Only admin can do this.
+- `free_space`: return the amount of storage space still available for reservation
 
 
 

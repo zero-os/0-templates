@@ -5,7 +5,6 @@ This template is responsible for creating a container on zero-os nodes
 
 ### Schema:
 
-- `node`: name of the parent node.
 - `hostname`: container hostname.
 - `flist`: url of the root filesystem flist.
 - `initProcesses`: a list of type Processes. These are the processes to be started once the container starts.
