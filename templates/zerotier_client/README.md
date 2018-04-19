@@ -11,9 +11,38 @@ This template is responsible for configuring the zerotier client on jumpscale. I
 ### Actions:
 - `delete`: delete the client from jumpscale.
 
+
+### Usage example via the 0-robot DSL
+
+To create zerotier_client `client` and execute action `delete`:
+
 ```python
+from zerorobot.dsl import ZeroRobotAPI
+api = ZeroRobotAPI.ZeroRobotAPI()
+robot = api.robots['main']
+
 args = {
     'token': 'Ximdhaua',
 }
-zt = self.api.services.create('github.com/zero-os/0-templates/zerotier_client/0.0.1', 'client', args)
+zt = robot.api.services.create('github.com/zero-os/0-templates/zerotier_client/0.0.1', 'client', args)
+zt.schedule_action('delete')
+```
+
+### Usage example via the 0-robot CLI
+
+To create zerotier_client `client`:
+
+```yaml
+services:
+    - github.com/zero-os/0-templates/zerotier_client/0.0.1__client:
+          token: 'Ximdhaua'
+```
+
+to delete zerotier_client `client`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/zerotier_client/0.0.1'
+      service: 'client'
+      actions: ['delete']
 ```
