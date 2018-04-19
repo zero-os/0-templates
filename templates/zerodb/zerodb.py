@@ -32,8 +32,8 @@ class Zerodb(TemplateBase):
             'name': self.name,
             'container': self._container_sal,
             'port': 9900,
-            'data_dir': '/mnt/data',
-            'index_dir': '/mnt/index',
+            'data_dir': '/zerodb/data',
+            'index_dir': '/zerodb/index',
             'mode': self.data['mode'],
             'sync': self.data['sync'],
             'admin': self.data['admin'],
@@ -49,7 +49,7 @@ class Zerodb(TemplateBase):
         self.data['nodePort'] = ports[0]
         mounts = {
             'source': self.data['disk'],
-            'target': '/data',
+            'target': '/zerodb',
         }
 
         return {
@@ -160,3 +160,10 @@ class Zerodb(TemplateBase):
         """
         self.state.check('actions', 'start', 'ok')
         self._zerodb_sal.set_namespace_property(name, prop, value)
+
+    def namespace_delete(self, name):
+        """
+        Delete a namespace
+        """
+        self.state.check('actions', 'install', 'ok')
+        return self._zerodb_sal.delete_namespace(name)
