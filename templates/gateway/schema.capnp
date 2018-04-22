@@ -2,17 +2,16 @@
 
 
 struct Schema {
-    node @0 :Text; # pointer to the parent service
-    status @1 :Status;
-    hostname @2 :Text;
-    nics @3 :List(Nic); # Configuration of the attached nics to the container
-    portforwards @4 :List(PortForward);
-    httpproxies @5 :List(HTTPProxy);
-    container @6 :Text; # Container spawned by this service
-    domain @7: Text;
-    advanced @8: Bool; # flag to check if http config has been set manually
-    zerotiernodeid @9:Text;
-    certificates @10 :List(Certificate);
+    status @0 :Status;
+    hostname @1 :Text;
+    nics @2 :List(Nic); # Configuration of the attached nics to the container
+    portforwards @3 :List(PortForward);
+    httpproxies @4 :List(HTTPProxy);
+    container @5 :Text; # Container spawned by this service
+    domain @6: Text;
+    advanced @7: Bool; # flag to check if http config has been set manually
+    zerotiernodeid @8:Text;
+    certificates @9 :List(Certificate);
 
     struct Nic {
         type @0: NicType;

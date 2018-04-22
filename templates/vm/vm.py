@@ -1,8 +1,9 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
+from zerorobot.template.state import StateCheckError
 
-NODE_TEMPLATE_UID = "github.com/zero-os/0-templates/node/0.0.1"
-HV_TEMPLATE = 'github.com/zero-os/0-templates/hypervisor/0.0.1'
+
+NODE_CLIENT = 'local'
 
 
 class Vm(TemplateBase):
@@ -13,28 +14,45 @@ class Vm(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-    def validate(self):
-        if not self.data.get('node'):
-            raise ValueError("invalid input, node can't be None")
+        self.recurring_action('_monitor', 30)  # every 30 seconds
 
-        vdisks = self.data.get('vdisks')
-        flist = self.data.get('flist')
-        if not vdisks and not flist:
-            raise ValueError("invalid input. Vm requires a vdisk or flist to be specifed.")
+    def validate(self):
+        if not self.data.get('flist'):
+            raise ValueError("invalid input. Vm requires flist to be specifed.")
 
     @property
-    def node_sal(self):
+    def _hypervisor_sal(self):
+        return self._node_sal.hypervisor.get(self.data['uuid'])
+
+    @property
+    def _node_sal(self):
         """
         connection to the zos node
         """
-        return j.clients.zero_os.sal.get_node(self.data['node'])
+        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
+
+    def _monitor(self):
+        self.logger.info('Monitor vm %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
+
+        if self._hypervisor_sal.is_running():
+            self.state.set('status', 'running', 'ok')
+            try:
+                self.state.check('status', 'rebooting', 'ok')
+                self.state.delete('status', 'rebooting')
+            except StateCheckError:
+                pass
+
+            try:
+                self.state.check('status', 'shutdown', 'ok')
+                self.state.delete('status', 'shutdown')
+            except StateCheckError:
+                pass
+        else:
+            self.state.delete('status', 'running')
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)
-        node_name = self.data['node']
-        node = self.api.services.get(name=node_name, template_uid=NODE_TEMPLATE_UID)
-        node.state.check('actions', 'install', 'ok')
-        node.state.check('status', 'running', 'ok')
         args = {
             'name': self.name,
             'media': self.data['media'],
@@ -46,46 +64,57 @@ class Vm(TemplateBase):
             'mounts': self.data.get('mount'),
             'tags': self.data.get('tags'),
         }
-        self.data['uuid'] = self.node_sal.hypervisor.create(**args).uuid
+        self.data['uuid'] = self._node_sal.hypervisor.create(**args).uuid
         self.state.set('actions', 'install', 'ok')
+        self.state.set('status', 'running', 'ok')
 
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
-        # TODO: deal with vdisks
-        if self.data.get('uuid'):
-            self.node_sal.hypervisor.get(self.data['uuid']).destroy()
+        self.state.check('actions', 'install', 'ok')
+        self._hypervisor_sal.destroy()
+        self.state.delete('actions', 'install')
 
     def shutdown(self):
         self.logger.info('Shuting down vm %s' % self.name)
-        self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).shutdown()
+        self.state.check('status', 'running', 'ok')
+        self._hypervisor_sal.shutdown()
+        self.state.delete('status', 'running')
+        self.state.set('status', 'shutdown', 'ok')
 
     def pause(self):
         self.logger.info('Pausing vm %s' % self.name)
-        self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).pause()
+        self.state.check('status', 'running', 'ok')
+        self._hypervisor_sal.pause()
+        self.state.delete('status', 'running')
+        self.state.set('actions', 'pause', 'ok')
 
     def resume(self):
         self.logger.info('Resuming vm %s' % self.name)
-        self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).resume()
+        self.state.check('actions', 'pause', 'ok')
+        self._hypervisor_sal.resume()
+        self.state.delete('actions', 'pause')
+        self.state.set('status', 'running', 'ok')
 
     def reboot(self):
         self.logger.info('Rebooting vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).reboot()
+        self._hypervisor_sal.reboot()
+        self.state.set('status', 'rebooting', 'ok')
 
     def reset(self):
         self.logger.info('Resetting vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).reset()
+        self._hypervisor_sal.reset()
 
     def enable_vnc(self):
         self.logger.info('Enable vnc for vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).enable_vnc()
+        self._hypervisor_sal.enable_vnc()
+        self.state.set('vnc', self._hypervisor_sal.info['vnc'], 'ok')
 
     def disable_vnc(self):
         self.logger.info('Disable vnc for vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.node_sal.hypervisor.get(self.data['uuid']).disable_vnc()
+        self.state.check('vnc', self._hypervisor_sal.info['vnc'], 'ok')
+        self._hypervisor_sal.disable_vnc()
+        self.state.delete('vnc', self._hypervisor_sal.info['vnc'])

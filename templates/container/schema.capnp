@@ -2,22 +2,21 @@
 
 
 struct Schema {
-    node @0 :Text; # pointer to the parent service
-    hostname @1 :Text;
-    flist @2 :Text; # Url to the root filesystem flist
-    initProcesses @3 :List(Process);
-    nics @4 :List(Nic); # Configuration of the attached nics to the container
-    hostNetworking @5 :Bool;
+    hostname @0 :Text;
+    flist @1 :Text; # Url to the root filesystem flist
+    initProcesses @2 :List(Process);
+    nics @3 :List(Nic); # Configuration of the attached nics to the container
+    hostNetworking @4 :Bool;
     # Make host networking available to the guest.
     # If true means that the container will be able participate in the networks available in the host operating system.
-    ports @6:List(Text); # List of node to container port mappings. e.g: 8080:80
-    storage @7 :Text;
-    mounts @8: List(Mount); # List mount points mapping to the container
-    bridges @9 :List(Text); # comsumed bridges, automaticly filled don't pass in blueprint
-    zerotierNetwork @10:Text; # node's zerotier network id
-    privileged @11 :Bool;
-    identity @12 :Text;
-    env @13: List(Env); # environment variables needed to be set for the container
+    ports @5:List(Text); # List of node to container port mappings. e.g: 8080:80
+    storage @6 :Text;
+    mounts @7: List(Mount); # List mount points mapping to the container
+    bridges @8 :List(Text); # comsumed bridges, automaticly filled don't pass in blueprint
+    zerotierNetwork @9:Text; # node's zerotier network id
+    privileged @10 :Bool;
+    identity @11 :Text;
+    env @12: List(Env); # environment variables needed to be set for the container
 
 
     struct Env {

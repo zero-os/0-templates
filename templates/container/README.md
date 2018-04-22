@@ -5,7 +5,6 @@ This template is responsible for creating a container on zero-os nodes
 
 ### Schema:
 
-- `node`: name of the parent node.
 - `hostname`: container hostname.
 - `flist`: url of the root filesystem flist.
 - `initProcesses`: a list of type Processes. These are the processes to be started once the container starts.
@@ -60,3 +59,69 @@ NicType enum:
 - `install`: creates a container on a node, starts it and runs all the processes in initProcesses.
 - `start`: start a container and run all the initProcesses.
 - `stop`: stops a container.
+
+
+
+### Usage example via the 0-robot DSL
+
+To install container `zerodbcontainer` on node `525400123456`:
+
+```python
+from zerorobot.dsl import ZeroRobotAPI
+api = ZeroRobotAPI.ZeroRobotAPI()
+robot = api.robots['main']
+
+container_data = {
+    'flist': 'https://hub.gig.tech/maxux/zero-db.flist',
+    'mounts': [{'source': '/mnt/zdb/one', 'target': '/zdb'}],
+    'nics': [{'type': 'default'}],
+}
+container = robot.services.create('github.com/zero-os/0-templates/container/0.0.1', 'zerodbcontainer', data=container_data)
+container.schedule_action('install')
+
+container.schedule_action('start')
+container.schedule_action('stop')
+```
+
+### Usage example via the 0-robot CLI
+
+To install container `zerodbcontainer` on node `525400123456`:
+
+```yaml
+services:
+    - github.com/zero-os/0-templates/container/0.0.1__zerodbcontainer:
+          flist: 'https://hub.gig.tech/maxux/zero-db.flist'
+          storage: 'ardb://hub.gig.tech:16379'
+          nics:
+            - type: 'default'
+          mounts:
+            - source: '/mnt/zdb/one'
+              target: '/zdb'
+actions:
+    - template: 'github.com/zero-os/0-templates/container/0.0.1'
+      service: 'zerodbcontainer'
+      actions: ['install']
+
+```
+
+
+To start container `zerodbcontainer`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/container/0.0.1'
+      service: 'zerodbcontainer'
+      actions: ['start']
+
+```
+
+
+To stop container `zerodbcontainer`:
+
+```yaml
+actions:
+    - template: 'github.com/zero-os/0-templates/container/0.0.1'
+      service: 'zerodbcontainer'
+      actions: ['stop']
+
+```

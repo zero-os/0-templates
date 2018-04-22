@@ -5,12 +5,10 @@ This template is responsible for managing a vm on a zero-os node.
 
 ### Schema:
 
-- `node`: the node to deploy the vm on.
-- `node`: the node to deploy the vm on.
 - `memory`: amount of memory in MiB. Defaults to 128.
 - `cpu`: number of virtual CPUs. Defaults to 1.
 - `nics`: list of type NicLink specifying the nics of this vm.
-- `vdisks`: list of type DiskLink 
+- `media`: list of Media that can be attached to the vm 
 - `flist`: if specified the vm will boot from this flist and not the vdisk.
 - `vnc`: the vnc port the machine is listening to.
 
@@ -19,16 +17,19 @@ NicLink:
 - `type`: NicType enum specifying the nic type
 - `macaddress`: nic's macaddress
 
-DiskLink:
-- `vdiskId`: vdisk identifier.
-- `maxIOps`: maximum iops for this disk
-
 NicType enum: 
 - `default` 
 - `vlan`
 - `vxlan`
 - `bridge`
 
+Media:
+- `mediaType`: mediaType enum specifying media type
+- `url`: media location
+
+MediaType enum: 
+- `disk` 
+- `cdrom`
 
 ### Actions:
 - `install`: creates a a vm and the hypervisor on the node.
@@ -40,3 +41,35 @@ NicType enum:
 - `reset`: reset the vm.
 - `enable_vnc`: if a vnc port is specified, it opens the port.
 - `disable_vnc`: if a vnc port is specified, it drops the port.
+
+### Examples:
+#### DSL (api interface):
+```python
+data = {
+    'memory': 256,
+    'cpu': 1,
+    'nics': [{'type':'default'}],
+    'flist': 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
+    'ports':["22:22"],
+}
+vm = robot.services.create('github.com/zero-os/0-templates/vm/0.0.1','vm1', data)
+vm.schedule_action('install')
+vm.schedule_action('start')
+```
+
+#### Blueprint (cli interface):
+```yaml
+services:
+    - github.com/zero-os/0-templates/vm/0.0.1__vm1:
+        flist: 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
+        memory: 256
+        cpu: 1
+        nics: 
+            - type: 'default'
+        ports:
+            - '22:22'
+
+actions:
+    - actions: ['install','start']
+      service: vm1
+```

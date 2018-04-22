@@ -4,6 +4,7 @@ from js9 import j
 
 
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
+NODE_CLIENT = 'local'
 
 
 class Container(TemplateBase):
@@ -15,13 +16,13 @@ class Container(TemplateBase):
         super().__init__(name=name, guid=guid, data=data)
 
     def validate(self):
-        for param in ['node', 'flist']:
+        for param in ['flist']:
             if not self.data[param]:
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.get_node(self.data['node'])
+        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     @property
     def container_sal(self):
@@ -32,12 +33,6 @@ class Container(TemplateBase):
             return self.node_sal.containers.get(self.name)
 
     def install(self):
-        if self.node_sal is None:
-            raise StateCheckError("no connection to the zero-os node")
-
-        if not self.node_sal.is_running():
-            raise StateCheckError("node is not running")
-
         # convert "src:dst" to {src:dst}
         ports = j.clients.zero_os.sal.format_ports(self.data['ports'])
 
@@ -74,19 +69,13 @@ class Container(TemplateBase):
                 return False
         return True
 
-    def start(self, node_name=None):
-        if node_name and self.data['node'] != node_name:
-            return
-
+    def start(self):
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Starting container %s' % self.name)
         self.container_sal.start()
         self.state.set('actions', 'start', 'ok')
 
-    def stop(self, node_name=None):
-        if node_name and self.data['node'] != node_name:
-            return
-
+    def stop(self):
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Stopping container %s' % self.name)
         self.container_sal.stop()
