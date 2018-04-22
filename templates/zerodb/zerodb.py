@@ -5,7 +5,9 @@ from zerorobot.service_collection import ServiceNotFoundError
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
-ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-db-master.flist'
+# user this for development
+# ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-master.flist'
+ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-release-master.flist'
 NODE_CLIENT = 'local'
 
 
@@ -31,7 +33,7 @@ class Zerodb(TemplateBase):
         kwargs = {
             'name': self.name,
             'container': self._container_sal,
-            'port': 9900,
+            'node_port': self.data['nodePort'],
             'data_dir': '/zerodb/data',
             'index_dir': '/zerodb/index',
             'mode': self.data['mode'],
@@ -63,6 +65,15 @@ class Zerodb(TemplateBase):
     def _container_name(self):
         return 'container_zdb_%s' % self.guid
 
+    @property
+    def _container(self):
+        try:
+            container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self._container_name)
+        except ServiceNotFoundError:
+            container = self.api.services.create(
+                template_uid=CONTAINER_TEMPLATE_UID, service_name=self._container_name, data=self._container_data)
+        return container
+
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
 
@@ -70,8 +81,7 @@ class Zerodb(TemplateBase):
         if not self.data['admin']:
             self.data['admin'] = j.data.idgenerator.generateXCharID(25)
 
-        container = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self._container_name, data=self._container_data)
-        container.schedule_action('install').wait(die=True)
+        self._container.schedule_action('install').wait(die=True)
         self.state.set('actions', 'install', 'ok')
 
     def start(self):
@@ -80,8 +90,8 @@ class Zerodb(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Starting zerodb %s' % self.name)
-        container = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self._container_name, data=self._container_data)
 
+        container = self._container
         try:
             container.state.check('actions', 'install', 'ok')
         except StateCheckError:
@@ -104,7 +114,7 @@ class Zerodb(TemplateBase):
         self._node_sal.client.nft.drop_port(self.data['nodePort'])
 
         try:
-            container = self.api.services.get(self._container_name)
+            container = self.api.services.get(name=self._container_name)
             container.schedule_action('stop').wait(die=True)
             container.delete()
         except ServiceNotFoundError:
