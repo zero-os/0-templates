@@ -71,13 +71,13 @@ class Vm(TemplateBase):
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self._hypervisor_sal.destroy()
+        self._hypervisor_sal.destroy(self.data['ports'])
         self.state.delete('actions', 'install')
 
     def shutdown(self):
         self.logger.info('Shuting down vm %s' % self.name)
         self.state.check('status', 'running', 'ok')
-        self._hypervisor_sal.shutdown()
+        self._hypervisor_sal.shutdown(self.data['ports'])
         self.state.delete('status', 'running')
         self.state.set('status', 'shutdown', 'ok')
 
