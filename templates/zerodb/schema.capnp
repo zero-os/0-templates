@@ -4,7 +4,7 @@ struct Schema {
     mode @0: Mode=direct; # a value from enum Mode representing the 0-db mode
     sync @1: Bool=false; # boolean indicating whether all write should be sync'd or not.
     disk @2: Text; # path of the disk to use
-    nodePort @3: Int32; # the node port used in the portfowarding
+    nodePort @3: Int32; # the node port used in the portforwarding
     admin @4: Text; # admin password
 
     enum Mode {
