@@ -29,6 +29,7 @@ class TestVmTemplate(TestCase):
             'mount': {},
             'tags': [],
             'uuid': '444d10d7-77f8-4b33-a6df-feb76e34dbc4',
+            'configs': [{'path': '/file/path', 'content': 'file-content'}]
         }
 
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
@@ -91,7 +92,19 @@ class TestVmTemplate(TestCase):
         vm = Vm('vm', data=self.valid_data)
         vm.install()
         assert 'uuid' in vm.data
-
+        args = {
+            'name': 'vm',
+            'media': self.valid_data['media'],
+            'flist': self.valid_data['flist'],
+            'cpu': self.valid_data['cpu'],
+            'memory': self.valid_data['memory'],
+            'nics': self.valid_data['nics'],
+            'ports': self.valid_data['ports'],
+            'mounts': self.valid_data.get('mount'),
+            'tags': self.valid_data.get('tags'),
+            'config': {'/file/path': 'file-content'},
+        }
+        vm._node_sal.hypervisor.create.called_once_with(**args)
         vm.state.check('actions', 'install', 'ok')
         vm.state.check('status', 'running', 'ok')
 

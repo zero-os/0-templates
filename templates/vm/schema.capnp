@@ -11,7 +11,12 @@ struct Schema {
     ports @5:List(Text); # List of node to vm port mappings. e.g: 8080:80
     media @6: List(Media); # list of media to attach to the vm
     tags @7: List(Text); # list of tags
+    configs @8: List(Config); # list of config
 
+    struct Config {
+        path @0: Text;
+        content @1: Text;
+    }
     struct Media {
       type @0: MediaType;
       url @1: Text;
