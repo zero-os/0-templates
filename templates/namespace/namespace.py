@@ -43,3 +43,10 @@ class Namespace(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self._zerodb.schedule_action('namespace_delete', args={'name': self.name}).wait(die=True)
 
+    def connection_info(self):
+        self.state.check('actions', 'install', 'ok')
+        task = self._zerodb.schedule_action('connection_info')
+        task.wait(die=True)
+
+        return task.result
+

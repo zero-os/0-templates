@@ -86,3 +86,18 @@ class TestNamespaceTemplate(TestCase):
         ns.api = MagicMock()
         ns.uninstall()
         ns._zerodb.schedule_action.assert_called_once_with('namespace_delete', args={'name': ns.name})
+
+    def test_connection_info_without_install(self):
+        with pytest.raises(StateCheckError, message='Executing connection_info action without install should raise an error'):
+            ns = Namespace(name='namespace', data=self.valid_data)
+            ns.connection_info()
+
+    def test_connection_info(self):
+        ns = Namespace(name='namespace', data=self.valid_data)
+        ns.state.set('actions', 'install', 'ok')
+        ns.api = MagicMock()
+        result = {'ip': '127.0.0.1', 'port': 9900}
+        task = MagicMock(result=result)
+        ns._zerodb.schedule_action = MagicMock(return_value=task)
+        assert ns.connection_info() == result
+        ns._zerodb.schedule_action.assert_called_once_with('connection_info')

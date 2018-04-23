@@ -44,7 +44,9 @@ class Zerodb(TemplateBase):
 
     @property
     def _container_data(self):
-        ports = self._node_sal.freeports(9900, 1)
+        port = self.data['nodePort'] if self.data['nodePort'] else 9900
+
+        ports = self._node_sal.freeports(port, 1)
         if len(ports) <= 0:
             raise RuntimeError("can't install 0-db, no free port available on the node")
 
@@ -99,7 +101,6 @@ class Zerodb(TemplateBase):
         container.schedule_action('start').wait(die=True)
 
         self._zerodb_sal.start()
-        self._node_sal.client.nft.open_port(self.data['nodePort'])
         self.state.set('actions', 'start', 'ok')
 
     def stop(self):
@@ -110,8 +111,6 @@ class Zerodb(TemplateBase):
         self.logger.info('Stopping zerodb %s' % self.name)
 
         self._zerodb_sal.stop()
-
-        self._node_sal.client.nft.drop_port(self.data['nodePort'])
 
         try:
             container = self.api.services.get(name=self._container_name)
@@ -177,3 +176,9 @@ class Zerodb(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         return self._zerodb_sal.delete_namespace(name)
+
+    def connection_info(self):
+        return {
+            'ip': self._node_sal.addr,
+            'port': self.data['nodePort']
+        }

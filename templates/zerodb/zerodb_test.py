@@ -9,6 +9,7 @@ from zerodb import Zerodb, CONTAINER_TEMPLATE_UID, ZERODB_FLIST, NODE_CLIENT
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
+from zerorobot.service_collection import ServiceNotFoundError
 
 
 class TestZerodbTemplate(TestCase):
@@ -75,13 +76,11 @@ class TestZerodbTemplate(TestCase):
         Test install action sets admin password if empty
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.api.services.find_or_create = MagicMock()
-        zdb._node_sal.freeports = MagicMock(return_value=[9900])
+        zdb.api.services = MagicMock()
 
         zdb.install()
 
-        zdb.api.services.find_or_create.assert_called_once_with(
-            CONTAINER_TEMPLATE_UID, zdb._container_name, data=zdb._container_data)
+        zdb._container.schedule_action.called_once_with('install')
         zdb.state.check('actions', 'install', 'ok')
         assert zdb.data['admin'] != ''
 
@@ -92,28 +91,38 @@ class TestZerodbTemplate(TestCase):
         valid_data = self.valid_data.copy()
         valid_data['admin'] = 'password'
         zdb = Zerodb('zdb', data=valid_data)
-        zdb.api.services.find_or_create = MagicMock()
-        zdb._node_sal.freeports = MagicMock(return_value=[9900])
+        zdb.api.services = MagicMock()
 
         zdb.install()
 
-        zdb.api.services.find_or_create.assert_called_once_with(
-            CONTAINER_TEMPLATE_UID, zdb._container_name, data=zdb._container_data)
+        zdb._container.schedule_action.called_once_with('install')
         zdb.state.check('actions', 'install', 'ok')
         assert zdb.data['admin'] == 'password'
 
-    def test_start(self):
+    def test_start_container_installed(self):
         """
-        Test start action
+        Test start action when container is installed
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'install', 'ok')
         zdb.api.services.get = MagicMock()
-        zdb._node_sal.freeports = MagicMock(return_value=[9900])
         zdb.start()
 
-        zdb.api.services.get.assert_called_once_with(
-            template_uid=CONTAINER_TEMPLATE_UID, name=zdb._container_name)
+        zdb._container.schedule_action.called_once_with('start')
+        zdb._zerodb_sal.start.assert_called_once_with()
+        zdb.state.check('actions', 'start', 'ok')
+
+    def test_start_container_not_installed(self):
+        """
+        Test start action when container is not installed
+        """
+        zdb = Zerodb('zdb', data=self.valid_data)
+        zdb.state.set('actions', 'install', 'ok')
+        zdb.api.services.get = MagicMock()
+        zdb._container.state.check = MagicMock(side_effect=StateCheckError)
+        zdb.start()
+
+        zdb._container.schedule_action.called_with(['start', 'install'])
         zdb._zerodb_sal.start.assert_called_once_with()
         zdb.state.check('actions', 'start', 'ok')
 
@@ -227,3 +236,27 @@ class TestZerodbTemplate(TestCase):
         zdb.namespace_set('namespace', 'maxsize', 12)
 
         zdb._zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
+
+    def test_container_service_exists(self):
+        """
+        Test _container property if service exists
+        """
+        zdb = Zerodb('zdb', data=self.valid_data)
+        zdb.api.services = MagicMock()
+        zdb.api.services.get = MagicMock(return_value='container')
+        assert zdb._container == 'container'
+        assert zdb.api.services.get.call_count == 1
+        assert zdb.api.services.create.call_count == 0
+
+    def test_container_service_doesnt_exist(self):
+        """
+        Test _container property if service doesnt exist
+        """
+        zdb = Zerodb('zdb', data=self.valid_data)
+        zdb._node_sal.freeports = MagicMock(return_value=[9900])
+        zdb.api.services = MagicMock()
+        zdb.api.services.get = MagicMock(side_effect=ServiceNotFoundError)
+        zdb.api.services.create = MagicMock(return_value='container')
+        assert zdb._container == 'container'
+        assert zdb.api.services.get.call_count == 1
+        assert zdb.api.services.create.call_count == 1
