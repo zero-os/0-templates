@@ -24,7 +24,7 @@ class TestVmTemplate(TestCase):
             'memory': 128,
             'nics': [],
             'vnc': -1,
-            'ports': [],
+            'ports': ['80:80'],
             'media': [],
             'mount': {},
             'tags': [],
@@ -104,7 +104,7 @@ class TestVmTemplate(TestCase):
         vm.state.delete = MagicMock()
         vm.uninstall()
 
-        self.node.hypervisor.get.return_value.destroy.assert_called_with()
+        self.node.hypervisor.get.return_value.destroy.assert_called_with(['80:80'])
         vm.state.delete.assert_called_once_with('actions', 'install')
 
     def test_uninstall_vm_not_installed(self):
@@ -133,7 +133,7 @@ class TestVmTemplate(TestCase):
 
         vm.shutdown()
 
-        self.node.hypervisor.get.return_value.shutdown.assert_called_with()
+        self.node.hypervisor.get.return_value.shutdown.assert_called_with(['80:80'])
         vm.state.check('status', 'shutdown', 'ok')
         vm.state.delete.assert_called_with('status', 'running')
 
