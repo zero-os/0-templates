@@ -59,10 +59,17 @@ class BasicTests(ZOS_BaseTest):
 
         **Test Scenario:**
 
+        #. Create a container without providing flist parameter, should fail.
         #. Create a container with all possible parameters.
         #. Check if the parameters have been reflected correctly.
         """
         self.log('%s STARTED' % self._testID)
+
+        self.log('Create a container without providing flist parameter, should fail.')
+        self.cont1_name = self.random_string()
+        self.containers = {self.cont1_name: {}}
+        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
+        self.assertEqual(res, "parameter 'flist' not valid: ")
 
         self.log('Create a container with all possible parameters.')
         self.cont1_name = self.random_string()
@@ -97,32 +104,5 @@ class BasicTests(ZOS_BaseTest):
         nic = [nic for nic in nics if nic['type'] == 'bridge'][0]
         self.assertTrue(len(nics), 2)
         self.assertEqual(nic['id'], bridge_name)
-
-        self.log('%s ENDED' % self._testID)
-
-    def test003_create_container_with_wrong_params(self):
-        """ ZRT-ZOS-003
-        *Test case for creating container with wrong parameters*
-
-        **Test Scenario:**
-
-        #. Create a container without providing flist parameter, should fail.
-        #. Create a container with providing non existing parameter, should fail.
-        """
-        self.log('%s STARTED' % self._testID)
-
-        self.log('Create a container without providing flist parameter, should fail.')
-        self.cont1_name = self.random_string()
-        self.containers = {self.cont1_name: {}}
-        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
-        self.assertEqual(res, "parameter 'flist' not valid: ")
-
-        self.log('Create a container with providing non existing parameter, should fail.')
-        self.containers = {self.cont1_name: {'node': self.zos_node_name,
-                                             'flist': self.cont_flist,
-                                              self.random_string(): self.random_string()}
-        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
-        error_msg = self.wait_for_service_action_status(self.cont1_name, res[self.cont1_name]['install'])
-        self.assertEqual(error_msg, "....")
 
         self.log('%s ENDED' % self._testID)
