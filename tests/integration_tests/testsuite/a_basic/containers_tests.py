@@ -13,9 +13,7 @@ class BasicTests(ZOS_BaseTest):
 
     def setUp(self):
         super(BasicTests, self).setUp()
-        self.temp_actions = {'node': {'actions': ['install']},
-                             'container': {'actions': ['install']}
-                             }
+        self.temp_actions = {'container': {'actions': ['install']}}
 
     def test001_create_containers(self):
         """ ZRT-ZOS-001
@@ -23,7 +21,6 @@ class BasicTests(ZOS_BaseTest):
 
         **Test Scenario:**
 
-        #. Create a node service, should succeed.
         #. Create a two container on that node, should succeed.
         #. Check that the container have been created.
         """
@@ -31,14 +28,12 @@ class BasicTests(ZOS_BaseTest):
 
         self.log('Create a two container on that node, should succeed.')
         self.cont1_name = self.random_string()
-        self.containers = {self.cont1_name: {'node': self.zos_node_name,
-                                             'hostname': self.cont1_name,
+        self.containers = {self.cont1_name: {'hostname': self.cont1_name,
                                              'flist': self.cont_flist,
                                              'storage': self.cont_storage}}
 
         self.cont2_name = self.random_string()
-        self.containers.update({self.cont2_name: {'node': self.zos_node_name,
-                                                  'hostname': self.cont2_name,
+        self.containers.update({self.cont2_name: {'hostname': self.cont2_name,
                                                   'flist': self.cont_flist,
                                                   'storage': self.cont_storage}})
 
@@ -64,7 +59,6 @@ class BasicTests(ZOS_BaseTest):
 
         **Test Scenario:**
 
-        #. Create a node service, should succeed.
         #. Create a container with all possible parameters.
         #. Check if the parameters have been reflected correctly.
         """
@@ -75,8 +69,7 @@ class BasicTests(ZOS_BaseTest):
         bridge_name = self.random_string()
         env_name = self.random_string()
         env_value = self.random_string()
-        self.containers = {self.cont1_name: {'node': self.zos_node_name,
-                                             'hostname': self.cont1_name,
+        self.containers = {self.cont1_name: {'hostname': self.cont1_name,
                                              'flist': self.cont_flist,
                                              'storage': self.cont_storage,
                                              'env': {'name': env_name, 'value': env_value},
@@ -104,5 +97,32 @@ class BasicTests(ZOS_BaseTest):
         nic = [nic for nic in nics if nic['type'] == 'bridge'][0]
         self.assertTrue(len(nics), 2)
         self.assertEqual(nic['id'], bridge_name)
+
+        self.log('%s ENDED' % self._testID)
+
+    def test003_create_container_with_wrong_params(self):
+        """ ZRT-ZOS-003
+        *Test case for creating container with wrong parameters*
+
+        **Test Scenario:**
+
+        #. Create a container without providing flist parameter, should fail.
+        #. Create a container with providing non existing parameter, should fail.
+        """
+        self.log('%s STARTED' % self._testID)
+
+        self.log('Create a container without providing flist parameter, should fail.')
+        self.cont1_name = self.random_string()
+        self.containers = {self.cont1_name: {}}
+        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
+        self.assertEqual(res, "parameter 'flist' not valid: ")
+
+        self.log('Create a container with providing non existing parameter, should fail.')
+        self.containers = {self.cont1_name: {'node': self.zos_node_name,
+                                             'flist': self.cont_flist,
+                                              self.random_string(): self.random_string()}
+        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
+        error_msg = self.wait_for_service_action_status(self.cont1_name, res[self.cont1_name]['install'])
+        self.assertEqual(error_msg, "....")
 
         self.log('%s ENDED' % self._testID)
