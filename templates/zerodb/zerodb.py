@@ -179,6 +179,6 @@ class Zerodb(TemplateBase):
 
     def connection_info(self):
         return {
-            'ip': self._node_sal.addr,
+            'ip': self._node_sal.public_addr,
             'port': self.data['nodePort']
         }
