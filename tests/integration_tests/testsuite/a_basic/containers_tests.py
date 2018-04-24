@@ -106,3 +106,48 @@ class BasicTests(ZOS_BaseTest):
         self.assertEqual(nic['id'], bridge_name)
 
         self.log('%s ENDED' % self._testID)
+
+    def test003_start_stop_container(self):
+        """ ZRT-ZOS-003
+        *Test case for starting and stopping container*
+
+        **Test Scenario:**
+
+        #. Create a container (C1).
+        #. Start container C1, should succeed.
+        #. Check if the container has been terminated, should succeed
+        #. Stop container C1, should succeed.
+        #. Check if the container has been started, should succeed
+        """
+
+        self.log('%s STARTED' % self._testID)
+
+        self.log('Create a container (C1)')
+        self.cont1_name = self.random_string()
+        self.containers = {self.cont1_name: {'hostname': self.cont1_name,
+                                             'flist': self.cont_flist,
+                                             'storage': self.cont_storage}}
+
+        res = self.create_container(containers=self.containers, temp_actions=self.temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.cont1_name, res[self.cont1_name]['install'])
+
+        self.log('Stop container C1, should succeed.')
+        temp_actions = {'container': {'actions': ['stop'], 'service': self.cont1_name}}
+        res = self.create_container(containers=self.containers, temp_actions=temp_actions)
+        self.wait_for_service_action_status(self.cont1_name, res[self.cont1_name]['stop'])
+
+        self.log('Check if the container has been terminated, should succeed')
+        conts = self.zos_client.container.list()
+        self.assertFalse([c for c in conts.values() if c['container']['arguments']['name'] == self.cont1_name])
+
+        self.log('Start container C1, should succeed.')
+        temp_actions = {'container': {'actions': ['start'], 'service': self.cont1_name}}
+        res = self.create_container(containers=self.containers, temp_actions=temp_actions)
+        self.wait_for_service_action_status(self.cont1_name, res[self.cont1_name]['start'])
+
+        self.log('Check if the container has been started, should succeed')
+        conts = self.zos_client.container.list()
+        self.assertTrue([c for c in conts.values() if c['container']['arguments']['name'] == self.cont1_name])
+
+        self.log('%s ENDED' % self._testID)
