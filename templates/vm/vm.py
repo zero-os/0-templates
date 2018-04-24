@@ -53,6 +53,10 @@ class Vm(TemplateBase):
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)
+        configs = {}
+        for config in self.data['configs']:
+            configs[config['path']] = config['content']
+
         args = {
             'name': self.name,
             'media': self.data['media'],
@@ -63,6 +67,7 @@ class Vm(TemplateBase):
             'ports': self.data['ports'],
             'mounts': self.data.get('mount'),
             'tags': self.data.get('tags'),
+            'config': configs,
         }
         self.data['uuid'] = self._node_sal.hypervisor.create(**args).uuid
         self.state.set('actions', 'install', 'ok')

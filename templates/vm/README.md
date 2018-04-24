@@ -11,6 +11,9 @@ This template is responsible for managing a vm on a zero-os node.
 - `media`: list of Media that can be attached to the vm 
 - `flist`: if specified the vm will boot from this flist and not the vdisk.
 - `vnc`: the vnc port the machine is listening to.
+- `ports`: List of node to vm port mappings. e.g: ['8080:80']
+- `tags`: List of vm tags. e.g ['tag']
+- `configs`: List of type Config.
 
 NicLink:
 - `id`: vxlan or vlan id
@@ -26,6 +29,10 @@ NicType enum:
 Media:
 - `mediaType`: mediaType enum specifying media type
 - `url`: media location
+
+Config:
+- `path`: the file path 
+- `content`: the file content
 
 MediaType enum: 
 - `disk` 
@@ -51,6 +58,7 @@ data = {
     'nics': [{'type':'default'}],
     'flist': 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
     'ports':["22:22"],
+    'configs': [{'path': '/root/.ssh/authorized_keys', 'content': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1'}]
 }
 vm = robot.services.create('github.com/zero-os/0-templates/vm/0.0.1','vm1', data)
 vm.schedule_action('install')
@@ -68,6 +76,11 @@ services:
             - type: 'default'
         ports:
             - '22:22'
+       configs:
+         - path: '/root/.ssh/authorized_keys'
+           content: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1'
+
+
 
 actions:
     - actions: ['install','start']
