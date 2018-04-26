@@ -76,6 +76,10 @@ class Minio(TemplateBase):
                 'name': 'AWS_SECRET_ACCESS_KEY',
                 'value': self.data['resticPassword'],
             },
+            {
+                'name': 'MINIO_ZEROSTOR_META_PRIVKEY',
+                'value': self.data['metaPrivateKey'],
+            }
         ]
         container_data = {
             'flist': MINIO_FLIST,

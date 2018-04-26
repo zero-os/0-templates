@@ -28,7 +28,8 @@ class TestMinioTemplate(TestCase):
             'resticPassword': 'pass',
             'resticRepo': 'repo/',
             'resticRepoPassword': '',
-            'resticUsername': 'username'
+            'resticUsername': 'username',
+            'metaPrivateKey': '1234567890abcdef'
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Minio.template_uid = TemplateUID.parse(
@@ -116,7 +117,8 @@ class TestMinioTemplate(TestCase):
             'node': self.valid_data['node'],
             'env':  [
                 {'name': 'MINIO_ACCESS_KEY', 'value': 'login'}, {'name': 'MINIO_SECRET_KEY', 'value': 'password'},
-                {'name': 'AWS_ACCESS_KEY_ID', 'value': 'username'}, {'name': 'AWS_SECRET_ACCESS_KEY', 'value': 'pass'}],
+                {'name': 'AWS_ACCESS_KEY_ID', 'value': 'username'}, {'name': 'AWS_SECRET_ACCESS_KEY', 'value': 'pass'},
+                {'name': 'MINIO_ZEROSTOR_META_PRIVKEY', 'value': '1234567890abcdef'}],
             'ports': ['9000:9000'],
             'nics': [{'type': 'default'}],
         }
