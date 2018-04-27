@@ -62,7 +62,6 @@ data = {
 }
 vm = robot.services.create('github.com/zero-os/0-templates/vm/0.0.1','vm1', data)
 vm.schedule_action('install')
-vm.schedule_action('start')
 ```
 
 #### Blueprint (cli interface):
@@ -83,6 +82,6 @@ services:
 
 
 actions:
-    - actions: ['install','start']
+    - actions: ['install']
       service: vm1
 ```
