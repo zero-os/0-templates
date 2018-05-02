@@ -6,8 +6,8 @@ from zerorobot.service_collection import ServiceNotFoundError
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
 # user this for development
-# ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-master.flist'
-ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-release-master.flist'
+ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-master.flist'
+#ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-release-master.flist'
 NODE_CLIENT = 'local'
 
 
@@ -18,6 +18,7 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self._zdb_sal = None
 
     @property
     def _node_sal(self):
@@ -25,56 +26,15 @@ class Zerodb(TemplateBase):
         return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
     @property
-    def _container_sal(self):
-        return self._node_sal.containers.get(self._container_name)
-
-    @property
     def _zerodb_sal(self):
-        kwargs = {
-            'name': self.name,
-            'container': self._container_sal,
-            'node_port': self.data['nodePort'],
-            'data_dir': '/zerodb/data',
-            'index_dir': '/zerodb/index',
-            'mode': self.data['mode'],
-            'sync': self.data['sync'],
-            'admin': self.data['admin'],
-        }
-        return j.clients.zero_os.sal.get_zerodb(**kwargs)
+        if not self._zdb_sal:
+            self._zdb_sal = self._node_sal.primitives.create_zerodb(self.name)
+        self._zdb_sal.from_dict(self.data)
+        return self._zdb_sal
 
-    @property
-    def _container_data(self):
-        port = self.data['nodePort'] if self.data['nodePort'] else 9900
-
-        ports = self._node_sal.freeports(port, 1)
-        if len(ports) <= 0:
-            raise RuntimeError("can't install 0-db, no free port available on the node")
-
-        self.data['nodePort'] = ports[0]
-        mounts = {
-            'source': self.data['disk'],
-            'target': '/zerodb',
-        }
-
-        return {
-            'flist': ZERODB_FLIST,
-            'mounts': [mounts],
-            'ports': ['%s:%s' % (self.data['nodePort'], 9900)],
-            'nics': [{'type': 'default'}],
-        }
-
-    @property
-    def _container_name(self):
-        return 'container_zdb_%s' % self.guid
-
-    @property
-    def _container(self):
-        try:
-            container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self._container_name)
-        except ServiceNotFoundError:
-            container = self.api.services.create(
-                template_uid=CONTAINER_TEMPLATE_UID, service_name=self._container_name, data=self._container_data)
-        return container
+    def _deploy(self):
+        self._zerodb_sal.deploy()
+        self.data['nodePort'] = self._zerodb_sal.node_port
 
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
@@ -83,7 +43,7 @@ class Zerodb(TemplateBase):
         if not self.data['admin']:
             self.data['admin'] = j.data.idgenerator.generateXCharID(25)
 
-        self._container.schedule_action('install').wait(die=True)
+        self._deploy()
         self.state.set('actions', 'install', 'ok')
 
     def start(self):
@@ -92,15 +52,7 @@ class Zerodb(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Starting zerodb %s' % self.name)
-
-        container = self._container
-        try:
-            container.state.check('actions', 'install', 'ok')
-        except StateCheckError:
-            container.schedule_action('install').wait(die=True)
-        container.schedule_action('start').wait(die=True)
-
-        self._zerodb_sal.start()
+        self._deploy()
         self.state.set('actions', 'start', 'ok')
 
     def stop(self):
@@ -111,15 +63,6 @@ class Zerodb(TemplateBase):
         self.logger.info('Stopping zerodb %s' % self.name)
 
         self._zerodb_sal.stop()
-
-        try:
-            container = self.api.services.get(name=self._container_name)
-            container.schedule_action('stop').wait(die=True)
-            container.delete()
-        except ServiceNotFoundError:
-            # container is already done, nothing else to do
-            pass
-
         self.state.delete('actions', 'start')
 
     def upgrade(self):
@@ -135,7 +78,7 @@ class Zerodb(TemplateBase):
         :return: list of namespaces ex: ['namespace1', 'namespace2']
         """
         self.state.check('actions', 'start', 'ok')
-        return self._zerodb_sal.list_namespaces()
+        return self.data['namespaces']
 
     def namespace_info(self, name):
         """
@@ -144,21 +87,19 @@ class Zerodb(TemplateBase):
         :return: dict
         """
         self.state.check('actions', 'start', 'ok')
-        return self._zerodb_sal.get_namespace_info(name)
+        return self._zerodb_sal.namespaces[name].info().to_dict()
 
-    def namespace_create(self, name, size=None, secret=None):
+    def namespace_create(self, name, size=None, secret=None, public=True):
         """
         Create a namespace and set the size and secret
         :param name: namespace name
         :param size: namespace size
         :param secret: namespace secret
+        :param public: namespace public status
         """
         self.state.check('actions', 'start', 'ok')
-        self._zerodb_sal.create_namespace(name)
-        if size:
-            self._zerodb_sal.set_namespace_property(name, 'maxsize', size)
-        if secret:
-            self._zerodb_sal.set_namespace_property(name, 'password', secret)
+        namespace = self._zerodb_sal.namespaces.add(name, size, secret, public)
+        namespace.deploy()
 
     def namespace_set(self, name, prop, value):
         """
@@ -168,14 +109,17 @@ class Zerodb(TemplateBase):
         :param value: property value
         """
         self.state.check('actions', 'start', 'ok')
-        self._zerodb_sal.set_namespace_property(name, prop, value)
+        self._zerodb_sal.namespaces[name].set_property(prop, value)
+        self.data['namespaces'] = self._zerodb_sal.to_dict()['namespaces']
 
     def namespace_delete(self, name):
         """
         Delete a namespace
         """
         self.state.check('actions', 'install', 'ok')
-        return self._zerodb_sal.delete_namespace(name)
+        self._zerodb_sal.namespaces.remove(name)
+        self._deploy()
+        self.data['namespaces'] = self._zerodb_sal.to_dict()['namespaces']
 
     def connection_info(self):
         return {

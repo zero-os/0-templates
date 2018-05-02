@@ -7,11 +7,11 @@ struct Schema {
     nics @2 :List(Nic); # Configuration of the attached nics to the container
     portforwards @3 :List(PortForward);
     httpproxies @4 :List(HTTPProxy);
-    container @5 :Text; # Container spawned by this service
-    domain @6: Text;
-    advanced @7: Bool; # flag to check if http config has been set manually
-    zerotiernodeid @8:Text;
-    certificates @9 :List(Certificate);
+    domain @5: Text;
+    advanced @6: Bool; # flag to check if http config has been set manually
+    zerotiernodeid @7:Text;
+    certificates @8 :List(Certificate);
+    identity @9: Text;
 
     struct Nic {
         type @0: NicType;
@@ -59,6 +59,7 @@ struct Schema {
         host @0: Text;
         destinations @1: List(Text);
         types @2: List(HTTPType);
+        name @3: Text;
     }
 
     enum Status{
@@ -77,6 +78,7 @@ struct Schema {
         srcip @2: Text;
         dstport @3: Int32;
         dstip @4: Text;
+        name @5: Text;
     }
     enum NicType {
         default @0;

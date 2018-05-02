@@ -15,41 +15,27 @@ class Gateway(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self._gw_sal = None
 
     def validate(self):
         GatewaySal.validate_input(self.data)
 
     @property
-    def node_sal(self):
+    def _node_sal(self):
         return j.clients.zero_os.sal.get_node(NODE_CLIENT)
 
-    def _get_gateway(self):
-        container = self.node_sal.containers.get(self.name)
-        return self.node_sal.gateways.get(container, self.data)
+    @property
+    def _gateway_sal(self):
+        if not self._gw_sal:
+            self._gw_sal = self._node_sal.primitives.create_gateway(self.name)
+        self._gw_sal.from_dict(self.data)
+        return self._gw_sal
 
     def install(self):
-        contnics = copy.deepcopy(self.data['nics'])
-        for nic in contnics:
-            nic.pop('dhcpserver', None)
-            zerotierbridge = nic.pop('zerotierbridge', None)
-            if zerotierbridge:
-                contnics.append(
-                    {
-                        'id': zerotierbridge['id'], 'type': 'zerotier',
-                        'name': 'z-{}'.format(nic['name']), 'token': zerotierbridge.get('token', '')
-                    })
-        containerdata = {
-            'flist': FLIST,
-            'nics': contnics,
-            'hostname': self.data['hostname'],
-            'hostNetworking': False,
-            'privileged': True
-        }
-        contservice = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self.name, containerdata)
-        contservice.schedule_action('install').wait(die=True)
-        gw = self._get_gateway()
-        gw.install()
+        self._gateway_sal.deploy()
+        self.data['identity'] = self._gateway_sal.identity
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def add_portforward(self, forward):
         for fw in self.data['portforwards']:
@@ -57,7 +43,7 @@ class Gateway(TemplateBase):
                 if set(fw['protocols']).intersection(set(forward['protocols'])):
                     raise ValueError("Forward conflicts with existing forward")
         self.data['portforwards'].append(forward)
-        self._get_gateway().configure_fw()
+        self._gateway_sal().configure_fw()
 
     def remove_portforward(self, forward):
         for fw in self.data['portforwards']:
@@ -67,14 +53,14 @@ class Gateway(TemplateBase):
                     break
         else:
             return
-        self._get_gateway().configure_fw()
+        self._gateway_sal().configure_fw()
 
     def add_http_proxy(self, proxy):
         for existing_proxy in self.data['httpproxies']:
             if self._compare_objects(existing_proxy, proxy, 'host'):
                 raise ValueError("Proxy with host {} already exists".format(proxy['host']))
         self.data['httpproxies'].append(proxy)
-        self._get_gateway().configure_http()
+        self._gateway_sal().configure_http()
 
     def remove_http_proxy(self, proxy):
         for existing_proxy in self.data['httpproxies']:
@@ -83,7 +69,7 @@ class Gateway(TemplateBase):
                 break
         else:
             return
-        self._get_gateway().configure_http()
+        self._gateway_sal.configure_http()
 
     def add_dhcp_host(self, nicname, host):
         for nic in self.data['nics']:
@@ -96,9 +82,8 @@ class Gateway(TemplateBase):
             if existing_host['macaddress'] == host['macaddress']:
                 raise ValueError('Host with macaddress {} already exists'.format(host['macaddress']))
         dhcpserver['hosts'].append(host)
-        gw = self._get_gateway()
-        gw.configure_dhcp()
-        gw.configure_cloudinit()
+        self._gateway_sal.configure_dhcp()
+        self._gateway_sal.configure_cloudinit()
 
     def remove_dhcp_host(self, nicname, host):
         for nic in self.data['nics']:
@@ -113,7 +98,7 @@ class Gateway(TemplateBase):
                 break
         else:
             return
-        self._get_gateway().configure_dhcp()
+        self._gateway_sal.configure_dhcp()
 
     def _compare_objects(self, obj1, obj2, *keys):
         for key in keys:
@@ -125,18 +110,7 @@ class Gateway(TemplateBase):
         for existing_nic in self.data['nics']:
             if self._compare_objects(existing_nic, nic, 'type', 'id'):
                 raise ValueError('Nic with same type/id combination already exists')
-        containernic = copy.deepcopy(nic)
-        dhcpserver = containernic.pop('dhcpserver', None)
-        zerotierbridge = containernic.pop('zerotierbridge', None)
-        containernic.pop('token', None)
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('add_nic', nic=containernic).wait(die=True)
-        self.data['nics'].append(nic)
-        gw = self._get_gateway()
-        if zerotierbridge:
-            gw.setup_zerotierbridges()
-        if dhcpserver:
-            gw.configure_dhcp()
+        self._gateway_sal.deploy()
 
     def remove_nic(self, nicname):
         for nic in self.data['nics']:
@@ -144,29 +118,18 @@ class Gateway(TemplateBase):
                 break
         else:
             return
-        gw = self._get_gateway()
-        dhcpserver = nic.pop('dhcpserver', None)
-        if nic.get('zerotierbridge'):
-            gw.cleanup_zerotierbridge(nic)
-
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('remove_nic', nicname=nicname).wait(die=True)
-        self.data['nics'].append(nic)
-        if dhcpserver:
-            gw.configure_dhcp()
+        self._gateway_sal.deploy()
 
     def update_data(self, data):
         raise NotImplementedError('Not supported use actions instead')
 
     def uninstall(self):
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('uninstall').wait(die=True)
+        self._gateway_sal.stop()
         self.state.delete('actions', 'install')
 
     def stop(self):
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('stop').wait(die=True)
+        self._gateway_sal.stop()
+        self.state.delete('actions', 'start')
 
     def start(self):
-        self.install()
-
+            self.install()
