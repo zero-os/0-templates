@@ -23,7 +23,7 @@ class TestContainerTemplate(TestCase):
             'flist': 'flist',
             'hostNetworking': False,
             'hostname': '',
-            'identity': '',
+            'ztIdentity': '',
             'initProcesses': [],
             'mounts': [],
             'nics': [],

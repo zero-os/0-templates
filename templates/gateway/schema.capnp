@@ -8,10 +8,8 @@ struct Schema {
     portforwards @3 :List(PortForward);
     httpproxies @4 :List(HTTPProxy);
     domain @5: Text;
-    advanced @6: Bool; # flag to check if http config has been set manually
-    zerotiernodeid @7:Text;
-    certificates @8 :List(Certificate);
-    identity @9: Text;
+    certificates @6 :List(Certificate);
+    ztIdentity @7: Text; #
 
     struct Nic {
         type @0: NicType;
@@ -19,8 +17,8 @@ struct Schema {
         config @2: NicConfig;
         name @3: Text;
         dhcpserver @4: DHCP;
-        zerotierbridge @5: Bridge;
-        token @6: Text;
+        ztBridge @5: Bridge;
+        ztClient @6: Text;
     }
 
     struct Bridge {

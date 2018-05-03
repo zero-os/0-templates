@@ -1,11 +1,12 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
+import copy
 import tempfile
 import shutil
 import os
 import pytest
 
-from zerodb import Zerodb, CONTAINER_TEMPLATE_UID, ZERODB_FLIST, NODE_CLIENT
+from zerodb import Zerodb, NODE_CLIENT
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
@@ -21,7 +22,10 @@ class TestZerodbTemplate(TestCase):
             'mode': 'user',
             'sync': False,
             'admin': '',
-            'disk': '/dev/sda1',
+            'path': '/dev/sda1',
+            'namespaces': [],
+            'ztIdentity': '',
+            'nics': [],
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Zerodb.template_uid = TemplateUID.parse(
@@ -33,6 +37,7 @@ class TestZerodbTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
+        self.data = copy.deepcopy(self.valid_data)
         patch('js9.j.clients.zero_os.sal', MagicMock()).start()
 
     def tearDown(self):
@@ -53,34 +58,26 @@ class TestZerodbTemplate(TestCase):
         assert zdb._node_sal == 'node_sal'
         get_node.assert_called_once_with(NODE_CLIENT)
 
-    def test_container_sal(self):
-        zdb = Zerodb('zdb', data=self.valid_data)
-        zdb._node_sal.containers.get = MagicMock(return_value='container')
-
-        assert zdb._container_sal == 'container'
-        zdb._node_sal.containers.get.assert_called_once_with(zdb._container_name)
-
     def test_zerodb_sal(self):
         """
         Test node_sal property
         """
-        zdb_sal = patch('js9.j.clients.zero_os.sal.get_zerodb', MagicMock(return_value='zdb_sal')).start()
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.api.services.get = MagicMock()
+        self.data['name'] = zdb.name
+        zdb_sal = MagicMock()
+        zdb._node_sal.primitives.from_dict.return_value = zdb_sal
 
-        assert zdb._zerodb_sal == 'zdb_sal'
-        assert zdb_sal.called
+        assert zdb._zerodb_sal == zdb_sal
+        zdb._node_sal.primitives.from_dict.assert_called_once_with('zerodb', self.data)
 
     def test_install_empty_password(self):
         """
         Test install action sets admin password if empty
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.api.services = MagicMock()
 
         zdb.install()
-
-        zdb._container.schedule_action.called_once_with('install')
+        zdb._zerodb_sal.deploy.called_once_with()
         zdb.state.check('actions', 'install', 'ok')
         assert zdb.data['admin'] != ''
 
@@ -91,40 +88,12 @@ class TestZerodbTemplate(TestCase):
         valid_data = self.valid_data.copy()
         valid_data['admin'] = 'password'
         zdb = Zerodb('zdb', data=valid_data)
-        zdb.api.services = MagicMock()
 
         zdb.install()
+        zdb._zerodb_sal.deploy.called_once_with()
 
-        zdb._container.schedule_action.called_once_with('install')
         zdb.state.check('actions', 'install', 'ok')
         assert zdb.data['admin'] == 'password'
-
-    def test_start_container_installed(self):
-        """
-        Test start action when container is installed
-        """
-        zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.state.set('actions', 'install', 'ok')
-        zdb.api.services.get = MagicMock()
-        zdb.start()
-
-        zdb._container.schedule_action.called_once_with('start')
-        zdb._zerodb_sal.start.assert_called_once_with()
-        zdb.state.check('actions', 'start', 'ok')
-
-    def test_start_container_not_installed(self):
-        """
-        Test start action when container is not installed
-        """
-        zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.state.set('actions', 'install', 'ok')
-        zdb.api.services.get = MagicMock()
-        zdb._container.state.check = MagicMock(side_effect=StateCheckError)
-        zdb.start()
-
-        zdb._container.schedule_action.called_with(['start', 'install'])
-        zdb._zerodb_sal.start.assert_called_once_with()
-        zdb.state.check('actions', 'start', 'ok')
 
     def test_start_before_install(self):
         """
@@ -140,18 +109,17 @@ class TestZerodbTemplate(TestCase):
         Test stop action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.state.set('actions', 'install', 'ok')
-        zdb.api.services.get = MagicMock()
+        zdb.state.set('actions', 'start', 'ok')
         zdb.stop()
 
         zdb._zerodb_sal.stop.assert_called_once_with()
 
-    def test_stop_before_install(self):
+    def test_stop_before_start(self):
         """
         Test stop action without install
         """
         with pytest.raises(StateCheckError,
-                           message='stop action should raise an error if zerodb is not installed'):
+                           message='stop action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.stop()
 
@@ -170,10 +138,8 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
-        zdb.api.services.get = MagicMock()
-        zdb.namespace_list()
-
-        zdb._zerodb_sal.list_namespaces.assert_called_once_with()
+        namespaces = zdb.namespace_list()
+        assert namespaces == zdb.data['namespaces']
 
     def test_namespace_info_before_start(self):
         """
@@ -184,16 +150,41 @@ class TestZerodbTemplate(TestCase):
             zdb = Zerodb('zdb', data=self.valid_data)
             zdb.namespace_info('namespace')
 
+    def test_namespace_info_doesnt_exist(self):
+        """
+        Test namespace_info action without start
+        """
+        with pytest.raises(ValueError,
+                           message='namespace action should raise an error if namespace doesnt exist'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.state.set('actions', 'start', 'ok')
+            zdb.namespace_info('namespace')
+
     def test_namespace_info(self):
         """
         Test namespace_info action
         """
-        zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.state.set('actions', 'start', 'ok')
-        zdb.api.services.get = MagicMock()
-        zdb.namespace_info('namespace')
+        self.data['namespaces'].append({'name': 'namespace', 'size': 20, 'public': True, 'password': ''})
 
-        zdb._zerodb_sal.get_namespace_info.assert_called_once_with('namespace')
+        zdb = Zerodb('zdb', data=self.data)
+        info_dict = {
+            'data_limits_bytes': 21474836480,
+            'data_size_bytes': 0,
+            'data_size_mb': 0.0,
+            'entries': 0,
+            'index_size_bytes': 0,
+            'index_size_kb': 0.0,
+            'name': 'two',
+            'password': 'yes',
+            'public': 'yes'
+        }
+        zdb.state.set('actions', 'start', 'ok')
+        namespace = MagicMock()
+        namespace.info.return_value.to_dict.return_value = info_dict
+        zdb_sal = MagicMock(namespaces={'namespace': namespace})
+        zdb._node_sal.primitives.from_dict.return_value = zdb_sal
+
+        assert zdb.namespace_info('namespace') == info_dict
 
     def test_namespace_create_before_start(self):
         """
@@ -208,14 +199,29 @@ class TestZerodbTemplate(TestCase):
         """
         Test namespace_set action
         """
-        zdb = Zerodb('zdb', data=self.valid_data)
+        zdb = Zerodb('zdb', data=self.data)
         zdb.state.set('actions', 'start', 'ok')
-        zdb.api.services.get = MagicMock()
+        zdb._deploy = MagicMock()
+        zdb._namespace_exists_update_delete = MagicMock(return_value=False)
         zdb.namespace_create('namespace', 12, 'secret')
 
-        zdb._zerodb_sal.create_namespace.assert_called_once_with('namespace')
-        zdb._zerodb_sal.set_namespace_property.assert_has_calls(
-            [call('namespace', 'maxsize', 12), call('namespace', 'password', 'secret')])
+        zdb._zerodb_sal.deploy.assert_called_once_with()
+        zdb._namespace_exists_update_delete.assert_called_once_with('namespace')
+        assert zdb.data['namespaces'] == [{
+            'name': 'namespace', 'size': 12, 'password': 'secret', 'public': True
+        }]
+
+    def test_namespace_create_namespace_exists(self):
+        """
+        Test namespace_set action
+        """
+        with pytest.raises(ValueError,
+                               message='namespace_create action should raise an error if namespace exists'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.state.set('actions', 'start', 'ok')
+            zdb._deploy = MagicMock()
+            zdb._namespace_exists_update_delete = MagicMock(return_value=True)
+            zdb.namespace_create('namespace', 12, 'secret')
 
     def test_namespace_set_before_start(self):
         """
@@ -224,7 +230,7 @@ class TestZerodbTemplate(TestCase):
         with pytest.raises(StateCheckError,
                            message='namespace_set action should raise an error if zerodb is not started'):
             zdb = Zerodb('zdb', data=self.valid_data)
-            zdb.namespace_set('namespace', 'maxsize', 12)
+            zdb.namespace_set('namespace', 'size', 12)
 
     def test_namespace_set(self):
         """
@@ -232,31 +238,124 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         zdb.state.set('actions', 'start', 'ok')
-        zdb.api.services.get = MagicMock()
-        zdb.namespace_set('namespace', 'maxsize', 12)
+        zdb._namespace_exists_update_delete = MagicMock(return_value=True)
+        zdb._deploy = MagicMock()
+        zdb.namespace_set('namespace', 'size', 12)
+        zdb._zerodb_sal.deploy.assert_called_once_with()
 
-        zdb._zerodb_sal.set_namespace_property.assert_called_once_with('namespace', 'maxsize', 12)
-
-    def test_container_service_exists(self):
+    def test_namespace_set_namespace_doesnt_exist(self):
         """
-        Test _container property if service exists
+        Test namespace_set action if namespace doesn't exist
+        """
+        with pytest.raises(ValueError,
+                           message='namespace_set action should raise an error if namespace doesn\'t exists'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.state.set('actions', 'start', 'ok')
+            zdb._namespace_exists_update_delete = MagicMock(return_value=False)
+            zdb.namespace_set('namespace', 'size', 12)
+
+    def test_namespace_delete_before_start(self):
+        """
+        Test namespace_delete action without start
+        """
+        with pytest.raises(StateCheckError,
+                           message='namespace_delete action should raise an error if zerodb is not started'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.namespace_delete('namespace')
+
+    def test_namespace_delete(self):
+        """
+        Test namespace_delete action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb.api.services = MagicMock()
-        zdb.api.services.get = MagicMock(return_value='container')
-        assert zdb._container == 'container'
-        assert zdb.api.services.get.call_count == 1
-        assert zdb.api.services.create.call_count == 0
+        zdb.state.set('actions', 'start', 'ok')
+        zdb._namespace_exists_update_delete = MagicMock(return_value=True)
+        zdb._deploy = MagicMock()
+        zdb.namespace_delete('namespace')
+        zdb._zerodb_sal.deploy.assert_called_once_with()
 
-    def test_container_service_doesnt_exist(self):
+    def test_namespace_delete_namespace_doesnt_exist(self):
         """
-        Test _container property if service doesnt exist
+        Test namespace_delete action if namespace doesn't exist
+        """
+        with pytest.raises(ValueError,
+                           message='namespace_delete action should raise an error if namespace doesn\'t exists'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.state.set('actions', 'start', 'ok')
+            zdb._namespace_exists_update_delete = MagicMock(return_value=False)
+            zdb.namespace_delete('namespace')
+
+    def test_deploy(self):
+        """
+        Test _deploy helper function
+        """
+        zdb = Zerodb('zdb', data=self.data)
+        zdb_sal = MagicMock(node_port=9900, zt_identity='identity')
+
+        zdb._node_sal.primitives.from_dict.return_value = zdb_sal
+        zdb._deploy()
+        assert zdb.data['ztIdentity'] == zdb_sal.zt_identity
+        assert zdb.data['nodePort'] == zdb_sal.node_port
+
+    def test_connection_info(self):
+        """
+        Test connection_info action
         """
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb._node_sal.freeports = MagicMock(return_value=[9900])
-        zdb.api.services = MagicMock()
-        zdb.api.services.get = MagicMock(side_effect=ServiceNotFoundError)
-        zdb.api.services.create = MagicMock(return_value='container')
-        assert zdb._container == 'container'
-        assert zdb.api.services.get.call_count == 1
-        assert zdb.api.services.create.call_count == 1
+        node_sal = MagicMock(public_addr='127.0.0.1')
+        patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=node_sal)).start()
+        assert zdb.connection_info() == {
+            'ip': node_sal.public_addr,
+            'port': zdb.data['nodePort'],
+        }
+
+    def test_namespace_exist_update_delete_runtimeerror(self):
+        """
+        Test _namespace_exists_update_delete raises RunTimeError if you try to update and delete a namespace at the same time
+        """
+        with pytest.raises(RuntimeError,
+                           message='_namespace_exist_update_dekete action should raise an error if user is trying to set property and delete namespace'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb._namespace_exists_update_delete('namespace', prop='password', delete=True)
+
+    def test_namespace_exist_update_delete_invalid_property(self):
+        """
+        Test _namespace_exists_update_delete raises ValueError if you supply invalid prop
+        """
+        with pytest.raises(ValueError,
+                           message='_namespace_exist_update_dekete action should raise an error if user uses invalid prop'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb._namespace_exists_update_delete('namespace', prop='prop')
+
+    def test_namespace_exist_update_delete_doesnt_exist(self):
+        """
+        Test _namespace_exists_update_delete if namespace doesn't exist
+        """
+        zdb = Zerodb('zdb', data=self.valid_data)
+        assert zdb._namespace_exists_update_delete('namespace') is False
+
+    def test_namespace_exist_update_delete_exists(self):
+        """
+        Test _namespace_exists_update_delete if namespace exists
+        """
+        self.data['namespaces'].append({'name': 'namespace', 'size': 20, 'public': True, 'password': ''})
+        zdb = Zerodb('zdb', data=self.data)
+        assert zdb._namespace_exists_update_delete('namespace') is True
+
+    def test_namespace_exist_update_delete_update_prop(self):
+        """
+        Test _namespace_exists_update_delete if namespace exists and prop is updated
+        """
+        self.data['namespaces'].append({'name': 'namespace', 'size': 20, 'public': True, 'password': ''})
+        zdb = Zerodb('zdb', data=self.data)
+        assert zdb._namespace_exists_update_delete('namespace', prop='size', value=30) is True
+        assert zdb.data['namespaces'] == [{'name': 'namespace', 'size': 30, 'public': True, 'password': ''}]
+
+    def test_namespace_exist_update_delete_namespace_delete(self):
+        """
+        Test _namespace_exists_update_delete if namespace exists and prop
+        """
+        self.data['namespaces'].append({'name': 'namespace', 'size': 20, 'public': True, 'password': ''})
+        zdb = Zerodb('zdb', data=self.data)
+        assert zdb._namespace_exists_update_delete('namespace', delete=True) is True
+        assert zdb.data['namespaces'] == []

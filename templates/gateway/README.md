@@ -9,15 +9,23 @@ It configures caddy, dnsmasq, nftables and cloud-init to work together to provid
 - `hostname`: container hostname.
 - `domain`: Domain for the private networks
 - `nics`: a list of type Nics. It specifies the configuration of the attached nics to the container.
-- `portforwards`: tcp/udp forwards from public network to private network
-- `httpproxies`: Reverse http/https proxy to allow one public ip to host multiple http services
+- `portforwards`: list of Portforward tcp/udp forwards from public network to private network
+- `httpproxies`: liost of HTTPProxy. Reverse http/https proxy to allow one public ip to host multiple http services
+- `domain`: gateway domain
+- `certificates`: List of Certificate
+- `ztIdentity`: zerottier identity of the gateway container
 
-Portforwards:
-- `protocols`: tcp or udp
+PortForward:
+- `protocols`: IPProtocol enum
 - `srcport`: Port to forward from
 - `srcip`: IPAddress to forward from
 - `dstip`: IPAddress to forward to
 - `dstport`: Port to forward to
+- `name`: portforward name
+
+IPProtocol enum:
+- `tcp`
+- `udp`
 
 Nic:
 - `type`: value from enum NicType indicating the nic type. 
@@ -55,6 +63,16 @@ Host:
 CloudInit:
 - `userdata`: Userdata as string (yaml string)
 - `metadata`: Metadata as string (yaml string)
+
+HTTPProxy:
+- `host`: http proxy host
+- `destinations`: list of destinations
+- `types`: list of HTTPType enum
+- `name`:http proxy name
+
+HTTPType enum:
+- `http`
+- `https`
 
 ### Actions:
 - `install`: creates a gatewa on a node, starts it and configures all services

@@ -17,8 +17,8 @@ class TestNamespaceTemplate(TestCase):
     def setUpClass(cls):
         cls.valid_data = {
             'size': 10,
-            'secret': 'user',
-            'zerodb': 'zerodb',
+            'password': 'user',
+            'zerodb': 'zerodb'
         }
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
         Namespace.template_uid = TemplateUID.parse(
@@ -54,7 +54,7 @@ class TestNamespaceTemplate(TestCase):
         args = {
             'name': ns.name,
             'size': ns.data['size'],
-            'secret': ns.data['secret'],
+            'password': ns.data['password'],
         }
         ns.install()
         ns._zerodb.schedule_action.assert_called_once_with('namespace_create', args=args)

@@ -27,7 +27,7 @@ class Namespace(TemplateBase):
         args = {
             'name': self.name,
             'size': self.data['size'],
-            'secret': self.data['secret'],
+            'password': self.data['password'],
         }
         self._zerodb.schedule_action('namespace_create', args=args).wait(die=True)
         self.state.set('actions', 'install', 'ok')

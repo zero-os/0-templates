@@ -3,11 +3,8 @@ from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
+
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
-# user this for development
-ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-master.flist'
-#ZERODB_FLIST = 'https://hub.gig.tech/gig-autobuilder/rivine-0-db-release-master.flist'
 NODE_CLIENT = 'local'
 
 
@@ -18,7 +15,6 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._zdb_sal = None
 
     @property
     def _node_sal(self):
@@ -27,14 +23,15 @@ class Zerodb(TemplateBase):
 
     @property
     def _zerodb_sal(self):
-        if not self._zdb_sal:
-            self._zdb_sal = self._node_sal.primitives.create_zerodb(self.name)
-        self._zdb_sal.from_dict(self.data)
-        return self._zdb_sal
+        data = self.data.copy()
+        data['name'] = self.name
+        return self._node_sal.primitives.from_dict('zerodb', data)
 
     def _deploy(self):
-        self._zerodb_sal.deploy()
-        self.data['nodePort'] = self._zerodb_sal.node_port
+        zerodb_sal = self._zerodb_sal
+        zerodb_sal.deploy()
+        self.data['nodePort'] = zerodb_sal.node_port
+        self.data['ztIdentity'] = zerodb_sal.zt_identity
 
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
@@ -45,6 +42,7 @@ class Zerodb(TemplateBase):
 
         self._deploy()
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def start(self):
         """
@@ -59,7 +57,7 @@ class Zerodb(TemplateBase):
         """
         stop zerodb server
         """
-        self.state.check('actions', 'install', 'ok')
+        self.state.check('actions', 'start', 'ok')
         self.logger.info('Stopping zerodb %s' % self.name)
 
         self._zerodb_sal.stop()
@@ -87,19 +85,23 @@ class Zerodb(TemplateBase):
         :return: dict
         """
         self.state.check('actions', 'start', 'ok')
+        if not self._namespace_exists_update_delete(name):
+            raise ValueError('Namespace {} doesn\'t exist'.format(name))
         return self._zerodb_sal.namespaces[name].info().to_dict()
 
-    def namespace_create(self, name, size=None, secret=None, public=True):
+    def namespace_create(self, name, size=None, password=None, public=True):
         """
         Create a namespace and set the size and secret
         :param name: namespace name
         :param size: namespace size
-        :param secret: namespace secret
+        :param password: namespace password
         :param public: namespace public status
         """
         self.state.check('actions', 'start', 'ok')
-        namespace = self._zerodb_sal.namespaces.add(name, size, secret, public)
-        namespace.deploy()
+        if self._namespace_exists_update_delete(name):
+                raise ValueError('Namespace {} already exists'.format(name))
+        self.data['namespaces'].append({'name': name, 'size': size, 'password': password, 'public': public})
+        self._zerodb_sal.deploy()
 
     def namespace_set(self, name, prop, value):
         """
@@ -109,20 +111,42 @@ class Zerodb(TemplateBase):
         :param value: property value
         """
         self.state.check('actions', 'start', 'ok')
-        self._zerodb_sal.namespaces[name].set_property(prop, value)
-        self.data['namespaces'] = self._zerodb_sal.to_dict()['namespaces']
+
+        if not self._namespace_exists_update_delete(name, prop, value):
+            raise ValueError('Namespace {} doesn\'t exist'.format(name))
+        self._zerodb_sal.deploy()
 
     def namespace_delete(self, name):
         """
         Delete a namespace
         """
-        self.state.check('actions', 'install', 'ok')
-        self._zerodb_sal.namespaces.remove(name)
-        self._deploy()
-        self.data['namespaces'] = self._zerodb_sal.to_dict()['namespaces']
+        self.state.check('actions', 'start', 'ok')
+        if not self._namespace_exists_update_delete(name, delete=True):
+            raise ValueError('Namespace {} doesn\'t exist'.format(name))
+
+        self._zerodb_sal.deploy()
 
     def connection_info(self):
         return {
             'ip': self._node_sal.public_addr,
             'port': self.data['nodePort']
         }
+
+    def _namespace_exists_update_delete(self, name, prop=None, value=None, delete=False):
+        if prop and delete:
+            raise RuntimeError('Can\'t set property and delete at the same time')
+        if prop and prop not in ['size', 'password', 'public']:
+            raise ValueError('Property must be size, password, or public')
+
+        for namespace in self.data['namespaces']:
+            if namespace['name'] == name:
+                if prop and delete:
+                    raise RuntimeError('Can\'t set property and delete at the same time')
+                if prop:
+                    if prop not in ['size', 'password', 'public']:
+                        raise ValueError('Property must be size, password, or public')
+                    namespace[prop] = value
+                if delete:
+                    self.data['namespaces'].remove(namespace)
+                return True
+        return False

@@ -1,24 +1,19 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
-from JumpScale9Lib.clients.zero_os.sal.gateway import Gateway as GatewaySal
-import copy
 
-CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
-NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
-FLIST = 'https://hub.gig.tech/gig-official-apps/zero-os-gw-master.flist'
 NODE_CLIENT = 'local'
 
 
 class Gateway(TemplateBase):
     version = '0.0.1'
-    template_name = "container"
+    template_name = "gateway"
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self._gw_sal = None
 
     def validate(self):
-        GatewaySal.validate_input(self.data)
+        if not self.data['hostname']:
+            raise ValueError('Must supply a valid hostname')
 
     @property
     def _node_sal(self):
@@ -26,26 +21,28 @@ class Gateway(TemplateBase):
 
     @property
     def _gateway_sal(self):
-        if not self._gw_sal:
-            self._gw_sal = self._node_sal.primitives.create_gateway(self.name)
-        self._gw_sal.from_dict(self.data)
-        return self._gw_sal
+        return self._node_sal.primitives.from_dict('gateway', self.data)
 
     def install(self):
-        self._gateway_sal.deploy()
-        self.data['identity'] = self._gateway_sal.identity
+        gateway_sal = self._gateway_sal
+        gateway_sal.deploy()
+        self.data['identity'] = gateway_sal.identity
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
 
     def add_portforward(self, forward):
+        self.state.check('actions', 'start', 'ok')
+
         for fw in self.data['portforwards']:
             if self._compare_objects(fw, forward, 'srcip', 'srcport'):
                 if set(fw['protocols']).intersection(set(forward['protocols'])):
-                    raise ValueError("Forward conflicts with existing forward")
+                    raise ValueError('Forward conflicts with existing forward')
         self.data['portforwards'].append(forward)
-        self._gateway_sal().configure_fw()
+        self._gateway_sal.deploy()
 
     def remove_portforward(self, forward):
+        self.state.check('actions', 'start', 'ok')
+
         for fw in self.data['portforwards']:
             if self._compare_objects(fw, forward, 'srcip', 'srcport'):
                 if set(fw['protocols']).intersection(set(forward['protocols'])):
@@ -53,16 +50,20 @@ class Gateway(TemplateBase):
                     break
         else:
             return
-        self._gateway_sal().configure_fw()
+        self._gateway_sal.configure_fw()
 
     def add_http_proxy(self, proxy):
+        self.state.check('actions', 'start', 'ok')
+
         for existing_proxy in self.data['httpproxies']:
             if self._compare_objects(existing_proxy, proxy, 'host'):
                 raise ValueError("Proxy with host {} already exists".format(proxy['host']))
         self.data['httpproxies'].append(proxy)
-        self._gateway_sal().configure_http()
+        self._gateway_sal.configure_http()
 
     def remove_http_proxy(self, proxy):
+        self.state.check('actions', 'start', 'ok')
+
         for existing_proxy in self.data['httpproxies']:
             if self._compare_objects(existing_proxy, proxy, 'host'):
                 self.data['httpproxies'].remove(existing_proxy)
@@ -72,6 +73,8 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_http()
 
     def add_dhcp_host(self, nicname, host):
+        self.state.check('actions', 'start', 'ok')
+
         for nic in self.data['nics']:
             if nic['name'] == nicname:
                 break
@@ -86,6 +89,8 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_cloudinit()
 
     def remove_dhcp_host(self, nicname, host):
+        self.state.check('actions', 'start', 'ok')
+
         for nic in self.data['nics']:
             if nic['name'] == nicname:
                 break
@@ -99,6 +104,7 @@ class Gateway(TemplateBase):
         else:
             return
         self._gateway_sal.configure_dhcp()
+        self._gateway_sal.configure_cloudinit()
 
     def _compare_objects(self, obj1, obj2, *keys):
         for key in keys:
@@ -107,12 +113,16 @@ class Gateway(TemplateBase):
         return True
 
     def add_nic(self, nic):
+        self.state.check('actions', 'start', 'ok')
+
         for existing_nic in self.data['nics']:
             if self._compare_objects(existing_nic, nic, 'type', 'id'):
                 raise ValueError('Nic with same type/id combination already exists')
         self._gateway_sal.deploy()
 
     def remove_nic(self, nicname):
+        self.state.check('actions', 'start', 'ok')
+
         for nic in self.data['nics']:
             if nic['name'] == nicname:
                 break
@@ -124,10 +134,13 @@ class Gateway(TemplateBase):
         raise NotImplementedError('Not supported use actions instead')
 
     def uninstall(self):
+        self.state.check('actions', 'install', 'ok')
         self._gateway_sal.stop()
         self.state.delete('actions', 'install')
+        self.state.delete('actions', 'start')
 
     def stop(self):
+        self.state.check('actions', 'start', 'ok')
         self._gateway_sal.stop()
         self.state.delete('actions', 'start')
 
