@@ -26,7 +26,7 @@ class Gateway(TemplateBase):
     def install(self):
         gateway_sal = self._gateway_sal
         gateway_sal.deploy()
-        self.data['identity'] = gateway_sal.identity
+        self.data['ztIdentity'] = gateway_sal.zt_identity
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
 
@@ -34,53 +34,58 @@ class Gateway(TemplateBase):
         self.state.check('actions', 'start', 'ok')
 
         for fw in self.data['portforwards']:
-            if self._compare_objects(fw, forward, 'srcip', 'srcport'):
+            name, combination = self._compare_objects(fw, forward, 'srcip', 'srcport')
+            if name:
+                raise ValueError('A forward with the same name exists')
+            if combination:
                 if set(fw['protocols']).intersection(set(forward['protocols'])):
                     raise ValueError('Forward conflicts with existing forward')
         self.data['portforwards'].append(forward)
         self._gateway_sal.deploy()
 
-    def remove_portforward(self, forward):
+    def remove_portforward(self, forward_name):
         self.state.check('actions', 'start', 'ok')
 
         for fw in self.data['portforwards']:
-            if self._compare_objects(fw, forward, 'srcip', 'srcport'):
-                if set(fw['protocols']).intersection(set(forward['protocols'])):
-                    self.data['portforwards'].remove(fw)
-                    break
+            if fw['name'] == forward_name:
+                self.data['portforwards'].remove(fw)
+                break
         else:
-            return
+            raise LookupError('Forward {} doesn\'t exist'.format(forward_name))
         self._gateway_sal.configure_fw()
 
     def add_http_proxy(self, proxy):
         self.state.check('actions', 'start', 'ok')
 
         for existing_proxy in self.data['httpproxies']:
-            if self._compare_objects(existing_proxy, proxy, 'host'):
+            name, combination = self._compare_objects(existing_proxy, proxy, 'host')
+            if name:
+                raise ValueError('A proxy with the same name exists')
+            if combination:
                 raise ValueError("Proxy with host {} already exists".format(proxy['host']))
         self.data['httpproxies'].append(proxy)
         self._gateway_sal.configure_http()
 
-    def remove_http_proxy(self, proxy):
+    def remove_http_proxy(self, proxy_name):
         self.state.check('actions', 'start', 'ok')
 
         for existing_proxy in self.data['httpproxies']:
-            if self._compare_objects(existing_proxy, proxy, 'host'):
+            if existing_proxy['name'] == proxy_name:
                 self.data['httpproxies'].remove(existing_proxy)
                 break
         else:
-            return
+            raise LookupError('Proxy with name {} doesn\'t exist'.format(proxy_name))
         self._gateway_sal.configure_http()
 
-    def add_dhcp_host(self, nicname, host):
+    def add_dhcp_host(self, network_name, host):
         self.state.check('actions', 'start', 'ok')
 
-        for nic in self.data['nics']:
-            if nic['name'] == nicname:
+        for network in self.data['networks']:
+            if network['name'] == network_name:
                 break
         else:
-            raise LookupError('Could not find NIC with name {}'.format(nicname))
-        dhcpserver = nic['dhcpserver']
+            raise LookupError('Network with name {} doesn\'t exist'.format(network_name))
+        dhcpserver = network['dhcpserver']
         for existing_host in dhcpserver['hosts']:
             if existing_host['macaddress'] == host['macaddress']:
                 raise ValueError('Host with macaddress {} already exists'.format(host['macaddress']))
@@ -88,50 +93,61 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_dhcp()
         self._gateway_sal.configure_cloudinit()
 
-    def remove_dhcp_host(self, nicname, host):
+    def remove_dhcp_host(self, networkname, host):
         self.state.check('actions', 'start', 'ok')
 
-        for nic in self.data['nics']:
-            if nic['name'] == nicname:
+        for network in self.data['networks']:
+            if network['name'] == networkname:
                 break
         else:
-            raise LookupError('Could not find NIC with name {}'.format(nicname))
-        dhcpserver = nic['dhcpserver']
+            raise LookupError('Network with name {} doesn\'t exist'.format(networkname))
+        dhcpserver = network['dhcpserver']
         for existing_host in dhcpserver['hosts']:
             if existing_host['macaddress'] == host['macaddress']:
                 dhcpserver['hosts'].remove(existing_host)
                 break
         else:
-            return
+            raise LookupError('Host with macaddress {} doesn\'t exist'.format(host['macaddress']))
         self._gateway_sal.configure_dhcp()
         self._gateway_sal.configure_cloudinit()
 
     def _compare_objects(self, obj1, obj2, *keys):
+        """
+        Checks that obj1 and obj2 have different names, and that the combination of values from keys are unique
+        :param obj1: first dict to use for comparison
+        :param obj2: second dict to use for comparison
+        :param keys: keys to use for value comparison
+        :return: a tuple of bool, where the first element indicates whether the name matches or not,
+        and the second element indicates whether the combination of values matches or not
+        """
+        name = obj1['name'] == obj2['name']
         for key in keys:
             if obj1[key] != obj2[key]:
-                return False
-        return True
+                return name, False
+        return name, True
 
-    def add_nic(self, nic):
+    def add_network(self, network):
         self.state.check('actions', 'start', 'ok')
 
-        for existing_nic in self.data['nics']:
-            if self._compare_objects(existing_nic, nic, 'type', 'id'):
-                raise ValueError('Nic with same type/id combination already exists')
+        for existing_network in self.data['networks']:
+            name, combination = self._compare_objects(existing_network, network, 'type', 'id')
+            if name:
+                raise ValueError('Network with name {} already exists'.format(name))
+            if combination:
+                raise ValueError('network with same type/id combination already exists')
+        self.data['networks'].append(network)
         self._gateway_sal.deploy()
 
-    def remove_nic(self, nicname):
+    def remove_network(self, network_name):
         self.state.check('actions', 'start', 'ok')
 
-        for nic in self.data['nics']:
-            if nic['name'] == nicname:
+        for network in self.data['networks']:
+            if network['name'] == network_name:
+                self.data['networks'].remove(network)
                 break
         else:
-            return
+            raise LookupError('Network with name {} doesn\'t exists'.format(network_name))
         self._gateway_sal.deploy()
-
-    def update_data(self, data):
-        raise NotImplementedError('Not supported use actions instead')
 
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
@@ -145,4 +161,5 @@ class Gateway(TemplateBase):
         self.state.delete('actions', 'start')
 
     def start(self):
-            self.install()
+        self.state.check('actions', 'install', 'ok')
+        self.install()

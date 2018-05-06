@@ -4,17 +4,17 @@
 struct Schema {
     status @0 :Status;
     hostname @1 :Text;
-    nics @2 :List(Nic); # Configuration of the attached nics to the container
+    networks @2 :List(Network); # Configuration of the attached nics to the container
     portforwards @3 :List(PortForward);
     httpproxies @4 :List(HTTPProxy);
     domain @5: Text;
     certificates @6 :List(Certificate);
     ztIdentity @7: Text; #
 
-    struct Nic {
-        type @0: NicType;
+    struct Network {
+        type @0: NetworkType;
         id @1: Text;
-        config @2: NicConfig;
+        config @2: NetworkConfig;
         name @3: Text;
         dhcpserver @4: DHCP;
         ztBridge @5: Bridge;
@@ -43,7 +43,7 @@ struct Schema {
         hosts @1: List(Host);
     }
 
-    struct NicConfig {
+    struct NetworkConfig {
         cidr @0: Text;
         gateway @1: Text;
     }
@@ -78,7 +78,7 @@ struct Schema {
         dstip @4: Text;
         name @5: Text;
     }
-    enum NicType {
+    enum NetworkType {
         default @0;
         zerotier @1;
         vlan @2;

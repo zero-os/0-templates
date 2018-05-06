@@ -86,7 +86,7 @@ class Zerodb(TemplateBase):
         """
         self.state.check('actions', 'start', 'ok')
         if not self._namespace_exists_update_delete(name):
-            raise ValueError('Namespace {} doesn\'t exist'.format(name))
+            raise LookupError('Namespace {} doesn\'t exist'.format(name))
         return self._zerodb_sal.namespaces[name].info().to_dict()
 
     def namespace_create(self, name, size=None, password=None, public=True):
@@ -113,7 +113,7 @@ class Zerodb(TemplateBase):
         self.state.check('actions', 'start', 'ok')
 
         if not self._namespace_exists_update_delete(name, prop, value):
-            raise ValueError('Namespace {} doesn\'t exist'.format(name))
+            raise LookupError('Namespace {} doesn\'t exist'.format(name))
         self._zerodb_sal.deploy()
 
     def namespace_delete(self, name):
@@ -122,7 +122,7 @@ class Zerodb(TemplateBase):
         """
         self.state.check('actions', 'start', 'ok')
         if not self._namespace_exists_update_delete(name, delete=True):
-            raise ValueError('Namespace {} doesn\'t exist'.format(name))
+            raise LookupError('Namespace {} doesn\'t exist'.format(name))
 
         self._zerodb_sal.deploy()
 
@@ -134,14 +134,12 @@ class Zerodb(TemplateBase):
 
     def _namespace_exists_update_delete(self, name, prop=None, value=None, delete=False):
         if prop and delete:
-            raise RuntimeError('Can\'t set property and delete at the same time')
+            raise ValueError('Can\'t set property and delete at the same time')
         if prop and prop not in ['size', 'password', 'public']:
             raise ValueError('Property must be size, password, or public')
 
         for namespace in self.data['namespaces']:
             if namespace['name'] == name:
-                if prop and delete:
-                    raise RuntimeError('Can\'t set property and delete at the same time')
                 if prop:
                     if prop not in ['size', 'password', 'public']:
                         raise ValueError('Property must be size, password, or public')
