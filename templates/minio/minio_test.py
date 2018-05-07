@@ -40,7 +40,7 @@ class TestMinioTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
+        patch('js9.j.clients.zos.sal', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -76,14 +76,14 @@ class TestMinioTemplate(TestCase):
         """
         Test node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node_sal')).start()
         minio = Minio('minio', data=self.valid_data)
 
         assert minio.node_sal == 'node_sal'
         get_node.assert_called_once_with(minio.data['node'])
 
     def test_container_sal(self):
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
         minio = Minio('minio', data=self.valid_data)
         minio.node_sal.containers.get = MagicMock(return_value='container')
 
@@ -94,7 +94,7 @@ class TestMinioTemplate(TestCase):
         """
         Test node_sal property
         """
-        minio_sal = patch('js9.j.clients.zero_os.sal.get_minio', MagicMock(return_value='minio_sal')).start()
+        minio_sal = patch('js9.j.clients.zos.sal.get_minio', MagicMock(return_value='minio_sal')).start()
         minio = Minio('minio', data=self.valid_data)
         minio._get_zdbs = MagicMock()
 

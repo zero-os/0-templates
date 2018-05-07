@@ -37,7 +37,7 @@ class TestZerodbTemplate(TestCase):
             'ztIdentity': '',
             'nics': [],
         }
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
+        patch('js9.j.clients.zos.sal', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -51,7 +51,7 @@ class TestZerodbTemplate(TestCase):
         """
         Test _node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node_sal')).start()
         zdb = Zerodb('zdb', data=self.valid_data)
 
         assert zdb._node_sal == 'node_sal'
@@ -302,7 +302,7 @@ class TestZerodbTemplate(TestCase):
         """
         zdb = Zerodb('zdb', data=self.valid_data)
         node_sal = MagicMock(public_addr='127.0.0.1')
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=node_sal)).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value=node_sal)).start()
         assert zdb.connection_info() == {
             'ip': node_sal.public_addr,
             'port': zdb.data['nodePort'],

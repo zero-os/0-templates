@@ -44,7 +44,7 @@ class TestHealthcheckTemplate(TestCase):
         Test node_sal property
         """
         node_sal_return = 'node_sal'
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value=node_sal_return)).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value=node_sal_return)).start()
         healthcheck = Healthcheck(name='healthcheck', data=self.valid_data)
         node_sal = healthcheck.node_sal
         get_node.assert_called_with(NODE_CLIENT)

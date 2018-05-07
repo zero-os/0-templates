@@ -133,7 +133,7 @@ class TestBootstrapTemplate(TestCase):
         """
         Test _get_node_sal
         """
-        zero_os = patch('js9.j.clients.zero_os.get', MagicMock()).start()
+        zero_os = patch('js9.j.clients.zos.get', MagicMock()).start()
         bootstrap = ZeroosBootstrap('bootstrap', data=self.valid_data)
         ip = '127.0.0.1'
         data = {
@@ -144,7 +144,7 @@ class TestBootstrapTemplate(TestCase):
             'ssl': True,
             'timeout': 120,
         }
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node')).start()
         node = bootstrap._get_node_sal(ip)
 
         zero_os.called_once_with(instance='bootstrap', data=data, create=True, die=True)

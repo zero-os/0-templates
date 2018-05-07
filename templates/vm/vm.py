@@ -31,7 +31,7 @@ class Vm(TemplateBase):
         """
         connection to the zos node
         """
-        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     def _monitor(self):
         self.logger.info('Monitor vm %s' % self.name)

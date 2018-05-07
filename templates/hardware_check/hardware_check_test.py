@@ -177,7 +177,7 @@ class TestHardwareCheckTemplate(TestCase):
         Test check is successful when hardware is supported
         :return:
         """
-        patch('js9.j.clients.zero_os.get', MagicMock()).start()
+        patch('js9.j.clients.zos.get', MagicMock()).start()
         hw = HardwareCheck(name='hw', data=self.valid_data)
         supported = self.valid_data['supported'][0]
         hw._disk = MagicMock(return_value=(supported['hddCount'], supported['ssdCount']))
@@ -194,7 +194,7 @@ class TestHardwareCheckTemplate(TestCase):
         """
         Test that check fails if any of hardware specs arent supported
         """
-        patch('js9.j.clients.zero_os.get', MagicMock()).start()
+        patch('js9.j.clients.zos.get', MagicMock()).start()
         hw = HardwareCheck(name='hw', data=self.valid_data)
         supported = self.valid_data['supported'][0]
         hw._disk = MagicMock(return_value=(supported['hddCount'], supported['ssdCount']))

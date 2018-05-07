@@ -37,7 +37,7 @@ class TestGatewayTemplate(TestCase):
             'certificates': [],
             'ztIdentity': '',
         }
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
+        patch('js9.j.clients.zos.sal', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -51,7 +51,7 @@ class TestGatewayTemplate(TestCase):
         """
         Test _node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node_sal')).start()
         gw = Gateway('gw', data=self.valid_data)
 
         assert gw._node_sal == 'node_sal'

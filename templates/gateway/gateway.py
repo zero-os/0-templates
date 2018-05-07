@@ -17,7 +17,7 @@ class Gateway(TemplateBase):
 
     @property
     def _node_sal(self):
-        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     @property
     def _gateway_sal(self):

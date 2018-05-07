@@ -44,7 +44,7 @@ class TestVmTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -71,10 +71,10 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
 
         assert vm._node_sal == node_sal_return
-        j.clients.zero_os.sal.get_node.assert_called_with(NODE_CLIENT)
+        j.clients.zos.sal.get_node.assert_called_with(NODE_CLIENT)
 
     def test_vm_sal(self):
         """
