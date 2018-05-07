@@ -27,7 +27,7 @@ class TestGatewayTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        self.data = {
+        self.valid_data = {
             'status': 'halted',
             'hostname': 'hostname',
             'networks': [],
@@ -43,16 +43,16 @@ class TestGatewayTemplate(TestCase):
         patch.stopall()
 
     def test_create_valid_data(self):
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.validate()
-        assert gw.data == self.data
+        assert gw.data == self.valid_data
 
     def test_node_sal(self):
         """
         Test _node_sal property
         """
         get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
 
         assert gw._node_sal == 'node_sal'
         get_node.assert_called_once_with(NODE_CLIENT)
@@ -61,18 +61,18 @@ class TestGatewayTemplate(TestCase):
         """
         Test _gateway_sal property
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw_sal = MagicMock()
         gw._node_sal.primitives.from_dict.return_value = gw_sal
 
         assert gw._gateway_sal == gw_sal
-        gw._node_sal.primitives.from_dict.assert_called_once_with('gateway', self.data)
+        gw._node_sal.primitives.from_dict.assert_called_once_with('gateway', self.valid_data)
 
     def test_install(self):
         """
         Test install action
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw_sal = MagicMock(zt_identity='zt_identity')
         gw._node_sal.primitives.from_dict.return_value = gw_sal
         gw.install()
@@ -85,7 +85,7 @@ class TestGatewayTemplate(TestCase):
         """
         Test add_portforward action
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
         gw.add_portforward(portforward)
@@ -98,7 +98,7 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(StateCheckError,
                            message='action should raise an error if gateway isn\'t started'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
             gw.add_portforward(portforward)
 
@@ -108,8 +108,8 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(ValueError,
                            message='action should raise an error if another portforward with the same name exist'):
-            self.data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
             gw.add_portforward(portforward)
@@ -120,8 +120,8 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(ValueError,
                            message='action should raise an error if another portforward with the same name exist'):
-            self.data['portforwards'] = [{'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['portforwards'] = [{'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
             gw.add_portforward(portforward)
@@ -131,8 +131,8 @@ class TestGatewayTemplate(TestCase):
         Test add_portforward action when another portforward with the same srcip and srcport exists and have different protocols
         """
         portforward_one = {'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['udp']}
-        self.data['portforwards'] = [portforward_one]
-        gw = Gateway('gw', data=self.data)
+        self.valid_data['portforwards'] = [portforward_one]
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         portforward_two = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
         gw.add_portforward(portforward_two)
@@ -142,8 +142,8 @@ class TestGatewayTemplate(TestCase):
         """
         Test remove_portforward action
         """
-        self.data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
-        gw = Gateway('gw', data=self.data)
+        self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.remove_portforward('pf')
         assert gw.data['portforwards'] == []
@@ -154,8 +154,8 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(StateCheckError,
                            message='action should raise an error if gateway isn\'t started'):
-            self.data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.remove_portforward('pf')
 
     def test_remove_portforward_doesnt_exist(self):
@@ -163,7 +163,7 @@ class TestGatewayTemplate(TestCase):
         Test remove_portforward action if the portforward doesn't exist
         """
         with pytest.raises(LookupError, message='action should raise an error if portforward doesnt exist'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.remove_portforward('pf')
 
@@ -171,7 +171,7 @@ class TestGatewayTemplate(TestCase):
         """
         Test add_http_proxy action
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         proxy = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
         gw.add_http_proxy(proxy)
@@ -183,7 +183,7 @@ class TestGatewayTemplate(TestCase):
         Test add_http_proxy action before gateway start
         """
         with pytest.raises(StateCheckError, message='actions should raise an error if gateway isn\'t started'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             proxy = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
             gw.add_http_proxy(proxy)
 
@@ -195,8 +195,8 @@ class TestGatewayTemplate(TestCase):
                    message='action should raise an error if another http proxy with the same name exist'):
             proxy = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
             proxy2 = {'host': 'host2', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
-            self.data['httpproxies'].append(proxy)
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['httpproxies'].append(proxy)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.add_http_proxy(proxy2)
 
@@ -208,8 +208,8 @@ class TestGatewayTemplate(TestCase):
                    message='action should raise an error if another http proxy with the same host exist'):
             proxy = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
             proxy2 = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy2'}
-            self.data['httpproxies'].append(proxy)
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['httpproxies'].append(proxy)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.add_http_proxy(proxy2)
 
@@ -217,8 +217,8 @@ class TestGatewayTemplate(TestCase):
         """
         Test remove_http_proxy action
         """
-        self.data['httpproxies'] = [{'host': 'host', 'destinations': ['destination'], 'types': ['http'], 'name': 'proxy'}]
-        gw = Gateway('gw', data=self.data)
+        self.valid_data['httpproxies'] = [{'host': 'host', 'destinations': ['destination'], 'types': ['http'], 'name': 'proxy'}]
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.remove_http_proxy('proxy')
         assert gw.data['httpproxies'] == []
@@ -230,8 +230,8 @@ class TestGatewayTemplate(TestCase):
         """
 
         with pytest.raises(StateCheckError, message='actions should raise an error if gateway isn\'t started'):
-            self.data['httpproxies'] = [{'host': 'host', 'destinations': ['destination'], 'types': ['http'], 'name': 'proxy'}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['httpproxies'] = [{'host': 'host', 'destinations': ['destination'], 'types': ['http'], 'name': 'proxy'}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.remove_http_proxy('proxy')
 
     def test_remove_http_proxy_doesnt_exist(self):
@@ -240,7 +240,7 @@ class TestGatewayTemplate(TestCase):
         """
 
         with pytest.raises(LookupError, message='actions should raise an error if gateway isn\'t started'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.remove_http_proxy('proxy')
 
@@ -248,8 +248,8 @@ class TestGatewayTemplate(TestCase):
         """
         Test add_dhcp_host action
         """
-        self.data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
-        gw = Gateway('gw', data=self.data)
+        self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.add_dhcp_host('network', {'macaddress': 'address2'})
         assert gw.data['networks'] == [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}, {'macaddress': 'address2'}]}}]
@@ -261,8 +261,8 @@ class TestGatewayTemplate(TestCase):
         Test add_dhcp_host action before gateway start
         """
         with pytest.raises(StateCheckError, message='actions should raise an error if gateway isn\'t started'):
-            self.data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.add_dhcp_host('network', {'macaddress': 'address2'})
 
     def test_add_dhcp_host_name_doesnt_exists(self):
@@ -271,7 +271,7 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(LookupError,
                            message='action should raise an error if network with this name doesnt exist'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.add_dhcp_host('network', {'macaddress': 'address2'})
 
@@ -281,8 +281,8 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(ValueError,
                            message='action should raise an error if another host with the same macaddress exists'):
-            self.data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.add_dhcp_host('network', {'macaddress': 'address1'})
 
@@ -290,8 +290,8 @@ class TestGatewayTemplate(TestCase):
         """
         Test remove_dhcp_host action
         """
-        self.data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
-        gw = Gateway('gw', data=self.data)
+        self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.remove_dhcp_host('network', {'macaddress': 'address1'})
         assert gw.data['networks'] == [{'name': 'network', 'dhcpserver': {'hosts': []}}]
@@ -303,8 +303,8 @@ class TestGatewayTemplate(TestCase):
         Test remove_dhcp_host action before gateway start
         """
         with pytest.raises(StateCheckError, message='actions should raise an error if gateway isn\'t started'):
-            self.data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.remove_dhcp_host('network', {'macaddress': 'address1'})
 
     def test_remove_dhcp_host_name_doesnt_exists(self):
@@ -313,7 +313,7 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(LookupError,
                    message='action should raise an error if network with this name doesnt exist'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.remove_dhcp_host('network', {'macaddress': 'address2'})
 
@@ -323,8 +323,8 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(LookupError,
                            message='action should raise an error if host with the macaddress doesnt exist'):
-            self.data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.remove_dhcp_host('network', {'macaddress': 'address2'})
 
@@ -332,7 +332,7 @@ class TestGatewayTemplate(TestCase):
         """
         Test start action
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'install', 'ok')
         gw.install = MagicMock()
         gw.start()
@@ -343,7 +343,7 @@ class TestGatewayTemplate(TestCase):
         Test start action, gateway isnt installed
         """
         with pytest.raises(StateCheckError, message='actions should raise an error if gateway isn\'t installed'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.start()
 
     def test_add_network(self):
@@ -351,7 +351,7 @@ class TestGatewayTemplate(TestCase):
         Test add_network action
         """
         network = {'name': 'network', 'type': 'default', 'id': 'id'}
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.add_network(network)
         assert gw.data['networks'] == [network]
@@ -365,8 +365,8 @@ class TestGatewayTemplate(TestCase):
                            message='action should raise an error if another network with the same name'):
             network = {'name': 'network', 'type': 'default', 'id': 'id'}
             network_two = {'name': 'network', 'type': 'default', 'id': 'id2'}
-            self.data['networks'].append(network)
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['networks'].append(network)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.add_network(network_two)
 
@@ -378,8 +378,8 @@ class TestGatewayTemplate(TestCase):
                            message='action should raise an error if another network with the same type and id combination exists'):
             network = {'name': 'network', 'type': 'default', 'id': 'id'}
             network_two = {'name': 'network2', 'type': 'default', 'id': 'id'}
-            self.data['networks'].append(network)
-            gw = Gateway('gw', data=self.data)
+            self.valid_data['networks'].append(network)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.add_network(network_two)
 
@@ -390,7 +390,7 @@ class TestGatewayTemplate(TestCase):
         with pytest.raises(StateCheckError,
                            message='action should raise an error if another network with the same type and id combination exists'):
             network = {'name': 'network', 'type': 'default', 'id': 'id'}
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.add_network(network)
 
     def test_remove_network(self):
@@ -398,8 +398,8 @@ class TestGatewayTemplate(TestCase):
         Test remove_network action
         """
         network = {'name': 'network', 'type': 'default', 'id': 'id'}
-        self.data['networks'] = [network]
-        gw = Gateway('gw', data=self.data)
+        self.valid_data['networks'] = [network]
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.remove_network('network')
         assert gw.data['networks'] == []
@@ -411,7 +411,7 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(LookupError,
                            message='action should raise an error if network with name doesnt exist'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
             gw.remove_network('network')
 
@@ -421,14 +421,14 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(StateCheckError,
                            message='action should raise an error if another gateway isnt started'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.remove_network('network')
 
     def test_uninstall(self):
         """
         Test uninstall action
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'install', 'ok')
         gw.uninstall()
         gw._gateway_sal.stop.called_once_with()
@@ -439,7 +439,7 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(StateCheckError,
                            message='action should raise an error if another gateway isnt installed'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.uninstall()
             gw._gateway_sal.stop.called_once_with()
 
@@ -447,7 +447,7 @@ class TestGatewayTemplate(TestCase):
         """
         Test uninstall action
         """
-        gw = Gateway('gw', data=self.data)
+        gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.stop()
         gw._gateway_sal.stop.called_once_with()
@@ -458,6 +458,6 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(StateCheckError,
                            message='action should raise an error if another gateway isnt installed'):
-            gw = Gateway('gw', data=self.data)
+            gw = Gateway('gw', data=self.valid_data)
             gw.stop()
             gw._gateway_sal.stop.called_once_with()
