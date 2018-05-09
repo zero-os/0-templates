@@ -100,6 +100,17 @@ class Zerodb(TemplateBase):
             raise LookupError('Namespace {} doesn\'t exist'.format(name))
         return self._zerodb_sal.namespaces[name].url
 
+    def namespace_private_url(self, name):
+        """
+        Get private url of the namespace
+        :param name: namespace name
+        :return: dict
+        """
+        self.state.check('actions', 'start', 'ok')
+        if not self._namespace_exists_update_delete(name):
+            raise LookupError('Namespace {} doesn\'t exist'.format(name))
+        return self._zerodb_sal.namespaces[name].private_url
+
     def namespace_create(self, name, size=None, password=None, public=True):
         """
         Create a namespace and set the size and secret

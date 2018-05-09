@@ -391,3 +391,36 @@ class TestZerodbTemplate(TestCase):
         zdb._node_sal.primitives.from_dict.return_value = zdb_sal
 
         assert zdb.namespace_url('namespace') == 'url'
+
+    def test_namespace_private_url_before_start(self):
+        """
+        Test namespace_private_url action without start
+        """
+        with pytest.raises(StateCheckError,
+                           message='namespace action should raise an error if zerodb is not started'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.namespace_private_url('namespace')
+
+    def test_namespace_private_url_doesnt_exist(self):
+        """
+        Test namespace_private_url action without start
+        """
+        with pytest.raises(LookupError,
+                           message='namespace action should raise an error if namespace doesnt exist'):
+            zdb = Zerodb('zdb', data=self.valid_data)
+            zdb.state.set('actions', 'start', 'ok')
+            zdb.namespace_private_url('namespace')
+
+    def test_namespace_private_url(self):
+        """
+        Test namespace_url action
+        """
+        self.valid_data['namespaces'].append({'name': 'namespace', 'size': 20, 'public': True, 'password': ''})
+
+        zdb = Zerodb('zdb', data=self.valid_data)
+        zdb.state.set('actions', 'start', 'ok')
+        namespace = MagicMock(private_url='url')
+        zdb_sal = MagicMock(namespaces={'namespace': namespace})
+        zdb._node_sal.primitives.from_dict.return_value = zdb_sal
+
+        assert zdb.namespace_private_url('namespace') == 'url'

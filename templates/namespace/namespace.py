@@ -39,6 +39,20 @@ class Namespace(TemplateBase):
 
         return task.result
 
+    def url(self):
+        self.state.check('actions', 'install', 'ok')
+        task = self._zerodb.schedule_action('namespace_url', args={'name': self.name})
+        task.wait(die=True)
+
+        return task.result
+
+    def private_url(self):
+        self.state.check('actions', 'install', 'ok')
+        task = self._zerodb.schedule_action('namespace_private_url', args={'name': self.name})
+        task.wait(die=True)
+
+        return task.result
+
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
         self._zerodb.schedule_action('namespace_delete', args={'name': self.name}).wait(die=True)

@@ -101,3 +101,33 @@ class TestNamespaceTemplate(TestCase):
         ns._zerodb.schedule_action = MagicMock(return_value=task)
         assert ns.connection_info() == result
         ns._zerodb.schedule_action.assert_called_once_with('connection_info')
+
+    def test_url_without_install(self):
+        with pytest.raises(StateCheckError, message='Executing info action without install should raise an error'):
+            ns = Namespace(name='namespace', data=self.valid_data)
+            ns.url()
+
+    def test_url(self):
+        ns = Namespace(name='namespace', data=self.valid_data)
+        ns.state.set('actions', 'install', 'ok')
+        ns.api = MagicMock()
+        task = MagicMock(result='url')
+        ns._zerodb.schedule_action = MagicMock(return_value=task)
+
+        assert ns.url() == 'url'
+        ns._zerodb.schedule_action.assert_called_once_with('namespace_url', args={'name': ns.name})
+
+    def test_private_url_without_install(self):
+        with pytest.raises(StateCheckError, message='Executing info action without install should raise an error'):
+            ns = Namespace(name='namespace', data=self.valid_data)
+            ns.url()
+
+    def test_private_url(self):
+        ns = Namespace(name='namespace', data=self.valid_data)
+        ns.state.set('actions', 'install', 'ok')
+        ns.api = MagicMock()
+        task = MagicMock(result='url')
+        ns._zerodb.schedule_action = MagicMock(return_value=task)
+
+        assert ns.private_url() == 'url'
+        ns._zerodb.schedule_action.assert_called_once_with('namespace_private_url', args={'name': ns.name})
