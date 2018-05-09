@@ -2,8 +2,7 @@ from js9 import j
 
 from zerorobot.template.base import TemplateBase
 
-
-class SSHClient(TemplateBase):
+class SshClient(TemplateBase):
 
     version = '0.0.1'
     template_name = "ssh_client"
@@ -25,13 +24,13 @@ class SSHClient(TemplateBase):
         port = self.data.get('port')
 
         # this will create a configuration for this instance
-        data={
+        data = {
             'addr': host,
             'port': port,
             'login': login,
             'passwd_': password,
         }
-        _ = j.clients.ssh.get(self.name, data=data)
+        _ = j.clients.ssh.get(self.name, data=data, interactive=False)
 
     def delete(self):
         """

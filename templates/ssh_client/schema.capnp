@@ -1,4 +1,4 @@
-@0xc1890c8a0387edda
+@0xc1890c8a0387edda;
 
 struct Schema {
     host @0: Text; # Target host address
