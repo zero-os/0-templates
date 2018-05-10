@@ -52,5 +52,6 @@ struct Schema {
       vlan @1;
       vxlan @2;
       bridge @3;
+      zerotier @4;
     }
 }
