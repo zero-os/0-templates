@@ -39,6 +39,7 @@ Disk:
 Config:
 - `path`: the file path 
 - `content`: the file content
+- `name`: name for this config
 
 Port:
 - `name`: name for this portforward
