@@ -66,6 +66,7 @@ class Vm(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self._vm_sal.destroy()
         self.state.delete('actions', 'install')
+        self.state.delete('status', 'running')
 
     def shutdown(self):
         self.logger.info('Shuting down vm %s' % self.name)
@@ -103,11 +104,9 @@ class Vm(TemplateBase):
         self.logger.info('Enable vnc for vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
         self._vm_sal.enable_vnc()
-        self.state.set('vnc', self._vm_sal.info['vnc'], 'ok')
 
     def disable_vnc(self):
         self.logger.info('Disable vnc for vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
         self.state.check('vnc', self._vm_sal.info['vnc'], 'ok')
         self._vm_sal.disable_vnc()
-        self.state.delete('vnc', self._vm_sal.info['vnc'])

@@ -13,9 +13,18 @@ class Namespace(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        if not self.data.get('password'):
+            self.data['password'] = j.data.idgenerator.generateXCharID(32)
 
     def validate(self):
-        for param in ['zerodb', 'size']:
+        try:
+            # ensure that a node service exists
+            node = self.api.services.get(template_account='zero-os', template_name='node')
+            node.state.check('actions', 'install', 'ok')
+        except:
+            raise RuntimeError("not node service found, can't install the namespace")
+
+        for param in ['disktype', 'size', 'mode']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
@@ -24,43 +33,36 @@ class Namespace(TemplateBase):
         return self.api.services.get(template_uid=ZERODB_TEMPLATE_UID, name=self.data['zerodb'])
 
     def install(self):
-        args = {
-            'name': self.name,
-            'size': self.data['size'],
+        node = self.api.services.get(template_account='zero-os', template_name='node')
+        kwargs = {
+            'disktype': self.data['disktype'].upper(),
+            'mode': self.data['mode'],
             'password': self.data['password'],
+            'public': self.data['public'],
+            'size': self.data['size'],
         }
-        self._zerodb.schedule_action('namespace_create', args=args).wait(die=True)
+        # use the method on the node service to create the zdb and the namespace.
+        # this action hold the logic of the capacity planning for the zdb and namespaces
+        self.data['zerodb'], self.data['ns_name'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
         self.state.set('actions', 'install', 'ok')
 
     def info(self):
         self.state.check('actions', 'install', 'ok')
-        task = self._zerodb.schedule_action('namespace_info', args={'name': self.name})
-        task.wait(die=True)
-
-        return task.result
+        return self._zerodb.schedule_action('namespace_info', args={'name': self.data['ns_name']}).wait(die=True).result
 
     def url(self):
         self.state.check('actions', 'install', 'ok')
-        task = self._zerodb.schedule_action('namespace_url', args={'name': self.name})
-        task.wait(die=True)
-
-        return task.result
+        return self._zerodb.schedule_action('namespace_url', args={'name': self.data['ns_name']}).wait(die=True).result
 
     def private_url(self):
         self.state.check('actions', 'install', 'ok')
-        task = self._zerodb.schedule_action('namespace_private_url', args={'name': self.name})
-        task.wait(die=True)
-
-        return task.result
+        return self._zerodb.schedule_action('namespace_private_url', args={'name': self.data['ns_name']}).wait(die=True).result
 
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
-        self._zerodb.schedule_action('namespace_delete', args={'name': self.name}).wait(die=True)
+        self._zerodb.schedule_action('namespace_delete', args={'name': self.data['ns_name']}).wait(die=True)
+        self.state.delete('actions', 'install')
 
     def connection_info(self):
         self.state.check('actions', 'install', 'ok')
-        task = self._zerodb.schedule_action('connection_info')
-        task.wait(die=True)
-
-        return task.result
-
+        return self._zerodb.schedule_action('connection_info').wait(die=True).result

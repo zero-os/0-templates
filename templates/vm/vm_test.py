@@ -107,11 +107,13 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.state.set('actions', 'install', 'ok')
-        vm.state.delete = MagicMock()
         vm.uninstall()
 
         vm._vm_sal.destroy.assert_called_with()
-        vm.state.delete.assert_called_once_with('actions', 'install')
+        with pytest.raises(StateCheckError):
+            vm.state.check('actions', 'install', 'ok')
+        with pytest.raises(StateCheckError):
+            vm.state.check('status', 'running', 'ok')
 
     def test_uninstall_vm_not_installed(self):
         """
@@ -236,7 +238,6 @@ class TestVmTemplate(TestCase):
         vm._node_sal.primitives.from_dict.return_value = vm_sal
         vm.enable_vnc()
         vm._vm_sal.enable_vnc.assert_called_with()
-        vm.state.check('vnc', 90, 'ok')
 
     def test_disable_vnc(self):
         """
@@ -250,7 +251,6 @@ class TestVmTemplate(TestCase):
         vm._node_sal.primitives.from_dict.return_value = vm_sal
         vm.disable_vnc()
         vm._vm_sal.disable_vnc.assert_called_with()
-        vm.state.delete.assert_called_once_with('vnc', 90)
 
     def test_disable_vnc_before_enable(self):
         """
