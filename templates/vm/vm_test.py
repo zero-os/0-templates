@@ -9,7 +9,6 @@ import pytest
 from js9 import j
 from vm import Vm, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
-from zerorobot import service_collection as scol
 from zerorobot import config
 from zerorobot.template_uid import TemplateUID
 
@@ -24,12 +23,15 @@ class TestVmTemplate(TestCase):
             'memory': 128,
             'nics': [],
             'vnc': -1,
-            'ports': ['80:80'],
-            'media': [],
-            'mount': {},
+            'ports': [],
+            'disks': [],
+            'mounts': [],
             'tags': [],
             'uuid': '444d10d7-77f8-4b33-a6df-feb76e34dbc4',
-            'configs': [{'path': '/file/path', 'content': 'file-content'}]
+            'configs': [],
+            'ztIdentity': '',
+            'ipxeUrl': '',
+
         }
 
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
@@ -42,9 +44,7 @@ class TestVmTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        mock = MagicMock()
-        self.node = mock.return_value
-        patch('js9.j.clients.zero_os.sal.get_node', mock).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -71,40 +71,33 @@ class TestVmTemplate(TestCase):
         """
         vm = Vm('vm', data=self.valid_data)
         node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
 
         assert vm._node_sal == node_sal_return
-        j.clients.zero_os.sal.get_node.assert_called_with(NODE_CLIENT)
+        j.clients.zos.sal.get_node.assert_called_with(NODE_CLIENT)
 
-    def test_hypervisor_sal(self):
+    def test_vm_sal(self):
         """
-        Test the _hypervisor_sal property
+        Test the _vm_sal property
         """
         vm = Vm('vm', data=self.valid_data)
-        hv_sal = 'hv_sal'
-        vm._node_sal.hypervisor.get = MagicMock(return_value=hv_sal)
-        assert vm._hypervisor_sal == hv_sal
+        vm_sal = 'vm_sal'
+        vm._node_sal.primitives.from_dict.return_value = vm_sal
+        assert vm._vm_sal == vm_sal
 
     def test_install_vm(self):
         """
         Test successfully creating a vm
         """
         vm = Vm('vm', data=self.valid_data)
+        data = self.valid_data.copy()
+        data['name'] = vm.name
+        vm_sal = MagicMock(uuid='uuid')
+        vm._node_sal.primitives.from_dict.return_value = vm_sal
         vm.install()
-        assert 'uuid' in vm.data
-        args = {
-            'name': 'vm',
-            'media': self.valid_data['media'],
-            'flist': self.valid_data['flist'],
-            'cpu': self.valid_data['cpu'],
-            'memory': self.valid_data['memory'],
-            'nics': self.valid_data['nics'],
-            'ports': self.valid_data['ports'],
-            'mounts': self.valid_data.get('mount'),
-            'tags': self.valid_data.get('tags'),
-            'config': {'/file/path': 'file-content'},
-        }
-        vm._node_sal.hypervisor.create.called_once_with(**args)
+        assert 'uuid' == 'uuid'
+
+        vm._node_sal.primitives.from_dict.called_once_with(data)
         vm.state.check('actions', 'install', 'ok')
         vm.state.check('status', 'running', 'ok')
 
@@ -117,7 +110,7 @@ class TestVmTemplate(TestCase):
         vm.state.delete = MagicMock()
         vm.uninstall()
 
-        self.node.hypervisor.get.return_value.destroy.assert_called_with(['80:80'])
+        vm._vm_sal.destroy.assert_called_with()
         vm.state.delete.assert_called_once_with('actions', 'install')
 
     def test_uninstall_vm_not_installed(self):
@@ -146,7 +139,7 @@ class TestVmTemplate(TestCase):
 
         vm.shutdown()
 
-        self.node.hypervisor.get.return_value.shutdown.assert_called_with(['80:80'])
+        vm._vm_sal.shutdown.assert_called_with()
         vm.state.check('status', 'shutdown', 'ok')
         vm.state.delete.assert_called_with('status', 'running')
 
@@ -168,7 +161,7 @@ class TestVmTemplate(TestCase):
 
         vm.pause()
 
-        self.node.hypervisor.get.return_value.pause.assert_called_with()
+        vm._vm_sal.pause.assert_called_with()
         vm.state.delete.assert_called_once_with('status', 'running')
         vm.state.check('actions', 'pause', 'ok')
 
@@ -189,7 +182,7 @@ class TestVmTemplate(TestCase):
         vm.state.delete = MagicMock()
         vm.resume()
 
-        self.node.hypervisor.get.return_value.resume.assert_called_with()
+        vm._vm_sal.resume.assert_called_with()
         vm.state.check('status', 'running', 'ok')
         vm.state.delete.assert_called_once_with('actions', 'pause')
 
@@ -208,7 +201,7 @@ class TestVmTemplate(TestCase):
         vm = Vm('vm', data=self.valid_data)
         vm.state.set('actions', 'install', 'ok')
         vm.reboot()
-        self.node.hypervisor.get.return_value.reboot.assert_called_with()
+        vm._vm_sal.reboot.assert_called_with()
         vm.state.check('status', 'rebooting', 'ok')
 
     def test_reset_vm_not_installed(self):
@@ -226,7 +219,7 @@ class TestVmTemplate(TestCase):
         vm = Vm('vm', data=self.valid_data)
         vm.state.set('actions', 'install', 'ok')
         vm.reset()
-        self.node.hypervisor.get.return_value.reset.assert_called_with()
+        vm._vm_sal.reset.assert_called_with()
 
     def test_enable_vnc_vm_not_installed(self):
         """
@@ -239,9 +232,10 @@ class TestVmTemplate(TestCase):
     def test_enable_vnc(self):
         vm = Vm('vm', data=self.valid_data)
         vm.state.set('actions', 'install', 'ok')
-        self.node.hypervisor.get.return_value = MagicMock(info={'vnc': 90})
+        vm_sal = MagicMock(info={'vnc': 90})
+        vm._node_sal.primitives.from_dict.return_value = vm_sal
         vm.enable_vnc()
-        self.node.hypervisor.get.return_value.enable_vnc.assert_called_with()
+        vm._vm_sal.enable_vnc.assert_called_with()
         vm.state.check('vnc', 90, 'ok')
 
     def test_disable_vnc(self):
@@ -252,9 +246,10 @@ class TestVmTemplate(TestCase):
         vm.state.set('vnc', 90, 'ok')
         vm.state.set('actions', 'install', 'ok')
         vm.state.delete = MagicMock()
-        self.node.hypervisor.get.return_value = MagicMock(info={'vnc': 90})
+        vm_sal = MagicMock(info={'vnc': 90})
+        vm._node_sal.primitives.from_dict.return_value = vm_sal
         vm.disable_vnc()
-        self.node.hypervisor.get.return_value.disable_vnc.assert_called_with()
+        vm._vm_sal.disable_vnc.assert_called_with()
         vm.state.delete.assert_called_once_with('vnc', 90)
 
     def test_disable_vnc_before_enable(self):
@@ -271,7 +266,7 @@ class TestVmTemplate(TestCase):
         Test monitor vm not running
         """
         vm = Vm('vm', data=self.valid_data)
-        vm._hypervisor_sal.is_running.return_value = False
+        vm._vm_sal.is_running.return_value = False
         vm.state.delete = MagicMock()
         vm.state.set('actions', 'install', 'ok')
 
@@ -286,7 +281,7 @@ class TestVmTemplate(TestCase):
         vm.state.set('status', 'rebooting', 'ok')
         vm.state.set('status', 'shutdown', 'ok')
         vm.state.set('actions', 'install', 'ok')
-        vm._hypervisor_sal.is_running.return_value = True
+        vm._vm_sal.is_running.return_value = True
         vm.state.delete = MagicMock()
 
         vm._monitor()

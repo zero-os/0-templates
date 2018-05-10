@@ -27,7 +27,7 @@ class Namespace(TemplateBase):
         args = {
             'name': self.name,
             'size': self.data['size'],
-            'secret': self.data['secret'],
+            'password': self.data['password'],
         }
         self._zerodb.schedule_action('namespace_create', args=args).wait(die=True)
         self.state.set('actions', 'install', 'ok')
@@ -35,6 +35,20 @@ class Namespace(TemplateBase):
     def info(self):
         self.state.check('actions', 'install', 'ok')
         task = self._zerodb.schedule_action('namespace_info', args={'name': self.name})
+        task.wait(die=True)
+
+        return task.result
+
+    def url(self):
+        self.state.check('actions', 'install', 'ok')
+        task = self._zerodb.schedule_action('namespace_url', args={'name': self.name})
+        task.wait(die=True)
+
+        return task.result
+
+    def private_url(self):
+        self.state.check('actions', 'install', 'ok')
+        task = self._zerodb.schedule_action('namespace_private_url', args={'name': self.name})
         task.wait(die=True)
 
         return task.result

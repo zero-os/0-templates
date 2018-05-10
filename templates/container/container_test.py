@@ -23,7 +23,7 @@ class TestContainerTemplate(TestCase):
             'flist': 'flist',
             'hostNetworking': False,
             'hostname': '',
-            'identity': '',
+            'ztIdentity': '',
             'initProcesses': [],
             'mounts': [],
             'nics': [],
@@ -43,7 +43,7 @@ class TestContainerTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -65,7 +65,7 @@ class TestContainerTemplate(TestCase):
         """
         Test the node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node')).start()
         container = Container('container', data=self.valid_data)
         node_sal = container.node_sal
         assert get_node.called

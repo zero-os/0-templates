@@ -15,7 +15,7 @@ struct Schema {
     bridges @8 :List(Text); # comsumed bridges, automaticly filled don't pass in blueprint
     zerotierNetwork @9:Text; # node's zerotier network id
     privileged @10 :Bool;
-    identity @11 :Text;
+    ztIdentity @11 :Text;
     env @12: List(Env); # environment variables needed to be set for the container
 
 

@@ -46,7 +46,7 @@ class TestNodeTemplate(TestCase):
         """
         Test node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node_sal')).start()
         node = Node(name='node')
         node_sal = node.node_sal
         get_node.assert_called_with(NODE_CLIENT)

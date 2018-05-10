@@ -1,172 +1,165 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
-from JumpScale9Lib.clients.zero_os.sal.gateway import Gateway as GatewaySal
-import copy
 
-CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
-NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
-FLIST = 'https://hub.gig.tech/gig-official-apps/zero-os-gw-master.flist'
 NODE_CLIENT = 'local'
 
 
 class Gateway(TemplateBase):
     version = '0.0.1'
-    template_name = "container"
+    template_name = "gateway"
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
     def validate(self):
-        GatewaySal.validate_input(self.data)
+        if not self.data['hostname']:
+            raise ValueError('Must supply a valid hostname')
 
     @property
-    def node_sal(self):
-        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
+    def _node_sal(self):
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
-    def _get_gateway(self):
-        container = self.node_sal.containers.get(self.name)
-        return self.node_sal.gateways.get(container, self.data)
+    @property
+    def _gateway_sal(self):
+        return self._node_sal.primitives.from_dict('gateway', self.data)
 
     def install(self):
-        contnics = copy.deepcopy(self.data['nics'])
-        for nic in contnics:
-            nic.pop('dhcpserver', None)
-            zerotierbridge = nic.pop('zerotierbridge', None)
-            if zerotierbridge:
-                contnics.append(
-                    {
-                        'id': zerotierbridge['id'], 'type': 'zerotier',
-                        'name': 'z-{}'.format(nic['name']), 'token': zerotierbridge.get('token', '')
-                    })
-        containerdata = {
-            'flist': FLIST,
-            'nics': contnics,
-            'hostname': self.data['hostname'],
-            'hostNetworking': False,
-            'privileged': True
-        }
-        contservice = self.api.services.find_or_create(CONTAINER_TEMPLATE_UID, self.name, containerdata)
-        contservice.schedule_action('install').wait(die=True)
-        gw = self._get_gateway()
-        gw.install()
+        gateway_sal = self._gateway_sal
+        gateway_sal.deploy()
+        self.data['ztIdentity'] = gateway_sal.zt_identity
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def add_portforward(self, forward):
-        for fw in self.data['portforwards']:
-            if self._compare_objects(fw, forward, 'srcip', 'srcport'):
-                if set(fw['protocols']).intersection(set(forward['protocols'])):
-                    raise ValueError("Forward conflicts with existing forward")
-        self.data['portforwards'].append(forward)
-        self._get_gateway().configure_fw()
+        self.state.check('actions', 'start', 'ok')
 
-    def remove_portforward(self, forward):
         for fw in self.data['portforwards']:
-            if self._compare_objects(fw, forward, 'srcip', 'srcport'):
+            name, combination = self._compare_objects(fw, forward, 'srcip', 'srcport')
+            if name:
+                raise ValueError('A forward with the same name exists')
+            if combination:
                 if set(fw['protocols']).intersection(set(forward['protocols'])):
-                    self.data['portforwards'].remove(fw)
-                    break
+                    raise ValueError('Forward conflicts with existing forward')
+        self.data['portforwards'].append(forward)
+        self._gateway_sal.deploy()
+
+    def remove_portforward(self, forward_name):
+        self.state.check('actions', 'start', 'ok')
+
+        for fw in self.data['portforwards']:
+            if fw['name'] == forward_name:
+                self.data['portforwards'].remove(fw)
+                break
         else:
-            return
-        self._get_gateway().configure_fw()
+            raise LookupError('Forward {} doesn\'t exist'.format(forward_name))
+        self._gateway_sal.configure_fw()
 
     def add_http_proxy(self, proxy):
+        self.state.check('actions', 'start', 'ok')
+
         for existing_proxy in self.data['httpproxies']:
-            if self._compare_objects(existing_proxy, proxy, 'host'):
+            name, combination = self._compare_objects(existing_proxy, proxy, 'host')
+            if name:
+                raise ValueError('A proxy with the same name exists')
+            if combination:
                 raise ValueError("Proxy with host {} already exists".format(proxy['host']))
         self.data['httpproxies'].append(proxy)
-        self._get_gateway().configure_http()
+        self._gateway_sal.configure_http()
 
-    def remove_http_proxy(self, proxy):
+    def remove_http_proxy(self, proxy_name):
+        self.state.check('actions', 'start', 'ok')
+
         for existing_proxy in self.data['httpproxies']:
-            if self._compare_objects(existing_proxy, proxy, 'host'):
+            if existing_proxy['name'] == proxy_name:
                 self.data['httpproxies'].remove(existing_proxy)
                 break
         else:
-            return
-        self._get_gateway().configure_http()
+            raise LookupError('Proxy with name {} doesn\'t exist'.format(proxy_name))
+        self._gateway_sal.configure_http()
 
-    def add_dhcp_host(self, nicname, host):
-        for nic in self.data['nics']:
-            if nic['name'] == nicname:
+    def add_dhcp_host(self, network_name, host):
+        self.state.check('actions', 'start', 'ok')
+
+        for network in self.data['networks']:
+            if network['name'] == network_name:
                 break
         else:
-            raise LookupError('Could not find NIC with name {}'.format(nicname))
-        dhcpserver = nic['dhcpserver']
+            raise LookupError('Network with name {} doesn\'t exist'.format(network_name))
+        dhcpserver = network['dhcpserver']
         for existing_host in dhcpserver['hosts']:
             if existing_host['macaddress'] == host['macaddress']:
                 raise ValueError('Host with macaddress {} already exists'.format(host['macaddress']))
         dhcpserver['hosts'].append(host)
-        gw = self._get_gateway()
-        gw.configure_dhcp()
-        gw.configure_cloudinit()
+        self._gateway_sal.configure_dhcp()
+        self._gateway_sal.configure_cloudinit()
 
-    def remove_dhcp_host(self, nicname, host):
-        for nic in self.data['nics']:
-            if nic['name'] == nicname:
+    def remove_dhcp_host(self, networkname, host):
+        self.state.check('actions', 'start', 'ok')
+
+        for network in self.data['networks']:
+            if network['name'] == networkname:
                 break
         else:
-            raise LookupError('Could not find NIC with name {}'.format(nicname))
-        dhcpserver = nic['dhcpserver']
+            raise LookupError('Network with name {} doesn\'t exist'.format(networkname))
+        dhcpserver = network['dhcpserver']
         for existing_host in dhcpserver['hosts']:
             if existing_host['macaddress'] == host['macaddress']:
                 dhcpserver['hosts'].remove(existing_host)
                 break
         else:
-            return
-        self._get_gateway().configure_dhcp()
+            raise LookupError('Host with macaddress {} doesn\'t exist'.format(host['macaddress']))
+        self._gateway_sal.configure_dhcp()
+        self._gateway_sal.configure_cloudinit()
 
     def _compare_objects(self, obj1, obj2, *keys):
+        """
+        Checks that obj1 and obj2 have different names, and that the combination of values from keys are unique
+        :param obj1: first dict to use for comparison
+        :param obj2: second dict to use for comparison
+        :param keys: keys to use for value comparison
+        :return: a tuple of bool, where the first element indicates whether the name matches or not,
+        and the second element indicates whether the combination of values matches or not
+        """
+        name = obj1['name'] == obj2['name']
         for key in keys:
             if obj1[key] != obj2[key]:
-                return False
-        return True
+                return name, False
+        return name, True
 
-    def add_nic(self, nic):
-        for existing_nic in self.data['nics']:
-            if self._compare_objects(existing_nic, nic, 'type', 'id'):
-                raise ValueError('Nic with same type/id combination already exists')
-        containernic = copy.deepcopy(nic)
-        dhcpserver = containernic.pop('dhcpserver', None)
-        zerotierbridge = containernic.pop('zerotierbridge', None)
-        containernic.pop('token', None)
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('add_nic', nic=containernic).wait(die=True)
-        self.data['nics'].append(nic)
-        gw = self._get_gateway()
-        if zerotierbridge:
-            gw.setup_zerotierbridges()
-        if dhcpserver:
-            gw.configure_dhcp()
+    def add_network(self, network):
+        self.state.check('actions', 'start', 'ok')
 
-    def remove_nic(self, nicname):
-        for nic in self.data['nics']:
-            if nic['name'] == nicname:
+        for existing_network in self.data['networks']:
+            name, combination = self._compare_objects(existing_network, network, 'type', 'id')
+            if name:
+                raise ValueError('Network with name {} already exists'.format(name))
+            if combination:
+                raise ValueError('network with same type/id combination already exists')
+        self.data['networks'].append(network)
+        self._gateway_sal.deploy()
+
+    def remove_network(self, network_name):
+        self.state.check('actions', 'start', 'ok')
+
+        for network in self.data['networks']:
+            if network['name'] == network_name:
+                self.data['networks'].remove(network)
                 break
         else:
-            return
-        gw = self._get_gateway()
-        dhcpserver = nic.pop('dhcpserver', None)
-        if nic.get('zerotierbridge'):
-            gw.cleanup_zerotierbridge(nic)
-
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('remove_nic', nicname=nicname).wait(die=True)
-        self.data['nics'].append(nic)
-        if dhcpserver:
-            gw.configure_dhcp()
-
-    def update_data(self, data):
-        raise NotImplementedError('Not supported use actions instead')
+            raise LookupError('Network with name {} doesn\'t exists'.format(network_name))
+        self._gateway_sal.deploy()
 
     def uninstall(self):
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('uninstall').wait(die=True)
+        self.state.check('actions', 'install', 'ok')
+        self._gateway_sal.stop()
         self.state.delete('actions', 'install')
+        self.state.delete('actions', 'start')
 
     def stop(self):
-        contservice = self.api.services.find(CONTAINER_TEMPLATE_UID, self.name)
-        contservice.schedule_action('stop').wait(die=True)
+        self.state.check('actions', 'start', 'ok')
+        self._gateway_sal.stop()
+        self.state.delete('actions', 'start')
 
     def start(self):
+        self.state.check('actions', 'install', 'ok')
         self.install()
-

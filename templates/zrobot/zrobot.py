@@ -28,7 +28,7 @@ class Zrobot(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.get_node(self.data['node'])
+        return j.clients.zos.sal.get_node(self.data['node'])
 
     @property
     def _container_name(self):
@@ -95,7 +95,7 @@ class Zrobot(TemplateBase):
     @property
     def zrobot_sal(self):
         container_sal = self.node_sal.containers.get(self._container_name)
-        return j.clients.zero_os.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], organization=(self.data.get('organization') or None))
+        return j.clients.zos.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], organization=(self.data.get('organization') or None))
 
     def install(self, force=False):
         try:

@@ -19,14 +19,14 @@ class Node(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-        self.recurring_action('_monitor', 30)  # every 30 seconds
+        # self.recurring_action('_monitor', 30)  # every 30 seconds
 
     @property
     def node_sal(self):
         """
         connection to the node
         """
-        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     def _monitor(self):
         self.logger.info('Monitoring node %s' % self.name)

@@ -32,7 +32,7 @@ class TestZrobotTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self): 
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -60,11 +60,11 @@ class TestZrobotTemplate(TestCase):
         """
         zrobot = Zrobot('zrobot', data=self.valid_data)
         node_sal_return = 'node_sal'
-        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock(return_value=node_sal_return)).start()
         node_sal = zrobot.node_sal
 
         assert node_sal == node_sal_return
-        j.clients.zero_os.sal.get_node.assert_called_with(self.valid_data['node'])
+        j.clients.zos.sal.get_node.assert_called_with(self.valid_data['node'])
 
     def test_zrobot_sal(self):
         """
@@ -72,7 +72,7 @@ class TestZrobotTemplate(TestCase):
         """
         zrobot = Zrobot('zrobot', data=self.valid_data)
         zrobot_sal_return = 'zrobot_sal'
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock(return_value=zrobot_sal_return)).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock(return_value=zrobot_sal_return)).start()
         zrobot_sal = zrobot.zrobot_sal
         container_sal = zrobot.node_sal.containers.get(zrobot._container_name)
         kwargs = {
@@ -82,7 +82,7 @@ class TestZrobotTemplate(TestCase):
             'organization': self.valid_data['organization']
         }
         assert zrobot_sal == zrobot_sal_return
-        j.clients.zero_os.sal.get_zerorobot.assert_called_with(**kwargs)
+        j.clients.zos.sal.get_zerorobot.assert_called_with(**kwargs)
 
     def test_install_zrobot_node_not_found(self):
         """
@@ -112,8 +112,8 @@ class TestZrobotTemplate(TestCase):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         container = MagicMock()
         zrobot._get_container = MagicMock(return_value=container)
-        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock()).start()
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.state.set('actions', 'install', 'ok')
         zrobot.install(True)
         zrobot.state.check('actions', 'install', 'ok')
@@ -127,8 +127,8 @@ class TestZrobotTemplate(TestCase):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         container = MagicMock()
         zrobot._get_container = MagicMock(return_value=container)
-        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock()).start()
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.install()
         zrobot.state.check('actions', 'install', 'ok')
         zrobot.state.check('actions', 'start', 'ok')
@@ -138,8 +138,8 @@ class TestZrobotTemplate(TestCase):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         container = MagicMock()
         zrobot._get_container = MagicMock(return_value=container)
-        patch('js9.j.clients.zero_os.sal.get_node',  MagicMock()).start()
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.start()
         zrobot.state.check('actions', 'start', 'ok')
         container.schedule_action.assert_called_once_with('start')
@@ -155,7 +155,7 @@ class TestZrobotTemplate(TestCase):
     def test_stop(self):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         zrobot.api.services.get = MagicMock()
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.state.set('actions', 'start', 'ok')
         zrobot.state.delete = MagicMock(return_value=True)
         zrobot.stop()
@@ -173,7 +173,7 @@ class TestZrobotTemplate(TestCase):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         container = MagicMock()
         zrobot.api.services.get = MagicMock(return_value=container)
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.state.set('actions', 'install', 'ok')
         zrobot.state.delete = MagicMock(return_value=True)
         zrobot.uninstall()
@@ -187,7 +187,7 @@ class TestZrobotTemplate(TestCase):
         """
         zrobot = Zrobot('zrobot', data=self.valid_data)
         zrobot.api.services.get = MagicMock()
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.state.set('actions', 'install', 'ok')
         zrobot.state.set('actions', 'start', 'ok')
         zrobot._monitor()
@@ -199,7 +199,7 @@ class TestZrobotTemplate(TestCase):
         """
         zrobot = Zrobot('zrobot', data=self.valid_data)
         zrobot.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
-        patch('js9.j.clients.zero_os.sal.get_zerorobot',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
         zrobot.state.set('actions', 'install', 'ok')
         zrobot.state.set('actions', 'start', 'ok')
         zrobot.state.delete = MagicMock(return_value=True)

@@ -34,8 +34,8 @@ class TestZeroosClientTemplate(TestCase):
             shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        self.list = patch('js9.j.clients.zero_os.list', MagicMock(return_value=[])).start()
-        self.get = patch('js9.j.clients.zero_os.get', MagicMock()).start()
+        self.list = patch('js9.j.clients.zos.list', MagicMock(return_value=[])).start()
+        self.get = patch('js9.j.clients.zos.get', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -46,7 +46,7 @@ class TestZeroosClientTemplate(TestCase):
             ZeroosClient(name="zos", data={'host': '', 'unixSocket': '', 'port': ''})
 
     def test_create(self):
-        get = patch('js9.j.clients.zero_os.get', MagicMock()).start()
+        get = patch('js9.j.clients.zos.get', MagicMock()).start()
         ZeroosClient(name="zos", data=self.valid_data)
         client_data = {
             'host': self.valid_data['host'],
@@ -62,13 +62,13 @@ class TestZeroosClientTemplate(TestCase):
         get.assert_called_with("zos", data=client_data)
 
     def test_create_already_exists(self):
-        patch('js9.j.clients.zero_os.list', MagicMock(return_value=['zos'])).start()
+        patch('js9.j.clients.zos.list', MagicMock(return_value=['zos'])).start()
         ZeroosClient(name='zos', data=self.valid_data)
 
         assert self.get.called is False
 
     def test_delete(self):
-        delete = patch('js9.j.clients.zero_os.delete', MagicMock()).start()
+        delete = patch('js9.j.clients.zos.delete', MagicMock()).start()
         service = ZeroosClient(name='zos', data=self.valid_data)
         service.delete()
 
