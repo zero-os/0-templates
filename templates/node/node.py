@@ -146,6 +146,11 @@ class Node(TemplateBase):
         return zdb_name
 
     def create_zdb_namespace(self, disktype, mode, password, public, size):
+        if disktype not in ['HDD', 'SSD', 'NVME', 'ARCHIVE']:
+            raise ValueError('Disktype should be HDD, SSD, NVME or ARCHIVE')
+        if mode not in ['seq', 'user', 'direct']:
+            raise ValueError('ZDB mode should be user, direct or seq')
+
         namespacename = j.data.idgenerator.generateXCharID(10)
         potentials = {info['mountpoint']: info['disk'] for info in self.node_sal.zerodbs.partition_and_mount_disks()}
         tasks = []
@@ -165,19 +170,18 @@ class Node(TemplateBase):
             if disks:
                 bestfreedisk, mountpoint = disks[0]
                 return self._create_zdb(namespacename, bestfreedisk.name, mountpoint, mode, password, public, size),  namespacename
-        else:
-            zdbinfo = list(filter(lambda info: info[0].data['mode'] == mode and (info[1]['free'] / 1024 ** 3) > size and info[1]['type'] == disktype, zdbinfo))
-            if not zdbinfo:
-                raise RuntimeError('Not enough free space for namespace creation with size {} and type {}'.format(size, disktype))
-            bestzdb, info = zdbinfo[0]
-            kwargs = {
-                'name': namespacename,
-                'size': size,
-                'password': password,
-                'public': public,
-            }
-            bestzdb.schedule_action('namespace_create', kwargs).wait(die=True)
-            return bestzdb.name, namespacename
+        zdbinfo = list(filter(lambda info: info[0].data['mode'] == mode and (info[1]['free'] / 1024 ** 3) > size and info[1]['type'] == disktype, zdbinfo))
+        if not zdbinfo:
+            raise RuntimeError('Not enough free space for namespace creation with size {} and type {}'.format(size, disktype))
+        bestzdb, info = zdbinfo[0]
+        kwargs = {
+            'name': namespacename,
+            'size': size,
+            'password': password,
+            'public': public,
+        }
+        bestzdb.schedule_action('namespace_create', kwargs).wait(die=True)
+        return bestzdb.name, namespacename
 
 
     def reboot(self):
