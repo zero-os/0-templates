@@ -47,6 +47,8 @@ Namespace:
 - `namespace_info`: returns basic information about a namespace
 - `namespace_list`: returns an array of all available namespaces.
 - `namespace_set`: change a namespace setting/property. Only admin can do this.
+- `namespace_url`: return the public url of the namespace
+- `namespace_private_url`: return the private url of the namespace
 - `free_space`: return the amount of storage space still available for reservation
 
 

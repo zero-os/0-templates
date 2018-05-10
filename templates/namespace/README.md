@@ -12,7 +12,8 @@ This template is responsible for managing a 0-db namespace
 ### Actions
 - `install`: creates the namespace.
 - `info`: returns info about the namespace. 
-
+- `url`: return the public url of the namespace
+- `private_url`: return the private url of the namespace
 
 ### Usage example via the 0-robot DSL
 
