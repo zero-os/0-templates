@@ -1,7 +1,5 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
-from zerorobot.template.state import StateCheckError
-from zerorobot.service_collection import ServiceNotFoundError
 
 
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
@@ -69,6 +67,12 @@ class Zerodb(TemplateBase):
         """
         self.stop()
         self.start()
+
+    def info(self):
+        """
+        Return disk information
+        """
+        return self._zerodb_sal.info
 
     def namespace_list(self):
         """

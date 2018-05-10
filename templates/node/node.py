@@ -124,6 +124,62 @@ class Node(TemplateBase):
         self.data['uptime'] = self.node_sal.uptime()
         self.state.set('actions', 'install', 'ok')
 
+    def _create_zdb(self, namespacename, diskname, mountpoint, mode, password, public, size):
+        zdb_name = 'zdb_%s_%s' % (self.name, diskname)
+        zdb_data = {
+            'path': mountpoint,
+            'mode': mode,
+            'sync': False,
+            'namespaces': [
+                {
+                    'name': namespacename,
+                    'password': password,
+                    'public': public,
+                    'size': size
+                }
+            ]
+        }
+
+        zdb = self.api.services.find_or_create(ZDB_TEMPLATE_UID, zdb_name, zdb_data)
+        zdb.schedule_action('install').wait(die=True)
+        zdb.schedule_action('start').wait(die=True)
+        return zdb_name
+
+    def create_zdb_namespace(self, disktype, mode, password, public, size):
+        namespacename = j.data.idgenerator.generateXCharID(10)
+        potentials = {info['mountpoint']: info['disk'] for info in self.node_sal.zerodbs.partition_and_mount_disks()}
+        tasks = []
+
+        zdbs = self.api.services.find(template_uid=ZDB_TEMPLATE_UID)
+        for zdb in zdbs:
+            tasks.append(zdb.schedule_action('info'))
+        results = self._wait_all(tasks, timeout=120, die=True)
+        zdbinfo = sorted(list(zip(zdbs, results)), key=lambda x: x[1]['free'],  reverse=True)
+        for zdb, info in zdbinfo:
+            potentials.pop(info['path'])
+        if potentials:
+            # there are free disks that are not used lets use them first
+            disks = [(self.node_sal.disks.get(diskname), mountpoint) for mountpoint, diskname in potentials.items()]
+            disks = list(filter(lambda disk: (disk[0].size / 1024 ** 3) > size and disk[0].type.value == disktype, disks))
+            disks.sort(key=lambda disk: disk[0].size, reverse=True)
+            if disks:
+                bestfreedisk, mountpoint = disks[0]
+                return self._create_zdb(namespacename, bestfreedisk.name, mountpoint, mode, password, public, size),  namespacename
+        else:
+            zdbinfo = list(filter(lambda info: info[0].data['mode'] == mode and (info[1]['free'] / 1024 ** 3) > size and info[1]['type'] == disktype, zdbinfo))
+            if not zdbinfo:
+                raise RuntimeError('Not enough free space for namespace creation with size {} and type {}'.format(size, disktype))
+            bestzdb, info = zdbinfo[0]
+            kwargs = {
+                'name': namespacename,
+                'size': size,
+                'password': password,
+                'public': public,
+            }
+            bestzdb.schedule_action('namespace_create', kwargs).wait(die=True)
+            return bestzdb.name, namespacename
+
+
     def reboot(self):
         self._stop_all_containers()
         self._stop_all_vms()
@@ -167,5 +223,7 @@ class Node(TemplateBase):
         pass
 
     def _wait_all(self, tasks, timeout=60, die=False):
+        results = []
         for t in tasks:
-            t.wait(timeout=timeout, die=die)
+            results.append(t.wait(timeout=timeout, die=die).result)
+        return results
