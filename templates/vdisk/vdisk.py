@@ -4,12 +4,13 @@ from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
 ZERODB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
+NODE_CLIENT = 'local'
 
 
-class Namespace(TemplateBase):
+class Vdisk(TemplateBase):
 
     version = '0.0.1'
-    template_name = "namespace"
+    template_name = "vdisk"
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
@@ -24,9 +25,16 @@ class Namespace(TemplateBase):
         except:
             raise RuntimeError("not node service found, can't install the namespace")
 
-        for param in ['disktype', 'size', 'mode']:
+        for param in ['disktype', 'size']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
+
+    @property
+    def _node_sal(self):
+        """
+        connection to the node
+        """
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     @property
     def _zerodb(self):
@@ -43,14 +51,26 @@ class Namespace(TemplateBase):
         node = self.api.services.get(template_account='zero-os', template_name='node')
         kwargs = {
             'disktype': self.data['disktype'].upper(),
-            'mode': self.data['mode'],
+            'mode': 'user',
             'password': self.data['password'],
-            'public': self.data['public'],
-            'size': self.data['size'],
+            'public': False,
+            'size': int(self.data['size']),
         }
         # use the method on the node service to create the zdb and the namespace.
         # this action hold the logic of the capacity planning for the zdb and namespaces
         self.data['zerodb'], self.data['ns_name'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
+
+        zerodb_data = self._zerodb.data.copy()
+        zerodb_data['name'] = self._zerodb.name
+        zerodb_sal = self._node_sal.primitives.from_dict('zerodb', zerodb_data)
+
+        disk = self._node_sal.primitives.create_disk(self.data['ns_name'],
+                                                     zerodb_sal,
+                                                     mountpoint=self.data.get('mountpoint') or None,
+                                                     filesystem=self.data.get('filesystem') or None,
+                                                     size=int(self.data['size']))
+        disk.deploy()
+
         self.state.set('actions', 'install', 'ok')
 
     def info(self):
@@ -69,7 +89,3 @@ class Namespace(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self._zerodb.schedule_action('namespace_delete', args={'name': self.data['ns_name']}).wait(die=True)
         self.state.delete('actions', 'install')
-
-    def connection_info(self):
-        self.state.check('actions', 'install', 'ok')
-        return self._zerodb.schedule_action('connection_info').wait(die=True).result

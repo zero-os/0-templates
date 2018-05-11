@@ -2,7 +2,6 @@ from js9 import j
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 
-
 NODE_CLIENT = 'local'
 
 
