@@ -58,11 +58,10 @@ class Node(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         self.logger.info("register node capacity")
-        registration = j.tools.capacity.registration
         # TODO:
         # implement TTL for the data registered, so if the node is not online anymore
         # the capacity will not be visible anymore until the node is up again
-        registration.nodes.register(self.node_sal.capacity.get())
+        self.node_sal.capacity.register()
 
     def _rename_cache(self):
         """Rename old cache storage pool to new convention if needed"""
