@@ -1,5 +1,6 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
+from zerorobot.template.state import StateCheckError
 
 
 NODE_TEMPLATE_UID = 'github.com/zero-os/0-templates/node/0.0.1'
@@ -13,6 +14,7 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.recurring_action('_monitor', 30)  # every 30 seconds
 
     @property
     def _node_sal(self):
@@ -31,6 +33,18 @@ class Zerodb(TemplateBase):
         self.data['nodePort'] = zerodb_sal.node_port
         self.data['ztIdentity'] = zerodb_sal.zt_identity
 
+    def _monitor(self):
+        self.logger.info('Monitor zerodb %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
+        self.state.check('actions', 'start', 'ok')
+
+        if not self._zerodb_sal.is_running():
+            self._zerodb_sal.start()
+            if self._zerodb_sal.is_running():
+                self.state.set('status', 'running', 'ok')
+            else:
+                self.state.delete('status', 'running')
+
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
 
@@ -41,6 +55,7 @@ class Zerodb(TemplateBase):
         self._deploy()
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
+        self.state.set('status', 'running', 'ok')
 
     def start(self):
         """
@@ -50,16 +65,17 @@ class Zerodb(TemplateBase):
         self.logger.info('Starting zerodb %s' % self.name)
         self._deploy()
         self.state.set('actions', 'start', 'ok')
+        self.state.set('status', 'running', 'ok')
 
     def stop(self):
         """
         stop zerodb server
         """
-        self.state.check('actions', 'start', 'ok')
         self.logger.info('Stopping zerodb %s' % self.name)
 
         self._zerodb_sal.stop()
         self.state.delete('actions', 'start')
+        self.state.delete('status', 'running')
 
     def upgrade(self):
         """
@@ -79,7 +95,7 @@ class Zerodb(TemplateBase):
         List namespace
         :return: list of namespaces ex: ['namespace1', 'namespace2']
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
         return self.data['namespaces']
 
     def namespace_info(self, name):
@@ -88,7 +104,7 @@ class Zerodb(TemplateBase):
         :param name: namespace name
         :return: dict
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
         if not self._namespace_exists_update_delete(name):
             raise LookupError('Namespace {} doesn\'t exist'.format(name))
         return self._zerodb_sal.namespaces[name].info().to_dict()
@@ -99,7 +115,7 @@ class Zerodb(TemplateBase):
         :param name: namespace name
         :return: dict
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
         if not self._namespace_exists_update_delete(name):
             raise LookupError('Namespace {} doesn\'t exist'.format(name))
         return self._zerodb_sal.namespaces[name].url
@@ -110,7 +126,7 @@ class Zerodb(TemplateBase):
         :param name: namespace name
         :return: dict
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
         if not self._namespace_exists_update_delete(name):
             raise LookupError('Namespace {} doesn\'t exist'.format(name))
         return self._zerodb_sal.namespaces[name].private_url
@@ -123,9 +139,9 @@ class Zerodb(TemplateBase):
         :param password: namespace password
         :param public: namespace public status
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
         if self._namespace_exists_update_delete(name):
-                raise ValueError('Namespace {} already exists'.format(name))
+            raise ValueError('Namespace {} already exists'.format(name))
         self.data['namespaces'].append({'name': name, 'size': size, 'password': password, 'public': public})
         self._zerodb_sal.deploy()
 
@@ -136,7 +152,7 @@ class Zerodb(TemplateBase):
         :param prop: property name
         :param value: property value
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
 
         if not self._namespace_exists_update_delete(name, prop, value):
             raise LookupError('Namespace {} doesn\'t exist'.format(name))
@@ -146,7 +162,7 @@ class Zerodb(TemplateBase):
         """
         Delete a namespace
         """
-        self.state.check('actions', 'start', 'ok')
+        self.state.check('status', 'running', 'ok')
         if not self._namespace_exists_update_delete(name, delete=True):
             raise LookupError('Namespace {} doesn\'t exist'.format(name))
 
