@@ -81,7 +81,14 @@ class TestNamespaceTemplate(TestCase):
         ns.api = MagicMock()
         ns.api.services.get = MagicMock(return_value=node)
         ns.install()
-        node.schedule_action.assert_called_once_with('create_zdb_namespace', self.valid_data)
+        args = {
+            'disktype': ns.data['diskType'].upper(),
+            'mode': ns.data['mode'],
+            'password': ns.data['password'],
+            'public': ns.data['public'],
+            'size': ns.data['size'],
+        }
+        node.schedule_action.assert_called_once_with('create_zdb_namespace', args)
         ns.state.check('actions', 'install', 'ok')
         assert ns.data['nsName'] == 'nsName'
         assert ns.data['zerodb'] == 'instance'

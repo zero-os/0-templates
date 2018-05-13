@@ -42,7 +42,7 @@ class Namespace(TemplateBase):
 
         node = self.api.services.get(template_account='zero-os', template_name='node')
         kwargs = {
-            'diskType': self.data['diskType'].upper(),
+            'disktype': self.data['diskType'].upper(),
             'mode': self.data['mode'],
             'password': self.data['password'],
             'public': self.data['public'],
