@@ -25,7 +25,7 @@ class Vdisk(TemplateBase):
         except:
             raise RuntimeError("not node service found, can't install the namespace")
 
-        for param in ['disktype', 'size']:
+        for param in ['diskType', 'size']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
@@ -50,7 +50,7 @@ class Vdisk(TemplateBase):
 
         node = self.api.services.get(template_account='zero-os', template_name='node')
         kwargs = {
-            'disktype': self.data['disktype'].upper(),
+            'disktype': self.data['diskType'].upper(),
             'mode': 'user',
             'password': self.data['password'],
             'public': False,
@@ -58,16 +58,16 @@ class Vdisk(TemplateBase):
         }
         # use the method on the node service to create the zdb and the namespace.
         # this action hold the logic of the capacity planning for the zdb and namespaces
-        self.data['zerodb'], self.data['ns_name'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
+        self.data['zerodb'], self.data['nsName'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
 
         zerodb_data = self._zerodb.data.copy()
         zerodb_data['name'] = self._zerodb.name
         zerodb_sal = self._node_sal.primitives.from_dict('zerodb', zerodb_data)
 
-        disk = self._node_sal.primitives.create_disk(self.data['ns_name'],
+        disk = self._node_sal.primitives.create_disk(self.data['nsName'],
                                                      zerodb_sal,
-                                                     mountpoint=self.data.get('mountpoint') or None,
-                                                     filesystem=self.data.get('filesystem') or None,
+                                                     mountpoint=self.data['mountPoint'] or None,
+                                                     filesystem=self.data['filesystem'] or None,
                                                      size=int(self.data['size']))
         disk.deploy()
 
@@ -75,17 +75,17 @@ class Vdisk(TemplateBase):
 
     def info(self):
         self.state.check('actions', 'install', 'ok')
-        return self._zerodb.schedule_action('namespace_info', args={'name': self.data['ns_name']}).wait(die=True).result
+        return self._zerodb.schedule_action('namespace_info', args={'name': self.data['nsName']}).wait(die=True).result
 
     def url(self):
         self.state.check('actions', 'install', 'ok')
-        return self._zerodb.schedule_action('namespace_url', args={'name': self.data['ns_name']}).wait(die=True).result
+        return self._zerodb.schedule_action('namespace_url', args={'name': self.data['nsName']}).wait(die=True).result
 
     def private_url(self):
         self.state.check('actions', 'install', 'ok')
-        return self._zerodb.schedule_action('namespace_private_url', args={'name': self.data['ns_name']}).wait(die=True).result
+        return self._zerodb.schedule_action('namespace_private_url', args={'name': self.data['nsName']}).wait(die=True).result
 
     def uninstall(self):
         self.state.check('actions', 'install', 'ok')
-        self._zerodb.schedule_action('namespace_delete', args={'name': self.data['ns_name']}).wait(die=True)
+        self._zerodb.schedule_action('namespace_delete', args={'name': self.data['nsName']}).wait(die=True)
         self.state.delete('actions', 'install')

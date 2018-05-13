@@ -24,7 +24,7 @@ class TestNamespaceTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.valid_data = {
-            'disktype': 'HDD',
+            'diskType': 'HDD',
             'mode': 'user',
             'password': 'mypasswd',
             'public': False,
@@ -66,6 +66,7 @@ class TestNamespaceTemplate(TestCase):
         ns.validate()
         data = self.valid_data.copy()
         data['zerodb'] = ''
+        data['nsName'] = ''
         assert ns.data == data
 
     def test_zerodb_property(self):
@@ -76,13 +77,13 @@ class TestNamespaceTemplate(TestCase):
     def test_install(self):
         ns = Namespace(name='namespace', data=self.valid_data)
         node = MagicMock()
-        node.schedule_action = MagicMock(return_value=_task_mock(('instance', 'ns_name')))
+        node.schedule_action = MagicMock(return_value=_task_mock(('instance', 'nsName')))
         ns.api = MagicMock()
         ns.api.services.get = MagicMock(return_value=node)
         ns.install()
         node.schedule_action.assert_called_once_with('create_zdb_namespace', self.valid_data)
         ns.state.check('actions', 'install', 'ok')
-        assert ns.data['ns_name'] == 'ns_name'
+        assert ns.data['nsName'] == 'nsName'
         assert ns.data['zerodb'] == 'instance'
 
     def test_info_without_install(self):
@@ -92,14 +93,14 @@ class TestNamespaceTemplate(TestCase):
 
     def test_info(self):
         ns = Namespace(name='namespace', data=self.valid_data)
-        ns.data['ns_name'] = 'ns_name'
+        ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
         task = _task_mock('info')
         ns._zerodb.schedule_action = MagicMock(return_value=task)
 
         assert ns.info() == 'info'
-        ns._zerodb.schedule_action.assert_called_once_with('namespace_info', args={'name': ns.data['ns_name']})
+        ns._zerodb.schedule_action.assert_called_once_with('namespace_info', args={'name': ns.data['nsName']})
 
     def test_uninstall_without_install(self):
         with pytest.raises(StateCheckError, message='Executing uninstall action without install should raise an error'):
@@ -108,11 +109,11 @@ class TestNamespaceTemplate(TestCase):
 
     def test_uninstall(self):
         ns = Namespace(name='namespace', data=self.valid_data)
-        ns.data['ns_name'] = 'ns_name'
+        ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
         ns.uninstall()
-        ns._zerodb.schedule_action.assert_called_once_with('namespace_delete', args={'name': 'ns_name'})
+        ns._zerodb.schedule_action.assert_called_once_with('namespace_delete', args={'name': 'nsName'})
 
     def test_connection_info_without_install(self):
         with pytest.raises(StateCheckError, message='Executing connection_info action without install should raise an error'):
@@ -137,13 +138,13 @@ class TestNamespaceTemplate(TestCase):
 
     def test_url(self):
         ns = Namespace(name='namespace', data=self.valid_data)
-        ns.data['ns_name'] = 'ns_name'
+        ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
         ns._zerodb.schedule_action = MagicMock(return_value=_task_mock('url'))
 
         assert ns.url() == 'url'
-        ns._zerodb.schedule_action.assert_called_once_with('namespace_url', args={'name': 'ns_name'})
+        ns._zerodb.schedule_action.assert_called_once_with('namespace_url', args={'name': 'nsName'})
 
     def test_private_url_without_install(self):
         with pytest.raises(StateCheckError, message='Executing info action without install should raise an error'):
@@ -152,10 +153,10 @@ class TestNamespaceTemplate(TestCase):
 
     def test_private_url(self):
         ns = Namespace(name='namespace', data=self.valid_data)
-        ns.data['ns_name'] = 'ns_name'
+        ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
         ns._zerodb.schedule_action = MagicMock(return_value=_task_mock('url'))
 
         assert ns.private_url() == 'url'
-        ns._zerodb.schedule_action.assert_called_once_with('namespace_private_url', args={'name': 'ns_name'})
+        ns._zerodb.schedule_action.assert_called_once_with('namespace_private_url', args={'name': 'nsName'})

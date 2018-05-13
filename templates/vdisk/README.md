@@ -1,19 +1,23 @@
-## template: github.com/zero-os/0-templates/namespace/0.0.1
+## template: github.com/zero-os/0-templates/vdisk/0.0.1
 
 ### Description:
-This template is responsible for managing a 0-db namespace
+This template is responsible for managing a vdisk
 
 ### Schema:
 
-- `zerodb`: the zerodb to create the namespace on
-- `size`: the namespace size
-- `password`: The namespace password **optional**
+- `zerodb`: the zerodb to create the namespace for the vdisk on.
+- `size`: the vdisk size
+- `diskType`: the type of the disk to use for the namespace
+- `mountPoint`: mount point of the disk
+- `filesystem`: filesystem to create on the disk
+- `nsName`: the name of the namespace created on tzerodb
 
 ### Actions
-- `install`: creates the namespace.
+- `install`: creates the vdisk and namespace.
 - `info`: returns info about the namespace. 
-- `url`: return the public url of the namespace
-- `private_url`: return the private url of the namespace
+- `url`: return the public url of the namespace.
+- `private_url`: return the private url of the namespace.
+- `uninstall`: uninstall the vdisk by deleting the namespace
 
 ### Usage example via the 0-robot DSL
 
@@ -23,41 +27,39 @@ from zerorobot.dsl import ZeroRobotAPI
 robot = j.clients.zrobot.robots['main']
 
 args = {
-    'zerodb': 'zerodb_one',
     'size': 10,
-    'password': 'password',
+    'diskType': 'hdd',
 }
-namespace = robot.services.create('github.com/zero-os/0-templates/namespace/0.0.1', 'namespace_one', data=args)
-namespace.schedule_action('install')
-namespace.schedule_action('info')
+vdisk = robot.services.create('github.com/zero-os/0-templates/vdisk/0.0.1', 'vdisk_one', data=args)
+vdisk.schedule_action('install')
+vdisk.schedule_action('info')
 ```
 
 
 ### Usage example via the 0-robot CLI
 
-To create namespace `namespace_one`:
+To create vdisk `vdisk_one`:
 
 ```yaml
 services:
-    - github.com/zero-os/0-templates/namespace/0.0.1__namespace_one:
-          zerodb: 'zerodb_one'
+    - github.com/zero-os/0-templates/vdisk/0.0.1__vdisk_one:
           size: 10
-          password: 'password'
+          diskType: 'hdd'
           
 actions:
-    - template: 'github.com/zero-os/0-templates/namespace/0.0.1'
-      service: 'namespace_one'
+    - template: 'github.com/zero-os/0-templates/vdisk/0.0.1'
+      service: 'vdisk_one'
       actions: ['install']
 
 ```
 
 
-To get info for namespace `namespace_one`:
+To get info for vdisk `vdisk_one`:
 
 ```yaml
 actions:
-    - template: 'github.com/zero-os/0-templates/namespace/0.0.1'
-      service: 'namespace_one'
+    - template: 'github.com/zero-os/0-templates/vdisk/0.0.1'
+      service: 'vdisk_one'
       actions: ['info']
 
 ```
