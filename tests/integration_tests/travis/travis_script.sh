@@ -27,11 +27,12 @@ initialize_js_config_manager(){
 }
 
 install_zrobot(){
-    BRANCH=${1:-"master"}
-    mkdir -p /opt/code/github/jumpscale
-    git clone --depth=1 -b ${BRANCH} https://github.com/Jumpscale/0-robot /opt/code/github/jumpscale/0-robot
-    pip3 install -r /opt/code/github/jumpscale/0-robot/equirements.txt
-    pip3 install /opt/code/github/jumpscale/0-robot
+    sudo apt-get install -y libsqlite3-dev
+    mkdir -p /opt/code/github/zero-os
+    cd /opt/code/github/zero-os
+    git clone https://github.com/zero-os/0-robot.git
+    cd 0-robot
+    pip install -e .
 }
 
 join_zerotier_network(){
