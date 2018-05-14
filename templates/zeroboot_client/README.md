@@ -2,16 +2,16 @@
 
 ### Description:
 
-This template is responsible for configuring the zeroboot client on jumpscale. Initializing a service from this templates creates a client with the provided configuration.
+This template is responsible for configuring the zeroboot client on Jumpscale. Initializing a service from this templates creates a client with the provided configuration.
 
 If the client with instance name already already exists, that instance will be used.
 
 ### Schema:
 
 - `networkId`: Zerotier network ID
-- `sshClient`: ssh jumpscale client instance name
-- `zerotierClient`: zerotier jumpscale client instance name
+- `sshClient`: SSH jumpscale client instance name
+- `zerotierClient`: Zerotier jumpscale client instance name
 
 ### Actions:
 
-- `delete`: delete the client from jumpscale and the service
+- `delete`: Deletes the client from Jumpscale and the service

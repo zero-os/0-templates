@@ -2,17 +2,17 @@
 
 ### Description:
 
-This template is responsible for configuring the ssh client on jumpscale. Initializing a service from this templates creates a client with the provided configuration.
+This template is responsible for configuring the ssh client on Jumpscale. Initializing a service from this templates creates a client with the provided configuration.
 
 If the client with instance name already already exists, that instance will be used
 
 ### Schema:
 
-- `host`: target host address
-- `port`: target port
-- `login`: ssh username/login
-- `password`: ssh password
+- `host`: Target host address
+- `port`: Target port
+- `login`: SSH username/login
+- `password`: SSH password
 
 ### Actions:
 
-- `delete`: delete the client from jumpscale and the service
+- `delete`: Deletes the client from Jumpscale and the service
