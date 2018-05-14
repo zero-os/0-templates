@@ -68,7 +68,7 @@ echo "[+] Preparing testing framework ..."
 bash tests/integration_tests/prepare.sh
 
 echo "[+] Installing tests requirements ..."
-bash pip3 install -r tests/integration_tests/requirements.txt
+pip3 install -r tests/integration_tests/requirements.txt
 
 echo "[+] Running tests ..."
 cd /tests/integration_tests 
