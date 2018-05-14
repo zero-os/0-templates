@@ -29,10 +29,8 @@ initialize_js_config_manager(){
 install_zrobot(){
     sudo apt-get install -y libsqlite3-dev
     mkdir -p /opt/code/github/zero-os
-    cd /opt/code/github/zero-os
-    git clone https://github.com/zero-os/0-robot.git
-    cd 0-robot
-    pip install -e .
+    git clone https://github.com/zero-os/0-robot.git /opt/code/github/zero-os/0-robot 
+    pip install -e /opt/code/github/zero-os/0-robot
 }
 
 join_zerotier_network(){
