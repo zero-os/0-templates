@@ -18,8 +18,8 @@ class Node(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-
         self.recurring_action('_monitor', 30)  # every 30 seconds
+        self.recurring_action('_register', 3600 * 2)  # every 2hours
 
     @property
     def node_sal(self):
@@ -51,6 +51,17 @@ class Node(TemplateBase):
             self.state.delete('status', 'rebooting')
         except StateCheckError:
             pass
+
+    def _register(self):
+        """
+        register the node capacity
+        """
+        self.state.check('actions', 'install', 'ok')
+        self.logger.info("register node capacity")
+        # TODO:
+        # implement TTL for the data registered, so if the node is not online anymore
+        # the capacity will not be visible anymore until the node is up again
+        self.node_sal.capacity.register()
 
     def _rename_cache(self):
         """Rename old cache storage pool to new convention if needed"""
