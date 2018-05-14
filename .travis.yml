@@ -1,18 +1,32 @@
-language: python
-sudo: required
-dist: trusty
+matrix:
+  include:
+    - language: python
+      sudo: true
+      dist: trusty
+      python: 3.5
+      if: type IN (api, cron)
 
-python:
-  - "3.5"
+      install:
+        - pip3 install argparse
+        - curl -s https://install.zerotier.com/ | sudo bash
 
-install:
-  - pip3 install codecov pytest pytest-cov
-  - pip3 install -r requirements.txt
-  - ./utils/jumspcale_install.sh
-  - ./utils/zrobot_install.sh
+      script:
+        - bash tests/integration_tests/travis/travis_script.sh
 
-script:
-  - make test
+    - language: python
+      sudo: required
+      dist: trusty
 
-after_success:
-  - codecov
+      python: 3.5
+
+      install:
+        - pip3 install codecov pytest pytest-cov
+        - pip3 install -r requirements.txt
+        - ./utils/jumspcale_install.sh
+        - ./utils/zrobot_install.sh
+
+      script:
+        - make test
+
+      after_success:
+        - codecov
