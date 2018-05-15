@@ -30,7 +30,7 @@ install_zrobot(){
     sudo apt-get install -y libsqlite3-dev
     mkdir -p /opt/code/github/zero-os
     git clone https://github.com/zero-os/0-robot.git /opt/code/github/zero-os/0-robot 
-    pip install -e /opt/code/github/zero-os/0-robot
+    pip3 install -e /opt/code/github/zero-os/0-robot
 }
 
 join_zerotier_network(){
@@ -40,7 +40,6 @@ join_zerotier_network(){
     curl -s -H "Content-Type: application/json" -H "Authorization: Bearer ${2}" -X POST -d '{"config": {"authorized": true}}' https://my.zerotier.com/api/network/${1}/member/${memberid} > /dev/null
     sudo ifconfig "$(ls /sys/class/net | grep zt)" mtu 1280 
 }
-
 
 echo "[+] Generating ssh key ..."
 ssh-keygen -f ~/.ssh/id_rsa -P ''
@@ -65,12 +64,12 @@ testing_zt_network=$(cat /tmp/testing_zt_network.txt)
 join_zerotier_network ${testing_zt_network} ${zerotier_token}
 
 echo "[+] Preparing testing framework ..."
-bash tests/integration_tests/prepare.sh
+cd tests/integration_tests
+bash prepare.sh
 
 echo "[+] Installing tests requirements ..."
-pip3 install -r tests/integration_tests/requirements.txt
+pip3 install -r requirements.txt
 
 echo "[+] Running tests ..."
-cd tests/integration_tests 
 cpu_zt_ip=$(cat /tmp/cpu_zt_ip.txt)
-nosetests -v -s --exe testsuite --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
+nosetests -v -s testsuite/a_basic/containers_tests.py --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
