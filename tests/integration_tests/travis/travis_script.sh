@@ -64,7 +64,7 @@ python3 -u tests/integration_tests/travis/zboot_env_setup.py --router_address ${
 
 echo "[+] Joining testing zerotier network"
 testing_zt_network=$(cat /tmp/testing_zt_network.txt)
-join_zerotier_network ${testing_zt_network} ${zerotier_token}
+join_zerotier_network ${testing_zt_network} ${zerotier_token}; sleep 20
 
 echo "[+] Preparing testing framework ..."
 cd tests/integration_tests
@@ -75,7 +75,7 @@ pip3 install -r requirements.txt
 
 echo "[+] Connecting to 0-robot server ..."
 cpu_zt_ip=$(cat /tmp/cpu_zt_ip.txt)
-zrobot robot connect main http://${cpu_zt_ip}:6600; sleep 15
+zrobot robot connect main http://${cpu_zt_ip}:6600; sleep 20
 
 echo "[+] Running tests ..."
 nosetests -v -s testsuite/a_basic/containers_tests.py --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
