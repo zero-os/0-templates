@@ -73,7 +73,7 @@ struct Schema {
     struct PortForward{
         protocols @0: List(IPProtocol);
         srcport @1: Int32;
-        srcip @2: Text;
+        srcnetwork @2: Text;
         dstport @3: Int32;
         dstip @4: Text;
         name @5: Text;

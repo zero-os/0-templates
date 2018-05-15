@@ -33,8 +33,14 @@ class Gateway(TemplateBase):
     def add_portforward(self, forward):
         self.state.check('actions', 'start', 'ok')
 
+        for network in self.data['networks']:
+            if network['name'] == forward['srcnetwork']:
+                break
+        else:
+            raise LookupError('Network with name {} doesn\'t exist'.format(forward['srcnetwork']))
+
         for fw in self.data['portforwards']:
-            name, combination = self._compare_objects(fw, forward, 'srcip', 'srcport')
+            name, combination = self._compare_objects(fw, forward, 'srcnetwork', 'srcport')
             if name:
                 raise ValueError('A forward with the same name exists')
             if combination:
