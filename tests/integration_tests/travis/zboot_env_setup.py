@@ -62,7 +62,7 @@ def main(options):
     else:
         raise RuntimeError("Node doesn't join the zerotier network")
     
-    time.sleep(20)
+    time.sleep(60)
     
     members = testing_zt_network.members_list()
     cpu_zt_ip = members[0].data['config']['ipAssignments'][0]

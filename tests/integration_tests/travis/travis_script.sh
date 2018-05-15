@@ -71,6 +71,6 @@ echo "[+] Installing tests requirements ..."
 pip3 install -r tests/integration_tests/requirements.txt
 
 echo "[+] Running tests ..."
-cd /tests/integration_tests 
+cd tests/integration_tests 
 cpu_zt_ip=$(cat /tmp/cpu_zt_ip.txt)
 nosetests -v -s testsuite --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
