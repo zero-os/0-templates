@@ -3,8 +3,8 @@ install_jumpscale(){
     js9_branch=${js9_branch:-"development"}
 
     ## install important packages
-    apt install git python3-pip python-pip -y
-    apt install python-dev python3-dev libffi-dev build-essential libssl-dev libxml2-dev libxslt1-dev zlib1g-dev -y
+    sudo apt install git python3-pip python-pip -y
+    sudo apt install python-dev python3-dev libffi-dev build-essential libssl-dev libxml2-dev libxslt1-dev zlib1g-dev -y
     
     ## install jumpscale 
     for target in /usr/local /opt /opt/cfg /opt/code/github/jumpscale /opt/var/capnp /opt/var/log $HOME/js9host/cfg; do
@@ -29,7 +29,7 @@ initialize_js_config_manager(){
 install_zrobot(){
     sudo apt-get install -y libsqlite3-dev
     mkdir -p /opt/code/github/zero-os
-    git clone https://github.com/zero-os/0-robot.git /opt/code/github/zero-os/0-robot 
+    git clone -b ${zrobot_branch} https://github.com/zero-os/0-robot.git /opt/code/github/zero-os/0-robot 
     pip3 install -e /opt/code/github/zero-os/0-robot
 }
 
@@ -64,9 +64,7 @@ python3 -u tests/integration_tests/travis/zboot_env_setup.py --router_address ${
 
 echo "[+] Joining testing zerotier network"
 testing_zt_network=$(cat /tmp/testing_zt_network.txt)
-join_zerotier_network ${testing_zt_network} ${zerotier_token}; sleep 30
-
-ip a
+join_zerotier_network ${testing_zt_network} ${zerotier_token}; sleep 20
 
 echo "[+] Preparing testing framework ..."
 cd tests/integration_tests
