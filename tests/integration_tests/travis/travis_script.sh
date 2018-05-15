@@ -38,7 +38,10 @@ join_zerotier_network(){
     sudo zerotier-cli join ${1}; sleep 5
     memberid=$(sudo zerotier-cli info | awk '{print $3}')
     curl -s -H "Content-Type: application/json" -H "Authorization: Bearer ${2}" -X POST -d '{"config": {"authorized": true}}' https://my.zerotier.com/api/network/${1}/member/${memberid} > /dev/null
-    sudo ifconfig "$(ls /sys/class/net | grep zt)" mtu 1280 
+    
+    for interface in $(ls /sys/class/net | grep zt); do
+        sudo ifconfig ${interface} mtu 1288
+    done
 }
 
 echo "[+] Generating ssh key ..."
