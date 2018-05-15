@@ -18,7 +18,7 @@ It configures caddy, dnsmasq, nftables and cloud-init to work together to provid
 PortForward:
 - `protocols`: IPProtocol enum
 - `srcport`: Port to forward from
-- `srcip`: IPAddress to forward from
+- `srcnetwork`: Network name to get the src ip from
 - `dstip`: IPAddress to forward to
 - `dstport`: Port to forward to
 - `name`: portforward name

@@ -34,7 +34,7 @@ class Gateway(TemplateBase):
         self.state.check('actions', 'start', 'ok')
 
         for fw in self.data['portforwards']:
-            name, combination = self._compare_objects(fw, forward, 'srcip', 'srcport')
+            name, combination = self._compare_objects(fw, forward, 'srcnetwork', 'srcport')
             if name:
                 raise ValueError('A forward with the same name exists')
             if combination:

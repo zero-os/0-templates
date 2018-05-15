@@ -87,7 +87,7 @@ class TestGatewayTemplate(TestCase):
         """
         gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
-        portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
+        portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
         gw.add_portforward(portforward)
         gw._gateway_sal.deploy.assert_called_once_with()
         assert gw.data['portforwards'] == [portforward]
@@ -99,7 +99,7 @@ class TestGatewayTemplate(TestCase):
         with pytest.raises(StateCheckError,
                            message='action should raise an error if gateway isn\'t started'):
             gw = Gateway('gw', data=self.valid_data)
-            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
+            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
             gw.add_portforward(portforward)
 
     def test_add_portforward_name_exists(self):
@@ -108,33 +108,33 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(ValueError,
                            message='action should raise an error if another portforward with the same name exist'):
-            self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
+            self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcnetwork': 'network', 'srcport': 21, 'protocols': ['tcp']}]
             gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
-            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
+            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
             gw.add_portforward(portforward)
 
     def test_add_portforward_combination_exists_same_protocols(self):
         """
-        Test add_portforward action when another portforward with the same srcip and srcport exists and have the same protocols
+        Test add_portforward action when another portforward with the same srcnetwork and srcport exists and have the same protocols
         """
         with pytest.raises(ValueError,
                            message='action should raise an error if another portforward with the same name exist'):
-            self.valid_data['portforwards'] = [{'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}]
+            self.valid_data['portforwards'] = [{'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}]
             gw = Gateway('gw', data=self.valid_data)
             gw.state.set('actions', 'start', 'ok')
-            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
+            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
             gw.add_portforward(portforward)
 
     def test_add_portforward_combination_exists_different_protocols(self):
         """
-        Test add_portforward action when another portforward with the same srcip and srcport exists and have different protocols
+        Test add_portforward action when another portforward with the same srcnetwork and srcport exists and have different protocols
         """
-        portforward_one = {'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['udp']}
+        portforward_one = {'name': 'pf2', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['udp']}
         self.valid_data['portforwards'] = [portforward_one]
         gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
-        portforward_two = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcip': '127.0.0.1', 'srcport': 22, 'protocols': ['tcp']}
+        portforward_two = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
         gw.add_portforward(portforward_two)
         assert gw.data['portforwards'] == [portforward_one, portforward_two]
 
@@ -142,7 +142,7 @@ class TestGatewayTemplate(TestCase):
         """
         Test remove_portforward action
         """
-        self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
+        self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcnetwork': 'network', 'srcport': 21, 'protocols': ['tcp']}]
         gw = Gateway('gw', data=self.valid_data)
         gw.state.set('actions', 'start', 'ok')
         gw.remove_portforward('pf')
@@ -154,7 +154,7 @@ class TestGatewayTemplate(TestCase):
         """
         with pytest.raises(StateCheckError,
                            message='action should raise an error if gateway isn\'t started'):
-            self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcip': '127.0.0.1', 'srcport': 21, 'protocols': ['tcp']}]
+            self.valid_data['portforwards'] = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcnetwork': 'network', 'srcport': 21, 'protocols': ['tcp']}]
             gw = Gateway('gw', data=self.valid_data)
             gw.remove_portforward('pf')
 
