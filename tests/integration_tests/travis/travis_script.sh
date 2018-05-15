@@ -70,6 +70,9 @@ bash prepare.sh
 echo "[+] Installing tests requirements ..."
 pip3 install -r requirements.txt
 
-echo "[+] Running tests ..."
+echo "[+] Connecting to 0-robot server ..."
 cpu_zt_ip=$(cat /tmp/cpu_zt_ip.txt)
+zrobot robot connect main http://${}:6600; sleep 15
+
+echo "[+] Running tests ..."
 nosetests -v -s testsuite/a_basic/containers_tests.py --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
