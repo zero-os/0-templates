@@ -40,7 +40,7 @@ join_zerotier_network(){
     curl -s -H "Content-Type: application/json" -H "Authorization: Bearer ${2}" -X POST -d '{"config": {"authorized": true}}' https://my.zerotier.com/api/network/${1}/member/${memberid} > /dev/null
     
     for interface in $(ls /sys/class/net | grep zt); do
-        sudo ifconfig ${interface} mtu 1288
+        sudo ifconfig ${interface} mtu 1280
     done
 }
 
@@ -64,7 +64,9 @@ python3 -u tests/integration_tests/travis/zboot_env_setup.py --router_address ${
 
 echo "[+] Joining testing zerotier network"
 testing_zt_network=$(cat /tmp/testing_zt_network.txt)
-join_zerotier_network ${testing_zt_network} ${zerotier_token}; sleep 20
+join_zerotier_network ${testing_zt_network} ${zerotier_token}; sleep 30
+
+ip a
 
 echo "[+] Preparing testing framework ..."
 cd tests/integration_tests
