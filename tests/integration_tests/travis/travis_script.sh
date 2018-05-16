@@ -6,7 +6,7 @@ install_jumpscale(){
     sudo apt install git python3-pip python-pip -y
     sudo apt install python-dev python3-dev libffi-dev build-essential libssl-dev libxml2-dev libxslt1-dev zlib1g-dev -y
     
-    ## install jumpscale 
+    ## install jumpscale9
     for target in /usr/local /opt /opt/cfg /opt/code/github/jumpscale /opt/var/capnp /opt/var/log $HOME/js9host/cfg; do
         mkdir -p $target
         sudo chown -R $USER:$USER $target
@@ -78,4 +78,4 @@ cpu_zt_ip=$(cat /tmp/cpu_zt_ip.txt)
 zrobot robot connect main http://${cpu_zt_ip}:6600; sleep 20
 
 echo "[+] Running tests ..."
-nosetests -v -s testsuite/a_basic/containers_tests.py --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
+nosetests -v -s ${tests_path} --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}

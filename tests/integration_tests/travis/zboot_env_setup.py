@@ -2,7 +2,24 @@ from js9 import j
 import argparse, random, time, os
 
 def main(options):
+    """Setup testing environment using Zero-Boot client
     
+    Arguments:
+        options {object} -- argparse option object
+            router_address {str} -- address of the router in the zerotier network.
+            router_username {str} -- username of the router.
+            router_password {str} -- password of the router.
+            zerotier_network {str} -- router's zerotier network.
+            zerotier_token {str} -- router's zerotier token.
+            rack_hostname {str} -- address of the racktivity device in the internal router network.
+            rack_username {str} -- username of the racktivity device.
+            rack_password {str} -- password of the racktivity device.
+            rack_module_id {str} -- rack module id.
+            cpu_hostname {str} -- cpu's hostname.
+            cpu_rack_port {int} -- cpu's rack port.
+            core_0_branch {str} -- core-0 branch.
+    """
+
     instance_name = 'test-{}'.format(random.randint(1, 1000))
     
     # configure ssh client
