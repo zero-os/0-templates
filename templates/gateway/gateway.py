@@ -24,6 +24,7 @@ class Gateway(TemplateBase):
         return self._node_sal.primitives.from_dict('gateway', self.data)
 
     def install(self):
+        self.logger.info('Install gateway {}'.format(self.name))
         gateway_sal = self._gateway_sal
         gateway_sal.deploy()
         self.data['ztIdentity'] = gateway_sal.zt_identity
@@ -31,6 +32,7 @@ class Gateway(TemplateBase):
         self.state.set('actions', 'start', 'ok')
 
     def add_portforward(self, forward):
+        self.logger.info('Add portforward {}'.format(forward['name']))
         self.state.check('actions', 'start', 'ok')
 
         for network in self.data['networks']:
@@ -50,6 +52,7 @@ class Gateway(TemplateBase):
         self._gateway_sal.deploy()
 
     def remove_portforward(self, forward_name):
+        self.logger.info('Remove portforward {}'.format(forward_name))
         self.state.check('actions', 'start', 'ok')
 
         for fw in self.data['portforwards']:
@@ -61,6 +64,7 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_fw()
 
     def add_http_proxy(self, proxy):
+        self.logger.info('Add http proxy {}'.format(proxy['name']))
         self.state.check('actions', 'start', 'ok')
 
         for existing_proxy in self.data['httpproxies']:
@@ -73,6 +77,7 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_http()
 
     def remove_http_proxy(self, proxy_name):
+        self.logger.info('Remove http proxy {}'.format(proxy_name))
         self.state.check('actions', 'start', 'ok')
 
         for existing_proxy in self.data['httpproxies']:
@@ -84,6 +89,7 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_http()
 
     def add_dhcp_host(self, network_name, host):
+        self.logger.info('Add dhcp to network {}'.format(network_name))
         self.state.check('actions', 'start', 'ok')
 
         for network in self.data['networks']:
@@ -99,14 +105,16 @@ class Gateway(TemplateBase):
         self._gateway_sal.configure_dhcp()
         self._gateway_sal.configure_cloudinit()
 
-    def remove_dhcp_host(self, networkname, host):
+    def remove_dhcp_host(self, network_name, host):
+        self.logger.info('Add dhcp to network {}'.format(network_name))
+
         self.state.check('actions', 'start', 'ok')
 
         for network in self.data['networks']:
-            if network['name'] == networkname:
+            if network['name'] == network_name:
                 break
         else:
-            raise LookupError('Network with name {} doesn\'t exist'.format(networkname))
+            raise LookupError('Network with name {} doesn\'t exist'.format(network_name))
         dhcpserver = network['dhcpserver']
         for existing_host in dhcpserver['hosts']:
             if existing_host['macaddress'] == host['macaddress']:
@@ -133,6 +141,7 @@ class Gateway(TemplateBase):
         return name, True
 
     def add_network(self, network):
+        self.logger.info('Add network {}'.format(network['name']))
         self.state.check('actions', 'start', 'ok')
 
         for existing_network in self.data['networks']:
@@ -145,6 +154,7 @@ class Gateway(TemplateBase):
         self._gateway_sal.deploy()
 
     def remove_network(self, network_name):
+        self.logger.info('Remove network {}'.format(network_name))
         self.state.check('actions', 'start', 'ok')
 
         for network in self.data['networks']:
@@ -156,16 +166,19 @@ class Gateway(TemplateBase):
         self._gateway_sal.deploy()
 
     def uninstall(self):
+        self.logger.info('Uninstall gateway {}'.format(self.name))
         self.state.check('actions', 'install', 'ok')
         self._gateway_sal.stop()
         self.state.delete('actions', 'install')
         self.state.delete('actions', 'start')
 
     def stop(self):
+        self.logger.info('Stop gateway {}'.format(self.name))
         self.state.check('actions', 'start', 'ok')
         self._gateway_sal.stop()
         self.state.delete('actions', 'start')
 
     def start(self):
+        self.logger.info('Start gateway {}'.format(self.name))
         self.state.check('actions', 'install', 'ok')
         self.install()

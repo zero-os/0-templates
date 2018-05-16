@@ -64,7 +64,7 @@ data = {
     'memory': 256,
     'cpu': 1,
     'nics': [{'type':'default'}],
-    'flist': 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
+    'flist': 'https://hub.gig.tech/gig-bootable/ubuntu:latest.flist',
     'ports':{'source': 22, 'target': 22, 'name': 'ssh'},
     'configs': [{'path': '/root/.ssh/authorized_keys', 'content': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1', 'name': 'sshkey'}]
 }
@@ -76,7 +76,7 @@ vm.schedule_action('install')
 ```yaml
 services:
     - github.com/zero-os/0-templates/vm/0.0.1__vm1:
-        flist: 'https://hub.gig.tech/gig-bootable/ubuntu-xenial-bootable-sshd.flist',
+        flist: 'https://hub.gig.tech/gig-bootable/ubuntu:latest.flist',
         memory: 256
         cpu: 1
         nics: 

@@ -41,6 +41,8 @@ struct Schema {
     struct DHCP {
         nameservers @0: List(Text);
         hosts @1: List(Host);
+        poolStart @2: Int32;
+        poolSize @3: Int32;
     }
 
     struct NetworkConfig {
