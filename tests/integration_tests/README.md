@@ -1,5 +1,3 @@
-Tesutsutie
-
 ## Travis CI
 You can trigger builds from [CI Dashboard](https://travis-dash.gig.tech)
 
@@ -39,6 +37,7 @@ python3 travis/zboot_env_setup.py [arguments]
 ```--core_0_branch``` : core-0 branch.
 
 > This script will return the zerotier network id to join, and the zero-os machine ip address.
+
 
 ### Run the testsuite
 
