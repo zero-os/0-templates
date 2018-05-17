@@ -3,10 +3,10 @@ from js9 import j
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 
-class ZerobootRacktivityHost(TemplateBase):
+class ZerobootIpmiHost(TemplateBase):
 
     version = '0.0.1'
-    template_name = "zeroboot_racktivity_host"
+    template_name = "zeroboot_ipmi_host"
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
@@ -21,29 +21,6 @@ class ZerobootRacktivityHost(TemplateBase):
             ZerobootClient -- zeroboot JS client
         """
         return j.clients.zboot.get(self.data['zerobootClient'], interactive=False)
-    
-    @property
-    def _racktivity(self):
-        """ Returns Racktivity client
-        
-        Returns:
-            RacktivityClient -- racktivity JS client
-        """
-        return j.clients.racktivity.get(self.data['racktivityClient'], interactive=False)
-
-    @property
-    def _powermodule_id(self):
-        """ Returns the Racktivity power module id
-        returns None if empty.
-        
-        Returns:
-            str -- Racktivity powermodule ID
-        """
-        pm = self.data.get('racktivityPowerModule')
-        if pm and pm != "" :
-            return pm
-        else:
-            return None
 
     @property
     def _network(self):
@@ -53,6 +30,15 @@ class ZerobootRacktivityHost(TemplateBase):
             ZerobootClient.Network -- Zeroboot network
         """
         return self._zeroboot.networks.get(self.data['network'])
+
+    @property
+    def _ipmi(self):
+        """ Returns ipmi client
+        
+        Returns:
+            IpmiClient -- ipmi JS client
+        """
+        return j.clients.ipmi.get(self.data['ipmiClient'], interactive=False)
 
     @property
     def _host(self):
@@ -67,8 +53,8 @@ class ZerobootRacktivityHost(TemplateBase):
         if not self.data.get('zerobootClient'):
             raise ValueError("No zeroboot instance specified (zerobootClient)")
 
-        if not self.data.get('racktivityClient'):
-            raise ValueError("No Racktivity instance specified (racktivityClient)")
+        if not self.data.get('ipmiClient'):
+            raise ValueError("No ipmi instance specified (ipmiClient)")
 
         if not self.data.get('network'):
             raise ValueError("No network specified")
@@ -85,15 +71,12 @@ class ZerobootRacktivityHost(TemplateBase):
         if not self.data.get('ipxeUrl'):
             raise ValueError("No ipxeUrl specified")
 
-        if not self.data.get('racktivityPort'):
-            raise ValueError("No Racktivity port for the host specified (racktivityPort)")
-
         # check if clients exists
         if self.data['zerobootClient'] not in j.clients.zboot.list():
             raise RuntimeError("No zboot client instance found named '%s'" % self.data['zerobootClient'])
 
-        if self.data['racktivityClient'] not in j.clients.racktivity.list():
-            raise RuntimeError("No racktivity client instance found named '%s'" % self.data['racktivityClient'])
+        if self.data['ipmiClient'] not in j.clients.ipmi.list():
+            raise RuntimeError("No ipmi client instance found named '%s'" % self.data['ipmiClient'])
 
     def install(self):
         # add host to zeroboot
@@ -120,7 +103,7 @@ class ZerobootRacktivityHost(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
 
-        self._zeroboot.port_power_on(self.data['racktivityPort'], self._racktivity, self._powermodule_id)
+        self._ipmi.power_on()
         self._powerstate = True
 
     def power_off(self):
@@ -128,15 +111,18 @@ class ZerobootRacktivityHost(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         
-        self._zeroboot.port_power_off(self.data['racktivityPort'], self._racktivity, self._powermodule_id)
+        self._ipmi.power_off()
         self._powerstate = False
 
     def power_cycle(self):
         """ Power cycles host
+
+        After a power cycle, the host will always be powered on.
         """
         self.state.check('actions', 'install', 'ok')
         
-        self._zeroboot.port_power_cycle([self.data['racktivityPort']], self._racktivity, self._powermodule_id)
+        self._ipmi.power_cycle()
+        self._powerstate = True
 
     def power_status(self):
         """ Power state of host
@@ -146,7 +132,14 @@ class ZerobootRacktivityHost(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
 
-        return self._zeroboot.port_info(self.data['racktivityPort'], self._racktivity, self._powermodule_id)[1]
+        status = self._ipmi.power_status()
+
+        if status == "on":
+            return True
+        elif status == "off":
+            return False
+        else:
+            raise RuntimeError("Received unexpected power state: '%s'\nExpected 'on' or 'off'" % status)
 
     def monitor(self):
         """Checks if the power status of the host is the same as the last called power_on/power_off action
@@ -167,7 +160,7 @@ class ZerobootRacktivityHost(TemplateBase):
         """ Configure the IPXE boot settings of the host
         
         Arguments:
-            boot_url str -- url to boot from includes zerotier netowrk id ex: http://unsecure.bootstrap.gig.tech/ipxe/zero-os-master/a84ac5c10a670ca3
+            boot_url str -- url to boot from includes zerotier network id ex: http://unsecure.bootstrap.gig.tech/ipxe/zero-os-master/a84ac5c10a670ca3
         
         Keyword Arguments:
             tftp_root str -- tftp root location where pxe config are stored (default: '/opt/storage')

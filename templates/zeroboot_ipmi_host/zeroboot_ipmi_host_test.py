@@ -11,26 +11,25 @@ from zerorobot import config, template_collection
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
-from zeroboot_racktivity_host import ZerobootRacktivityHost
+from zeroboot_ipmi_host import ZerobootIpmiHost
 
-class TestZerobootRacktivityHostTemplate(TestCase):
+class TestZerobootIpmiHostTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         config.DATA_DIR = '/tmp'
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        ZerobootRacktivityHost.template_uid = TemplateUID.parse(
+        ZerobootIpmiHost.template_uid = TemplateUID.parse(
             'github.com/zero-os/0-templates/%s/%s' % (
-                ZerobootRacktivityHost.template_name, ZerobootRacktivityHost.version))
+                ZerobootIpmiHost.template_name, ZerobootIpmiHost.version))
 
         cls._valid_data = {
             'zerobootClient': 'zboot1-zb',
-            'racktivityClient': 'zboot1-rack',
+            'ipmiClient': 'zboot1-ipmi',
             'mac': 'well:this:a:weird:mac:address',
             'ip': '10.10.1.1',
             'network': '10.10.1.0/24',
             'hostname': 'test-01',
             'ipxeUrl': 'some.ixpe.url',
-            'racktivityPort': 123456,
         }
 
     @classmethod
@@ -38,26 +37,24 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         if os.path.exists(config.DATA_DIR):
             shutil.rmtree(config.DATA_DIR)
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_validation_required_fields(self, zboot, rack):
+    def test_validation_required_fields(self, zboot, ipmi):
         zboot.list = MagicMock(return_value=[self._valid_data['zerobootClient']])
-        rack.list = MagicMock(return_value=[self._valid_data['racktivityClient']])
+        ipmi.list = MagicMock(return_value=[self._valid_data['ipmiClient']])
 
         test_cases = [
             {
                 'data': {
-                    'racktivityClient': 'zboot1-rack',
+                    'ipmiClient': 'zboot1-ipmi',
                     'mac': 'well:this:a:weird:mac:address',
                     'ip': '10.10.1.1',
                     'network': '10.10.1.0/24',
                     'hostname': 'test-01',
                     'ipxeUrl': 'some.ixpe.url',
-                    'racktivityPort': 1,
                 },
                 'message': "Should fail: missing zerobootClient",
                 'valid': False,
-                'missing': 'zerobootClient',
             },
             {
                 'data': {
@@ -67,94 +64,68 @@ class TestZerobootRacktivityHostTemplate(TestCase):
                     'network': '10.10.1.0/24',
                     'hostname': 'test-01',
                     'ipxeUrl': 'some.ixpe.url',
-                    'racktivityPort': 1,
                 },
-                'message': "Should fail: missing racktivityClient",
+                'message': "Should fail: missing impiClient",
                 'valid': False,
-                'missing': 'racktivityClient',
             },
             {
                 'data': {
                     'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
+                    'ipmiClient': 'zboot1-ipmi',
                     'mac': 'well:this:a:weird:mac:address',
                     'ip': '10.10.1.1',
                     'hostname': 'test-01',
                     'ipxeUrl': 'some.ixpe.url',
-                    'racktivityPort': 1,
                 },
                 'message': "Should fail: missing network",
                 'valid': False,
-                'missing': 'network',
             },
             {
                 'data': {
                     'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
+                    'ipmiClient': 'zboot1-ipmi',
                     'mac': 'well:this:a:weird:mac:address',
                     'ip': '10.10.1.1',
                     'network': '10.10.1.0/24',
                     'ipxeUrl': 'some.ixpe.url',
-                    'racktivityPort': 1,
                 },
                 'message': "Should fail: missing hostname",
                 'valid': False,
-                'missing': 'hostname',
             },
             {
                 'data': {
                     'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
-                    'mac': 'well:this:a:weird:mac:address',
+                    'ipmiClient': 'zboot1-ipmi',
                     'ip': '10.10.1.1',
                     'network': '10.10.1.0/24',
                     'hostname': 'test-01',
                     'ipxeUrl': 'some.ixpe.url',
-                },
-                'message': "Should fail: missing racktivityPort",
-                'valid': False,
-                'missing': 'racktivityPort',
-            },
-            {
-                'data': {
-                    'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
-                    'ip': '10.10.1.1',
-                    'network': '10.10.1.0/24',
-                    'hostname': 'test-01',
-                    'ipxeUrl': 'some.ixpe.url',
-                    'racktivityPort': 1,
                 },
                 'message': "Should fail: missing mac address",
                 'valid': False,
-                'missing': 'mac',
             },
             {
                 'data': {
                     'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
+                    'ipmiClient': 'zboot1-ipmi',
                     'network': '10.10.1.0/24',
                     'mac': 'well:this:a:weird:mac:address',
                     'hostname': 'test-01',
-                    'racktivityPort': 1,
                 },
                 'message': "Should fail: missing ip address",
                 'valid': False,
-                'missing': 'ip',
             },
             {
                 'data': {
                     'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
+                    'ipmiClient': 'zboot1-ipmi',
                     'network': '10.10.1.0/24',
                     'mac': 'well:this:a:weird:mac:address',
                     'ip': '10.10.1.1',
                     'hostname': 'test-01',
-                    'racktivityPort': 1,
                 },
                 'message': "Should fail: missing ipxeUrl address",
                 'valid': False,
-                'missing': 'ipxeUrl',
             },
             {
                 'data': self._valid_data,
@@ -164,28 +135,23 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         ]
 
         for tc in test_cases:
-            instance = ZerobootRacktivityHost(name="test", data=tc['data'])
+            instance = ZerobootIpmiHost(name="test", data=tc['data'])
             if tc['valid']:
                 try:
                     instance.validate()
                 except BaseException as err:
                     pytest.fail("Unexpected error: %s\n\nMessage: %s\n\nData: %s" %(err, tc['message'], tc['data']))
             else:
-                with pytest.raises(
-                        ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])) as excinfo:
+                with pytest.raises(ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])):
                     instance.validate()
-                
-                if tc['missing'] not in str(excinfo):
-                    pytest.fail(
-                        "Error message did not contain missing field('%s'): %s" % (tc['missing'], str(excinfo)))
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_validate_no_zboot_instance(self, zboot, rack):
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+    def test_validate_no_zboot_instance(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
 
         zboot.list = MagicMock(return_value=[])
-        rack.list = MagicMock(return_value=[self._valid_data['racktivityClient']])
+        ipmi.list = MagicMock(return_value=[self._valid_data['ipmiClient']])
         instance.power_status = MagicMock(return_value=True)
 
         with pytest.raises(RuntimeError, message="zeroboot instance should not be present") as excinfo:
@@ -193,25 +159,26 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         if "zboot client" not in str(excinfo.value):
             pytest.fail("Received unexpected error message for missing zboot instance: %s" % str(excinfo.value))
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_validate_no_racktivity_instance(self, zboot, rack):
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+    def test_validate_no_ipmi_instance(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
 
         zboot.list = MagicMock(return_value=[self._valid_data['zerobootClient']])
-        rack.list = MagicMock(return_value=[])
+        ipmi.list = MagicMock(return_value=[])
         instance.power_status = MagicMock(return_value=True)
 
-        with pytest.raises(RuntimeError, message="racktivity instance should not be present") as excinfo:
+        with pytest.raises(RuntimeError, message="ipmi instance should not be present") as excinfo:
             instance.validate()
-        if "racktivity client" not in str(excinfo.value):
-            pytest.fail("Received unexpected error message for missing racktivity instance: %s" % str(excinfo.value))
+        if "ipmi client" not in str(excinfo.value):
+            pytest.fail("Received unexpected error message for missing ipmi instance: %s" % str(excinfo.value))
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_install(self, zboot, rack):
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+    def test_install(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance._network.hosts.list = MagicMock(return_value=[])
+        ipmi.get().power_status = MagicMock(return_value="on")
 
         instance.install()
 
@@ -227,7 +194,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_zboot')
     def test_uninstall(self, zboot):
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
 
         instance.uninstall()
@@ -237,79 +204,78 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         with pytest.raises(StateCheckError, message="install action state check should fail"):
             instance.state.check('actions', 'install', 'ok')
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_on(self, zboot, rack):
+    def test_power_on(self, zboot, ipmi):
         # check when not installed
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_on should be not be able to be called before install"):
             instance.power_on()
 
         # prep mock
         instance.state.set('actions', 'install', 'ok')
-        rack.get = MagicMock()
 
         instance.power_on()
-        zboot.get().port_power_on.assert_called_with(
-            self._valid_data['racktivityPort'], mock.ANY, None)
+        ipmi.get().power_on.assert_called_with()
 
         # check if instance._power_state True
         assert instance._powerstate
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_off(self, zboot, rack):
+    def test_power_off(self, zboot, ipmi):
         # check when not installed
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_off should be not be able to be called before install"):
             instance.power_off()
 
         # prep mock
         instance.state.set('actions', 'install', 'ok')
-        rack.get = MagicMock()
 
         instance.power_off()
-        zboot.get().port_power_off.assert_called_with(
-            self._valid_data['racktivityPort'], mock.ANY, None)
+        ipmi.get().power_off.assert_called_with()
 
         # check if instance._power_state False
         assert not instance._powerstate
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_cycle(self, zboot, rack):
+    def test_power_cycle(self, zboot, ipmi):
         # check when not installed
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_cycle should be not be able to be called before install"):
             instance.power_cycle()
 
         # prep mock
         instance.state.set('actions', 'install', 'ok')
-        rack.get = MagicMock()
 
         instance.power_cycle()
-        zboot.get().port_power_cycle.assert_called_with(
-            [self._valid_data['racktivityPort']], mock.ANY, None)
+        ipmi.get().power_cycle.assert_called_with()
 
-    @mock.patch.object(j.clients, '_racktivity')
+    @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_status(self, zboot, rack):
+    def test_power_status(self, zboot, ipmi):
         # check when not installed
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_status should be not be able to be called before install"):
             instance.power_status()
 
         # prep mock
         instance.state.set('actions', 'install', 'ok')
-        rack.get = MagicMock()
+        ipmi.get().power_status = MagicMock(return_value="on")
 
-        instance.power_status()
-        zboot.get().port_info.assert_called_with(
-            self._valid_data['racktivityPort'], mock.ANY, None)
+        status = instance.power_status()
+
+        assert status == True
+
+        ipmi.get().power_status = MagicMock(return_value="off")
+        status = instance.power_status()
+
+        assert status == False
 
     def test_monitor_matching_state(self):
         # check when not installed
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="monitor should be not be able to be called before install"):
             instance.monitor()
 
@@ -327,7 +293,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         instance.power_off.assert_not_called()
 
     def test_monitor_power_on(self):
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
@@ -341,7 +307,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         instance.power_off.assert_not_called()
 
     def test_monitor_power_off(self):
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
@@ -359,7 +325,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         boot_url = "some.url"
 
         # check when not installed
-        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="monitor should be not be able to be called before install"):
             instance.configure_ipxe_boot(boot_url)
         instance.state.set('actions', 'install', 'ok')
