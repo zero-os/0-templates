@@ -59,7 +59,7 @@ def main(options):
     networks = zboot.networks.get()
     host = networks.hosts.get(options.cpu_hostname)
 
-    ipxe_boot_url = 'https://bootstrap.gig.tech/ipxe/{branch}/{zerotier}/development'.format(
+    ipxe_boot_url = 'http://unsecure.gig.tech/ipxe/{branch}/{zerotier}/development'.format(
         branch=options.core_0_branch,
         zerotier=testing_zt_network.id
     )
