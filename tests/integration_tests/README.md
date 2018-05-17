@@ -2,13 +2,19 @@
 
 ### What does Travis build do ? 
 - Setting up the testing environment in lochristi using this [script](#setup-the-testing-environment).
-- Run the testsuite.
+- Run the testsuite from travis machine.
 
 You can trigger builds from [CI Dashboard](https://travis-dash.gig.tech)
 
 ## Run manually
 
 ### Setup the testing environment.
+
+#### what does this script do ?
+- Create zerotier network for testing.
+- Setting target cpu node's ipxe_boot url.
+- Reboot the target node.
+- Authorize the cpu node on the zerotier network and get its zerotier ip address.
 
 ```bash 
 python3 travis/zboot_env_setup.py [arguments]
