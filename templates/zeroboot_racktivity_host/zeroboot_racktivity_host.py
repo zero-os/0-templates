@@ -3,10 +3,10 @@ from js9 import j
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 
-class ZerobootHost(TemplateBase):
+class ZerobootRacktivityHost(TemplateBase):
 
     version = '0.0.1'
-    template_name = "zeroboot_host"
+    template_name = "zeroboot_racktivity_host"
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)

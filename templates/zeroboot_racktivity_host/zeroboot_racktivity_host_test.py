@@ -11,16 +11,16 @@ from zerorobot import config, template_collection
 from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
-from zeroboot_host import ZerobootHost
+from zeroboot_racktivity_host import ZerobootRacktivityHost
 
-class TestZerobootHostTemplate(TestCase):
+class TestZerobootRacktivityHostTemplate(TestCase):
     @classmethod
     def setUpClass(cls):
         config.DATA_DIR = '/tmp'
         config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        ZerobootHost.template_uid = TemplateUID.parse(
+        ZerobootRacktivityHost.template_uid = TemplateUID.parse(
             'github.com/zero-os/0-templates/%s/%s' % (
-                ZerobootHost.template_name, ZerobootHost.version))
+                ZerobootRacktivityHost.template_name, ZerobootRacktivityHost.version))
 
         cls._valid_data = {
             'zerobootClient': 'zboot1-zb',
@@ -40,7 +40,7 @@ class TestZerobootHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
-    def testValidation(self, zboot, rack):
+    def test_validation_required_fields(self, zboot, rack):
         zboot.list = MagicMock(return_value=[self._valid_data['zerobootClient']])
         rack.list = MagicMock(return_value=[self._valid_data['racktivityClient']])
 
@@ -57,6 +57,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing zerobootClient",
                 'valid': False,
+                'missing': 'zerobootClient',
             },
             {
                 'data': {
@@ -70,6 +71,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing racktivityClient",
                 'valid': False,
+                'missing': 'racktivityClient',
             },
             {
                 'data': {
@@ -83,6 +85,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing network",
                 'valid': False,
+                'missing': 'network',
             },
             {
                 'data': {
@@ -96,6 +99,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing hostname",
                 'valid': False,
+                'missing': 'hostname',
             },
             {
                 'data': {
@@ -109,6 +113,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing racktivityPort",
                 'valid': False,
+                'missing': 'racktivityPort',
             },
             {
                 'data': {
@@ -122,6 +127,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing mac address",
                 'valid': False,
+                'missing': 'mac',
             },
             {
                 'data': {
@@ -134,6 +140,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing ip address",
                 'valid': False,
+                'missing': 'ip',
             },
             {
                 'data': {
@@ -147,6 +154,7 @@ class TestZerobootHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing ipxeUrl address",
                 'valid': False,
+                'missing': 'ipxeUrl',
             },
             {
                 'data': self._valid_data,
@@ -156,20 +164,25 @@ class TestZerobootHostTemplate(TestCase):
         ]
 
         for tc in test_cases:
-            instance = ZerobootHost(name="test", data=tc['data'])
+            instance = ZerobootRacktivityHost(name="test", data=tc['data'])
             if tc['valid']:
                 try:
                     instance.validate()
                 except BaseException as err:
                     pytest.fail("Unexpected error: %s\n\nMessage: %s\n\nData: %s" %(err, tc['message'], tc['data']))
             else:
-                with pytest.raises(ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])):
+                with pytest.raises(
+                        ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])) as excinfo:
                     instance.validate()
+                
+                if tc['missing'] not in str(excinfo):
+                    pytest.fail(
+                        "Error message did not contain missing field('%s'): %s" % (tc['missing'], str(excinfo)))
 
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
     def test_validate_no_zboot_instance(self, zboot, rack):
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
 
         zboot.list = MagicMock(return_value=[])
         rack.list = MagicMock(return_value=[self._valid_data['racktivityClient']])
@@ -183,7 +196,7 @@ class TestZerobootHostTemplate(TestCase):
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
     def test_validate_no_racktivity_instance(self, zboot, rack):
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
 
         zboot.list = MagicMock(return_value=[self._valid_data['zerobootClient']])
         rack.list = MagicMock(return_value=[])
@@ -197,7 +210,7 @@ class TestZerobootHostTemplate(TestCase):
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
     def test_install(self, zboot, rack):
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         instance._network.hosts.list = MagicMock(return_value=[])
 
         instance.install()
@@ -214,7 +227,7 @@ class TestZerobootHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_zboot')
     def test_uninstall(self, zboot):
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
 
         instance.uninstall()
@@ -228,7 +241,7 @@ class TestZerobootHostTemplate(TestCase):
     @mock.patch.object(j.clients, '_zboot')
     def test_power_on(self, zboot, rack):
         # check when not installed
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_on should be not be able to be called before install"):
             instance.power_on()
 
@@ -237,7 +250,7 @@ class TestZerobootHostTemplate(TestCase):
         rack.get = MagicMock()
 
         instance.power_on()
-        instance._zeroboot.port_power_on.assert_called_with(
+        zboot.get().port_power_on.assert_called_with(
             self._valid_data['racktivityPort'], mock.ANY, None)
 
         # check if instance._power_state True
@@ -247,7 +260,7 @@ class TestZerobootHostTemplate(TestCase):
     @mock.patch.object(j.clients, '_zboot')
     def test_power_off(self, zboot, rack):
         # check when not installed
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_off should be not be able to be called before install"):
             instance.power_off()
 
@@ -256,7 +269,7 @@ class TestZerobootHostTemplate(TestCase):
         rack.get = MagicMock()
 
         instance.power_off()
-        instance._zeroboot.port_power_off.assert_called_with(
+        zboot.get().port_power_off.assert_called_with(
             self._valid_data['racktivityPort'], mock.ANY, None)
 
         # check if instance._power_state False
@@ -266,7 +279,7 @@ class TestZerobootHostTemplate(TestCase):
     @mock.patch.object(j.clients, '_zboot')
     def test_power_cycle(self, zboot, rack):
         # check when not installed
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_cycle should be not be able to be called before install"):
             instance.power_cycle()
 
@@ -275,14 +288,14 @@ class TestZerobootHostTemplate(TestCase):
         rack.get = MagicMock()
 
         instance.power_cycle()
-        instance._zeroboot.port_power_cycle.assert_called_with(
+        zboot.get().port_power_cycle.assert_called_with(
             [self._valid_data['racktivityPort']], mock.ANY, None)
 
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
     def test_power_status(self, zboot, rack):
         # check when not installed
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_status should be not be able to be called before install"):
             instance.power_status()
 
@@ -291,12 +304,12 @@ class TestZerobootHostTemplate(TestCase):
         rack.get = MagicMock()
 
         instance.power_status()
-        instance._zeroboot.port_info.assert_called_with(
+        zboot.get().port_info.assert_called_with(
             self._valid_data['racktivityPort'], mock.ANY, None)
 
     def test_monitor_matching_state(self):
         # check when not installed
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="monitor should be not be able to be called before install"):
             instance.monitor()
 
@@ -314,7 +327,7 @@ class TestZerobootHostTemplate(TestCase):
         instance.power_off.assert_not_called()
 
     def test_monitor_power_on(self):
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
@@ -328,7 +341,7 @@ class TestZerobootHostTemplate(TestCase):
         instance.power_off.assert_not_called()
 
     def test_monitor_power_off(self):
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
@@ -346,7 +359,7 @@ class TestZerobootHostTemplate(TestCase):
         boot_url = "some.url"
 
         # check when not installed
-        instance = ZerobootHost(name="test", data=self._valid_data)
+        instance = ZerobootRacktivityHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="monitor should be not be able to be called before install"):
             instance.configure_ipxe_boot(boot_url)
         instance.state.set('actions', 'install', 'ok')

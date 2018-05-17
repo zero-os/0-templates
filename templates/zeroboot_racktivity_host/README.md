@@ -1,8 +1,8 @@
-## template: github.com/zero-os/0-templates/zeroboot_client/0.0.1
+## template: github.com/zero-os/0-templates/zeroboot_racktivity_client/0.0.1
 
 ### Description:
 
-This template is responsible for managing a zeroboot host.
+This template is responsible for managing a zeroboot host with Racktivity power management.
 Through this template, one can manage the power state and boot configuration of the host.
 
 ### Schema:
