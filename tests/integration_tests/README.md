@@ -1,7 +1,7 @@
 ## Travis CI
 
-### What Travis build does ? 
-- Setting up the testing environment in locarsti using this [script](#setup-the-testing-environment).
+### What does Travis build do ? 
+- Setting up the testing environment in lochristi using this [script](#setup-the-testing-environment).
 - Run the testsuite.
 
 You can trigger builds from [CI Dashboard](https://travis-dash.gig.tech)
