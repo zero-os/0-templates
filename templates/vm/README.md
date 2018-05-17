@@ -63,9 +63,9 @@ Port:
 data = {
     'memory': 256,
     'cpu': 1,
-    'nics': [{'type':'default'}],
+    'nics': [{'type':'default', 'name': 'defaultnic'}],
     'flist': 'https://hub.gig.tech/gig-bootable/ubuntu:latest.flist',
-    'ports':{'source': 22, 'target': 22, 'name': 'ssh'},
+    'ports':[{'source': 22, 'target': 22, 'name': 'ssh'}],
     'configs': [{'path': '/root/.ssh/authorized_keys', 'content': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1', 'name': 'sshkey'}]
 }
 vm = robot.services.create('github.com/zero-os/0-templates/vm/0.0.1','vm1', data)
@@ -81,11 +81,15 @@ services:
         cpu: 1
         nics: 
             - type: 'default'
+              name: 'defaultnic'
         ports:
-            - '22:22'
+            - source: 22
+              target: 22
+              name: 'ssh'
        configs:
          - path: '/root/.ssh/authorized_keys'
            content: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1'
+           name: 'sshkey'
 
 
 
