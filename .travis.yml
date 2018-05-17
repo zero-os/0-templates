@@ -8,6 +8,9 @@ matrix:
       install:
         - pip3 install argparse
         - curl -s https://install.zerotier.com/ | sudo bash
+        - pip3 install -r tests/integration_tests/requirements.txt
+        - ./utils/jumspcale_install.sh ${js9_branch}
+        - ./utils/zrobot_install.sh ${zrobot_branch}
 
       script:
         - bash tests/integration_tests/travis/travis_script.sh
