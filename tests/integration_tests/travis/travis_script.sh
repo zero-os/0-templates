@@ -19,7 +19,7 @@ join_zerotier_network(){
 }
 
 echo "[+] Joining router zerotier network"
-join_zerotier_network ${zerotier_network} ${zerotier_token}
+join_zerotier_network ${zerotier_network} ${zerotier_token}; sleep 10
 
 echo "[+] Setting up testing environment ..."
 python3 -u tests/integration_tests/travis/zboot_env_setup.py --router_address ${router_address} --router_username ${router_username} --router_password ${router_password} --zerotier_network ${zerotier_network} --zerotier_token ${zerotier_token} --rack_hostname ${rack_hostname} --rack_username ${rack_username} --rack_password ${rack_password} --rack_module_id ${rack_module_id} --cpu_hostname ${cpu_hostname} --cpu_rack_port ${cpu_rack_port} --core_0_branch ${core_0_branch}
