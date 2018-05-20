@@ -31,9 +31,9 @@ Network:
 - `id`: vxlan or vlan id.
 - `config`: a dict of NetworkConfig.
 - `name`: network's name.
-- `token`: zerotier token for Network of type zerotier.
+- `ztClient`: reference to zerotier client to authorize this node into the zerotier network
 - `hwaddr`: hardware address.
-- `dhcpsever`: Config for dhcp entries to be services for this network.
+- `dhcpserver`: Config for dhcp entries to be services for this network.
 
 NetworkConfig:
 - `dhcp`: boolean indicating to use dhcp or not.
@@ -85,3 +85,57 @@ HTTPType enum:
 - `remove_dhcp_host`: Remove a host from a dhcp server
 - `add_network`: Adds a network to the gateway
 - `remove_network`: Remove a network from the gateway
+
+### Examples:
+
+#### DSL (api interface)
+```python
+api = j.clients.zrobot.robots['main']
+print('Create GW')
+vmmac = '54:40:12:34:56:78'
+vmip = '192.168.103.2'
+data = {
+        'hostname': 'mygw',
+        'domain': 'lan',
+        'networks': [{
+            'name': 'public',
+            'type': 'vlan',
+            'id': 0,
+            'config': {
+                'cidr': '192.168.59.200/25',
+                'gateway': '192.168.59.254'
+            }
+        }, {
+            'name': 'private',
+            'type': 'vxlan',
+            'id': 100,
+            'config': {
+                'cidr': '192.168.103.1/24',
+            },
+            'dhcpserver': {
+                'nameservers': ['1.1.1.1'],
+                'hosts': [{
+                    'hostname': 'myvm',
+                    'macaddress': vmmac,
+                    'ipaddress': vmip
+                    }]
+            }
+        }],
+        'portforwards': [{
+            'srcport': 34022,
+            'srcnetwork': 'public',
+            'dstip': vmip,
+            'dstport': 22,
+            'name': 'sshtovm'
+        }],
+        'httpproxies': [{
+            'host': '192.168.59.200',
+            'destinations': ['http://{}:8000'.format(vmip)],
+            'types': ['http'],
+            'name': 'httpproxy'
+        }]
+
+}
+gwservice = api.services.find_or_create(GW_UID, service_name='mygw', data=data)
+gwservice.schedule_action('install').wait(die=True)
+```
