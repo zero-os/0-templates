@@ -5,12 +5,12 @@ This template is responsible for managing a vdisk
 
 ### Schema:
 
-- `zerodb`: the zerodb to create the namespace for the vdisk on.
 - `size`: the vdisk size
 - `diskType`: the type of the disk to use for the namespace
 - `mountPoint`: mount point of the disk
 - `filesystem`: filesystem to create on the disk
-- `nsName`: the name of the namespace created on tzerodb
+- `zerodb`: the zerodb the namespace is created on
+- `nsName`: the name of the namespace created on zerodb
 
 ### Actions
 - `install`: creates the vdisk and namespace.

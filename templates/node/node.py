@@ -135,10 +135,14 @@ class Node(TemplateBase):
         return zdb_name
 
     def create_zdb_namespace(self, disktype, mode, password, public, size):
-        if disktype not in ['HDD', 'SSD', 'NVME', 'ARCHIVE']:
-            raise ValueError('Disktype should be HDD, SSD, NVME or ARCHIVE')
+        if disktype not in ['HDD', 'SSD']:
+            raise ValueError('Disktype should be HDD, SSD')
         if mode not in ['seq', 'user', 'direct']:
             raise ValueError('ZDB mode should be user, direct or seq')
+        if disktype == 'HDD':
+            disktypes = ['HDD', 'ARCHIVE']
+        else:
+            disktypes = ['SSD', 'NVME']
 
         namespace_name = j.data.idgenerator.generateXCharID(10)
         potentials = {info['mountpoint']: info['disk'] for info in self.node_sal.zerodbs.partition_and_mount_disks()}
@@ -154,12 +158,12 @@ class Node(TemplateBase):
         if potentials:
             # there are free disks that are not used lets use them first
             disks = [(self.node_sal.disks.get(diskname), mountpoint) for mountpoint, diskname in potentials.items()]
-            disks = list(filter(lambda disk: (disk[0].size / 1024 ** 3) > size and disk[0].type.value == disktype, disks))
+            disks = list(filter(lambda disk: (disk[0].size / 1024 ** 3) > size and disk[0].type.value in disktypes, disks))
             disks.sort(key=lambda disk: disk[0].size, reverse=True)
             if disks:
                 bestfreedisk, mountpoint = disks[0]
                 return self._create_zdb(namespace_name, bestfreedisk.name, mountpoint, mode, password, public, size),  namespace_name
-        zdbinfo = list(filter(lambda info: info[0].data['mode'] == mode and (info[1]['free'] / 1024 ** 3) > size and info[1]['type'] == disktype, zdbinfo))
+        zdbinfo = list(filter(lambda info: info[0].data['mode'] == mode and (info[1]['free'] / 1024 ** 3) > size and info[1]['type'] in disktypes, zdbinfo))
         if not zdbinfo:
             raise RuntimeError('Not enough free space for namespace creation with size {} and type {}'.format(size, disktype))
         bestzdb, info = zdbinfo[0]

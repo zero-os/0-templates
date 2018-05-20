@@ -68,7 +68,8 @@ class Vdisk(TemplateBase):
                                                      zerodb_sal,
                                                      mountpoint=self.data['mountPoint'] or None,
                                                      filesystem=self.data['filesystem'] or None,
-                                                     size=int(self.data['size']))
+                                                     size=int(self.data['size']),
+                                                     label=self.name)
         disk.deploy()
 
         self.state.set('actions', 'install', 'ok')
