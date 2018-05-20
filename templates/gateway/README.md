@@ -11,7 +11,6 @@ It configures caddy, dnsmasq, nftables and cloud-init to work together to provid
 - `networks`: a list of type Networks. It specifies the configuration of the attached networks to the container.
 - `portforwards`: list of Portforward tcp/udp forwards from public network to private network
 - `httpproxies`: liost of HTTPProxy. Reverse http/https proxy to allow one public ip to host multiple http services
-- `domain`: gateway domain
 - `certificates`: List of Certificate
 - `ztIdentity`: zerottier identity of the gateway container
 
