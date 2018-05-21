@@ -1,6 +1,9 @@
 import unittest
 from framework.zos_utils.utils import ZOS_BaseTest
 from random import randint
+import time
+from nose_parameterized import parameterized
+from random import randint
 
 
 class BasicTests(ZOS_BaseTest):
@@ -18,8 +21,8 @@ class BasicTests(ZOS_BaseTest):
                             }
 
     def test001_create_vm(self):
-        """ ZRT-ZOS-001
-        *Test case for creating a vm on a zero-os node*
+        """ ZRT-ZOS-003
+        *Test case for creating a vm.*
 
         **Test Scenario:**
 
@@ -45,7 +48,6 @@ class BasicTests(ZOS_BaseTest):
         vm = [vm for vm in vms if vm['name'] == vm1_name]
         self.assertTrue(vm)
         self.assertEqual(vm[0]['state'], "running")
-        self.log('%s ENDED' % self._testID)
 
         self.log('Destroy [vm1], should succeed.')
         temp_actions = {'vm': {'actions': ['uninstall']}}
@@ -55,14 +57,17 @@ class BasicTests(ZOS_BaseTest):
         
         self.log("Check that [vm1] has been destroyed successfully.")
         vms = self.zos_client.kvm.list()
-        self.assertNotIn(vm1_name, vms)
+        vm = [vm for vm in vms if vm['name'] == vm1_name]
+        self.assertFalse(vm)        
         self.log('%s ENDED' % self._testID)
 
     def test002_create_vm_with_non_valid_params(self):
-        """ ZRT-ZOS-002
+        """ ZRT-ZOS-004
         *Test case for creating vm with non-valid parameters*
+
         **Test Scenario:**
         #. Create a vm without providing flist parameter, should fail.
+
         """
         self.log('Create a vm without providing flist parameter, should fail.')
         vm1_name = self.random_string()
@@ -71,12 +76,35 @@ class BasicTests(ZOS_BaseTest):
                                                               
         res = self.create_vm(vms=self.vms, temp_actions=self.temp_actions)
         self.assertEqual(res, "invalid input. Vm requires flist or ipxeUrl to be specifed.")
-
         self.log('%s ENDED' % self._testID)
 
-    @unittest.skip("not-tested")
-    def test003_pause_and_resume_vm(self):
-        """ ZRT-ZOS-003
+
+class VM_actions(ZOS_BaseTest):
+    def __init__(self, *args, **kwargs):
+        super(VM_actions, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def setUpClass(cls):
+        self = cls()
+        super(VM_actions, cls).setUpClass()
+        super(VM_actions, self).setUp()
+
+        cls.temp_actions = {
+                             'vm': {'actions': ['install']}
+                            }
+        self.log('Create vm[vm1], should succeed.')
+        cls.vm1_name = cls.random_string()
+        cls.vms = {cls.vm1_name: {'flist': self.vm_flist,
+                                  'memory': 512,
+                                  'nics': {"name": self.random_string(), "type": "default"},
+                                  'ports': [{"source": 22, "target": randint(1000, 60000), "name": 'ssh'}]}}
+
+        res = self.create_vm(vms=cls.vms, temp_actions=cls.temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['install'])
+
+    def test001_pause_and_resume_vm(self):
+        """ ZRT-ZOS-005
         *Test case for testing pause and resume vm*
 
         **Test Scenario:**
@@ -89,34 +117,107 @@ class BasicTests(ZOS_BaseTest):
         """
         self.log('%s STARTED' % self._testID)
 
-        self.log('Create a vm[vm1]  on node, should succeed.')
-        vm1_name = self.random_string()
-        self.vms = {vm1_name: {'flist': self.vm_flist,            
-                               'nics': {"type": "default"}}}
-
-        res = self.create_vm(vms=self.vms, temp_actions=self.temp_actions)
-        self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.cont1_name, res[vm1_name]['install'])
-
         self.log('Pause [vm1], should succeed.')
-        temp_actions = {'vm': {'actions': ['pause'], 'service': vm1_name}}
+        temp_actions = {'vm': {'actions': ['pause'], 'service': self.vm1_name}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.cont1_name, res[vm1_name]['pause'])        
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['pause'])        
         
         self.log("Check that [vm1] has been paused successfully..")
         vms = self.zos_client.kvm.list()
-        vm1 = [vm for vm in vms if vm['name'] == vm1_name]
-        self.assertEqual(vm1['state'], "paused")
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1[0]['state'], "paused")
 
-        temp_actions = {'vm': {'actions': ['resume'], 'service': vm1_name}}
+        self.log("Resume [vm1], should succeed.")
+        temp_actions = {'vm': {'actions': ['resume'], 'service': self.vm1_name}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.cont1_name, res[vm1_name]['resume'])        
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['resume'])        
          
         self.log('Check that [vm1] is runninng ')
         vms = self.zos_client.kvm.list()
-        vm1 = [vm for vm in vms if vm['name'] == vm1_name]
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1[0]['state'], "running")
+
+        self.log('%s ENDED' % self._testID)
+
+    @unittest.skip("https://github.com/zero-os/0-templates/issues/117")
+    def test002_shutdown_and_start_vm(self):
+        """ ZRT-ZOS-006
+        *Test case for testing shutdown and reset vm*
+
+        **Test Scenario:**
+
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Shutdown [vm1], should succeed.
+        #. Check that [vm1] has been forced shutdown successfully.
+        #. Start [vm1], should succeed.
+        #. Check that [vm1] is running again.
+        """
+        self.log('%s STARTED' % self._testID)
+        
+        self.log('Shutdown [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['shutdown'])        
+        
+        self.log("Check that [vm1] has been forced shutdown successfully..")
+        time.sleep(10)
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertFalse(vm1)
+
+        self.log("Start [vm1], should succeed.")
+        temp_actions = {'vm': {'actions': ['start'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['start'])        
+
+        self.log("Check that [vm1] is running again.")
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
         self.assertEqual(vm1['state'], "running")
 
+        self.log('%s ENDED' % self._testID)
+
+    @parameterized.expand(["reset", "reboot"])
+    @unittest.skip("https://github.com/zero-os/0-templates/issues/117")
+    def test003_stop_and_reset_vm(self, action):
+        """ ZRT-ZOS-007
+        *Test case for testing reset and reboot vm*
+
+        **Test Scenario:**
+
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Stop [vm1], should succeed.
+        #. Check that [vm1] has been stopped successfully.
+        #. Reset and reboot [vm1], should succeed.
+        #. Check that [vm1] is runninng .
+        """
+        self.log('%s STARTED' % self._testID)
+        
+        self.log('Stop [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['stop'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['stop'])        
+        
+        self.log("Check that [vm1] has been stopped successfully..")
+        time.sleep(5)
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1[0]['state'], "halted")
+
+        self.log(" {} [vm1], should succeed.".format(action))
+        temp_actions = {'vm': {'actions': [action], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.cont1_name, res[self.vm1_name][action])        
+
+        self.log("Check that [vm1] is runninng. ")
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1['state'], "running")
+      
         self.log('%s ENDED' % self._testID)
