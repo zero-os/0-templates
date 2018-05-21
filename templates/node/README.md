@@ -58,11 +58,12 @@ actions:
   template: github.com/zero-os/0-templates/node/0.0.1
   name: 525400123456
   actions: ['create_zdb_namespace']
-  disktype: HDD
-  mode: seq
-  password: mypassword
-  public: false
-  size: 10
+  args:
+    disktype: HDD
+    mode: seq
+    password: mypassword
+    public: false
+    size: 10
 
 ```
 
