@@ -51,6 +51,7 @@ class Vm(TemplateBase):
                 pass
         else:
             self.state.delete('status', 'running')
+            self.state.set('status', 'shutdown', 'ok')
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)
@@ -67,10 +68,13 @@ class Vm(TemplateBase):
         self.state.delete('actions', 'install')
         self.state.delete('status', 'running')
 
-    def shutdown(self):
+    def shutdown(self, force=False):
         self.logger.info('Shuting down vm %s' % self.name)
         self.state.check('status', 'running', 'ok')
-        self._vm_sal.shutdown()
+        if force is False:
+            self._vm_sal.shutdown()
+        else:
+            self._vm_sal.destroy()
         self.state.delete('status', 'running')
         self.state.set('status', 'shutdown', 'ok')
 
@@ -80,6 +84,13 @@ class Vm(TemplateBase):
         self._vm_sal.pause()
         self.state.delete('status', 'running')
         self.state.set('actions', 'pause', 'ok')
+
+    def start(self):
+        self.logger.info('Starting vm {}'.format(self.name))
+        self.state.check('status', 'shutdown', 'ok')
+        self.vm_sal.deploy()
+        self.state.delete('status', 'shutdown')
+        self.state.set('actions', 'running', 'ok')
 
     def resume(self):
         self.logger.info('Resuming vm %s' % self.name)
