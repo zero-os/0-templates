@@ -49,7 +49,9 @@ Port:
 ### Actions:
 - `install`: creates a a vm and the hypervisor on the node.
 - `uninstall`: destroys and deletes the service from 0-robot and the node.
-- `shutdown`: shuts down the vm.
+- `shutdown`: Sends signal to the VM to shutdown this requires the VM to handle acpi signals.
+  - Takes optional parameter force (defaults to false) to force the VM to shutdown
+- `start`: starts a machine in shutdown state.
 - `pause`: pause the vm.
 - `resume`: resume the vm.
 - `reboot`: reboot the vm.
