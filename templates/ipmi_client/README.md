@@ -8,7 +8,7 @@ If the client with instance name already already exists, that instance will be u
 
 ### Schema:
 
-- `bmc`: bmc host address
+- `bmc`: bmc hostname/address
 - `user`: ipmi login username
 - `password`: ipmi password
 - `port`: ipmi port

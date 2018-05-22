@@ -10,7 +10,7 @@ If the client with instance name already already exists, that instance will be u
 
 - `username`: Racktivity username
 - `password`: Racktivity password
-- `host`: Target host address
+- `host`: Rackivity device hostname/address
 - `port`: Target port
 
 ### Actions:
