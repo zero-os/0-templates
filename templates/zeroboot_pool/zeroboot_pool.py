@@ -64,7 +64,11 @@ class ZerobootPool(TemplateBase):
         Arguments:
             zboot_host str -- Name of the zeroboot host service
         """
-        self.data["zerobootHosts"].remove(zboot_host)
+        try:
+            self.data["zerobootHosts"].remove(zboot_host)
+        except ValueError:
+            self.logger.debug("host '%s' was not in the list, skipping removal" % zboot_host)
+            pass
 
     def unreserved_host(self, caller_guid):
         """ Returns a zeroboot host instance that has not been reserved yet.
@@ -94,7 +98,6 @@ class ZerobootPool(TemplateBase):
             reserved_hosts.append(reservation.schedule_action('host').wait(die=True).result)
 
         for zbh in self.data['zerobootHosts']:
-            s = self.api.services.get(name=zbh)
             if not zbh in reserved_hosts:
                 return zbh
         raise ValueError("No free hosts available")
