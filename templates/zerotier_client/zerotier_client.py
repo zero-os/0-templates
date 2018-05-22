@@ -30,3 +30,6 @@ class ZerotierClient(TemplateBase):
         j.clients.zerotier.delete(self.name)
         # call the delete of the base class
         super().delete()
+
+    def token(self):
+        return self.data['token']

@@ -62,3 +62,7 @@ class TestZerotierClientTemplate(TestCase):
         service.delete()
 
         delete.assert_called_once_with('zttest')
+
+    def test_token(self):
+        service = ZerotierClient(name='zttest', data={'token': 'foo'})
+        assert service.token() == 'foo'
