@@ -5,14 +5,14 @@ This template is responsible for managing 0-db.
 
 ### Schema:
 
-- `mode`: a value from enum Mode representing the 0-db mode.
-- `sync`: boolean indicating whether all write should be sync'd or not.
-- `path`: path to use for storing zdb data
-- `nodePort`: the node port used in port forwarding. Defaults to 9900 and is incremented by the sal if the port is already being used.
+- `mode`: a value from enum Mode representing the 0-db mode. Defaults to `user`.
+- `sync`: boolean indicating whether all write should be sync'd or not. Defaults to `false`.
+- `path`: path to use for storing zdb data.
+- `nodePort`: the node port used in port forwarding. Defaults to 9900 and is incremented by the sal if the port is already being used. The user should not set this.
 - `admin`: admin password. Set by the template if not supplied.
-- `namespaces`: list of Namespace to be deployed on this zerodb
-- `nics`: list of nics to create for the zerodb container.
-- `ztIdentity`: zerotier identity of the zerodb container.
+- `namespaces`: list of Namespace to be deployed on this zerodb. **optional**
+- `nics`: list of nics to create for the zerodb container. **optional**
+- `ztIdentity`: zerotier identity of the zerodb container. This is set by the template.
 
 Nic:
 - `id`: vxlan or vlan id
@@ -49,7 +49,6 @@ Namespace:
 - `namespace_set`: change a namespace setting/property. Only admin can do this.
 - `namespace_url`: return the public url of the namespace
 - `namespace_private_url`: return the private url of the namespace
-- `free_space`: return the amount of storage space still available for reservation
 
 
 
@@ -73,7 +72,7 @@ zdb.schedule_action('start')
 zdb.schedule_action('namespace_list')
 zdb.schedule_action('namespace_info', args={'name':'namespace'})
 zdb.schedule_action('namespace_create', args={'name':'namespace'})
-zdb.schedule_action('namespace_set', args={'name':'namespace', 'password': 'password'})
+zdb.schedule_action('namespace_set', args={'name':'namespace', 'value': 9, 'prop': 'size'})
 
 zdb.schedule_action('stop')
 ```
@@ -89,6 +88,7 @@ services:
           sync: True
           mode: 'user'
           admin: 'password'
+          path: '/mnt/data/'
           
 actions:
     - template: 'github.com/zero-os/0-templates/zerodb/0.0.1'
