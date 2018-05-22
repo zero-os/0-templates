@@ -2,5 +2,6 @@
 
 struct Schema {
     zerobootPool @0: Text; # Zeroboot_pool instance
-    zerobootHost @1: Text; # Reserved zeroboot host
+    ipxeUrl @1: Text; # URL to ipxe script
+    zerobootHost @2: Text; # Reserved zeroboot host
 }

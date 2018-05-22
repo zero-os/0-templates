@@ -55,6 +55,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing zerobootClient",
                 'valid': False,
+                'missing': 'zerobootClient',
             },
             {
                 'data': {
@@ -65,8 +66,9 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'hostname': 'test-01',
                     'ipxeUrl': 'some.ixpe.url',
                 },
-                'message': "Should fail: missing impiClient",
+                'message': "Should fail: missing ipmiClient",
                 'valid': False,
+                'missing': 'ipmiClient',
             },
             {
                 'data': {
@@ -79,6 +81,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing network",
                 'valid': False,
+                'missing': 'network',
             },
             {
                 'data': {
@@ -91,6 +94,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing hostname",
                 'valid': False,
+                'missing': 'hostname',
             },
             {
                 'data': {
@@ -103,6 +107,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing mac address",
                 'valid': False,
+                'missing': 'mac',
             },
             {
                 'data': {
@@ -114,18 +119,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
                 },
                 'message': "Should fail: missing ip address",
                 'valid': False,
-            },
-            {
-                'data': {
-                    'zerobootClient': 'zboot1-zb',
-                    'ipmiClient': 'zboot1-ipmi',
-                    'network': '10.10.1.0/24',
-                    'mac': 'well:this:a:weird:mac:address',
-                    'ip': '10.10.1.1',
-                    'hostname': 'test-01',
-                },
-                'message': "Should fail: missing ipxeUrl address",
-                'valid': False,
+                'missing': 'ip',
             },
             {
                 'data': self._valid_data,
@@ -142,8 +136,13 @@ class TestZerobootIpmiHostTemplate(TestCase):
                 except BaseException as err:
                     pytest.fail("Unexpected error: %s\n\nMessage: %s\n\nData: %s" %(err, tc['message'], tc['data']))
             else:
-                with pytest.raises(ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])):
+                with pytest.raises(
+                        ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])) as excinfo:
                     instance.validate()
+                
+                if tc['missing'] not in str(excinfo):
+                    pytest.fail(
+                        "Error message did not contain missing field('%s'): %s" % (tc['missing'], str(excinfo)))
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')

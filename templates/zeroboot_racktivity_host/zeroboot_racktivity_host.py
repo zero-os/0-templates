@@ -82,9 +82,6 @@ class ZerobootRacktivityHost(TemplateBase):
         if not self.data.get('hostname'):
             raise ValueError("No hostname specified")
 
-        if not self.data.get('ipxeUrl'):
-            raise ValueError("No ipxeUrl specified")
-
         if not self.data.get('racktivityPort'):
             raise ValueError("No Racktivity port for the host specified (racktivityPort)")
 
@@ -105,7 +102,8 @@ class ZerobootRacktivityHost(TemplateBase):
         else:
             self._network.hosts.add(self.data['mac'], self.data['ip'], self.data['hostname'])
 
-        self._host.configure_ipxe_boot(self.data['ipxeUrl'])
+        if self.data.get('ipxeUrl'):
+            self._host.configure_ipxe_boot(self.data['ipxeUrl'])
 
         self.state.set('actions', 'install', 'ok')
         self._powerstate = self.power_status()
@@ -167,7 +165,7 @@ class ZerobootRacktivityHost(TemplateBase):
         """ Configure the IPXE boot settings of the host
         
         Arguments:
-            boot_url str -- url to boot from includes zerotier netowrk id ex: http://unsecure.bootstrap.gig.tech/ipxe/zero-os-master/a84ac5c10a670ca3
+            boot_url str -- url to boot from includes zerotier network id ex: http://unsecure.bootstrap.gig.tech/ipxe/zero-os-master/a84ac5c10a670ca3
         
         Keyword Arguments:
             tftp_root str -- tftp root location where pxe config are stored (default: '/opt/storage')

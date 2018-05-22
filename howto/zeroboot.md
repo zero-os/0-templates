@@ -4,11 +4,11 @@
 
 * Zeroboot environment: The Zeroboot templates are not responsible for setting up the Zeroboot environment, this should be done before starting with the template and make an inventory of the hosts so that it can be used to configure the templates.  
 
-    On how to setup a zeroboot environment, check the [zero_boot howto guide.](https://docs.grid.tf/threefold/info/src/branch/master/howto/zero_boot_hardware.md)  
+    On how to setup a zeroboot environment, check the [zero-boot howto guide.](https://docs.grid.tf/threefold/info/src/branch/master/howto/zero_boot_hardware.md)  
 
-    Power management using ipmi is supported by the templates. If your hardware supports it, the Racktivity module and setup can be omitted in the [zero_boot howto guide.](https://docs.grid.tf/threefold/info/src/branch/master/howto/zero_boot_hardware.md)
+    Power management using ipmi is supported by the templates. If your hardware supports it, the Racktivity module and setup can be omitted in the [zero-boot howto guide.](https://docs.grid.tf/threefold/info/src/branch/master/howto/zero_boot_hardware.md)
 
-* Inventory environment: The following data will be needed to setup the templates for the environment.
+* Inventory environment: The following data from the network will be needed to setup the templates for the environment.
     * Zeroboot (on the router) client needs the following data:
         * hostname/address of the host running it
         * ssh login/username
@@ -241,11 +241,12 @@ Documentation for the template can be found [here](../templates/zeroboot_reserva
 ```py
 data = {
   'zerobootPool': 'zboot1-pool',
+  'ipxeUrl': '<ipxe_boot_url>',
 }
 reservation1_service = robot.services.get_or_create("github.com/zero-os/0-templates/zeroboot_reservation/0.0.1", "zboot1-res1", data=data)
 ```
 
-## Example power management host
+## Example power management of a single host
 
 The following example will show how to do power management of a single zeroboot host for both a Racktivity and ipmi managed host.
 
@@ -372,6 +373,7 @@ pool_service = robot.services.get_or_create("github.com/zero-os/0-templates/zero
 # create a reservation service
 data = {
   'zerobootPool': 'zboot1-pool',
+  'ipxeUrl': '<ipxe_boot_url>',
 }
 reservation_1 = robot.services.get_or_create("github.com/zero-os/0-templates/zeroboot_reservation/0.0.1", "zboot1-res1", data=data)
 

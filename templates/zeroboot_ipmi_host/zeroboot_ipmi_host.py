@@ -68,9 +68,6 @@ class ZerobootIpmiHost(TemplateBase):
         if not self.data.get('hostname'):
             raise ValueError("No hostname specified")
 
-        if not self.data.get('ipxeUrl'):
-            raise ValueError("No ipxeUrl specified")
-
         # check if clients exists
         if self.data['zerobootClient'] not in j.clients.zboot.list():
             raise RuntimeError("No zboot client instance found named '%s'" % self.data['zerobootClient'])
@@ -88,7 +85,8 @@ class ZerobootIpmiHost(TemplateBase):
         else:
             self._network.hosts.add(self.data['mac'], self.data['ip'], self.data['hostname'])
 
-        self._host.configure_ipxe_boot(self.data['ipxeUrl'])
+        if self.data.get('ipxeUrl'):
+            self._host.configure_ipxe_boot(self.data['ipxeUrl'])
 
         self.state.set('actions', 'install', 'ok')
         self._powerstate = self.power_status()
@@ -167,7 +165,7 @@ class ZerobootIpmiHost(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
 
-        if boot_url == self.data['ipxeUrl']:
+        if boot_url == self.data.get('ipxeUrl'):
             return
 
         self._host.configure_ipxe_boot(boot_url)

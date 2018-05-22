@@ -8,6 +8,7 @@ It also acts as a proxy for the zeroboot host.
 ### Schema:
 
 - zerobootPool: zeroboot pool where it can look for available hosts
+- ipxeUrl: URL to ipxe boot script
 
 ### Actions:
 

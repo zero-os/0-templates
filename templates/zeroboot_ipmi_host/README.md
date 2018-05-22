@@ -13,7 +13,7 @@ Through this template, one can manage the power state and boot configuration of 
 - mac: Target mac address
 - ip: Target IP address
 - hostname: Target hostname
-- ipxeUrl: URL to ipxe script
+- ipxeUrl: URL to ipxe script, if provided, it will be set on install
 
 ### Actions:
 

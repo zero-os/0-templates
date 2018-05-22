@@ -143,20 +143,6 @@ class TestZerobootRacktivityHostTemplate(TestCase):
                 'missing': 'ip',
             },
             {
-                'data': {
-                    'zerobootClient': 'zboot1-zb',
-                    'racktivityClient': 'zboot1-rack',
-                    'network': '10.10.1.0/24',
-                    'mac': 'well:this:a:weird:mac:address',
-                    'ip': '10.10.1.1',
-                    'hostname': 'test-01',
-                    'racktivityPort': 1,
-                },
-                'message': "Should fail: missing ipxeUrl address",
-                'valid': False,
-                'missing': 'ipxeUrl',
-            },
-            {
                 'data': self._valid_data,
                 'message': "Should succeed: all mandatory fields should be provided",
                 'valid': True,

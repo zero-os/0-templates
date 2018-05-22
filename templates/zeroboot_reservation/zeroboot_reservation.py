@@ -17,7 +17,10 @@ class ZerobootReservation(TemplateBase):
     def validate(self):
         if self.data['zerobootHost']:
             raise ValueError("zerobootHost can not be specified")
-        
+
+        if not self.data.get('ipxeUrl'):
+            raise ValueError("No ipxeUrl specified")
+
         self._pool = self.api.services.get(name=self.data['zerobootPool'])
 
     def install(self):
@@ -28,8 +31,11 @@ class ZerobootReservation(TemplateBase):
         """
         self.data["zerobootHost"] = self._pool.schedule_action("unreserved_host", args={'caller_guid': self.guid}).wait(die=True).result
 
+        # configure ipxe
+        self.api.services.get(name=self.data['zerobootHost']).schedule_action('configure_ipxe_boot', args={'boot_url': self.data['ipxeUrl']}).wait(die=True)
+        self.api.services.get(name=self.data['zerobootHost']).schedule_action('power_cycle').wait(die=True)
+
         self.state.set('actions', 'install', 'ok')
-        self.power_on()
 
     def uninstall(self):
         """ Uninstalls the reservation
