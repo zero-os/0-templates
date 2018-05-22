@@ -88,7 +88,7 @@ class Vm(TemplateBase):
     def start(self):
         self.logger.info('Starting vm {}'.format(self.name))
         self.state.check('status', 'shutdown', 'ok')
-        self.vm_sal.deploy()
+        self._vm_sal.deploy()
         self.state.delete('status', 'shutdown')
         self.state.set('actions', 'running', 'ok')
 
