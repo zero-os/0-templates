@@ -35,15 +35,13 @@ class BasicTests(ZOS_BaseTest):
 
         self.log('Create vm[vm1], should succeed.')
         vm1_name = self.random_string()
-        self.vms = {vm1_name: {'flist': self.vm_flist,            
-                               'nics': {"name": self.random_string(), "type": "default"}
-                               }}
-
+        self.vms = {vm1_name: {'flist': self.vm_flist}}
         res = self.create_vm(vms=self.vms, temp_actions=self.temp_actions)
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(vm1_name, res[vm1_name]['install'])
 
         self.log('Check that the vm have been created.')
+        time.sleep(3)
         vms = self.zos_client.kvm.list()
         vm = [vm for vm in vms if vm['name'] == vm1_name]
         self.assertTrue(vm)
@@ -103,6 +101,15 @@ class VM_actions(ZOS_BaseTest):
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['install'])
 
+    @classmethod
+    def tearDownClass(cls):
+        self = cls()
+        temp_actions = {'vm': {'actions': ['uninstall']}}
+        if self.check_if_service_exist(self.vm1_name):
+            res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+            self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['uninstall'])
+        self.delete_services()
+
     def test001_pause_and_resume_vm(self):
         """ ZRT-ZOS-005
         *Test case for testing pause and resume vm*
@@ -141,7 +148,6 @@ class VM_actions(ZOS_BaseTest):
 
         self.log('%s ENDED' % self._testID)
 
-    @unittest.skip("https://github.com/zero-os/0-templates/issues/117")
     def test002_shutdown_and_start_vm(self):
         """ ZRT-ZOS-006
         *Test case for testing shutdown and reset vm*
@@ -157,7 +163,7 @@ class VM_actions(ZOS_BaseTest):
         self.log('%s STARTED' % self._testID)
         
         self.log('Shutdown [vm1], should succeed.')
-        temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name}}
+        temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name, 'args':{'force':True}}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['shutdown'])        
@@ -177,47 +183,6 @@ class VM_actions(ZOS_BaseTest):
         self.log("Check that [vm1] is running again.")
         vms = self.zos_client.kvm.list()
         vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-        self.assertEqual(vm1['state'], "running")
+        self.assertEqual(vm1[0]['state'], "running")
 
-        self.log('%s ENDED' % self._testID)
-
-    @parameterized.expand(["reset", "reboot"])
-    @unittest.skip("https://github.com/zero-os/0-templates/issues/117")
-    def test003_stop_and_reset_vm(self, action):
-        """ ZRT-ZOS-007
-        *Test case for testing reset and reboot vm*
-
-        **Test Scenario:**
-
-        #. Create a vm[vm1]  on node, should succeed.
-        #. Stop [vm1], should succeed.
-        #. Check that [vm1] has been stopped successfully.
-        #. Reset and reboot [vm1], should succeed.
-        #. Check that [vm1] is runninng .
-        """
-        self.log('%s STARTED' % self._testID)
-        
-        self.log('Stop [vm1], should succeed.')
-        temp_actions = {'vm': {'actions': ['stop'], 'service': self.vm1_name}}
-        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-        self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['stop'])        
-        
-        self.log("Check that [vm1] has been stopped successfully..")
-        time.sleep(5)
-        vms = self.zos_client.kvm.list()
-        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-        self.assertEqual(vm1[0]['state'], "halted")
-
-        self.log(" {} [vm1], should succeed.".format(action))
-        temp_actions = {'vm': {'actions': [action], 'service': self.vm1_name}}
-        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-        self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.cont1_name, res[self.vm1_name][action])        
-
-        self.log("Check that [vm1] is runninng. ")
-        vms = self.zos_client.kvm.list()
-        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-        self.assertEqual(vm1['state'], "running")
-      
         self.log('%s ENDED' % self._testID)
