@@ -11,8 +11,6 @@ class ZerobootRacktivityHost(TemplateBase):
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
 
-        self._power_state = None
-
     @property
     def _zeroboot(self):
         """ Returns zeroboot client
@@ -106,7 +104,7 @@ class ZerobootRacktivityHost(TemplateBase):
             self._host.configure_ipxe_boot(self.data['ipxeUrl'])
 
         self.state.set('actions', 'install', 'ok')
-        self._powerstate = self.power_status()
+        self.data['powerState'] = self.power_status()
 
     def uninstall(self):
         # remove host from zeroboot
@@ -119,7 +117,7 @@ class ZerobootRacktivityHost(TemplateBase):
         self.state.check('actions', 'install', 'ok')
 
         self._zeroboot.port_power_on(self.data['racktivityPort'], self._racktivity, self._powermodule_id)
-        self._powerstate = True
+        self.data['powerState'] = True
 
     def power_off(self):
         """ Powers off host
@@ -127,7 +125,7 @@ class ZerobootRacktivityHost(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         
         self._zeroboot.port_power_off(self.data['racktivityPort'], self._racktivity, self._powermodule_id)
-        self._powerstate = False
+        self.data['powerState'] = False
 
     def power_cycle(self):
         """ Power cycles host
@@ -135,6 +133,8 @@ class ZerobootRacktivityHost(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         
         self._zeroboot.port_power_cycle([self.data['racktivityPort']], self._racktivity, self._powermodule_id)
+        # power cycle always ends with a turned on machine
+        self.data['powerState'] = True
 
     def power_status(self):
         """ Power state of host
@@ -152,9 +152,9 @@ class ZerobootRacktivityHost(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
 
-        if self._power_state != self.power_status():
+        if self.data['powerState'] != self.power_status():
             self.logger.debug('power state did not match')
-            if self._power_state:
+            if self.data['powerState']:
                 self.logger.debug('powering on host to match internal saved power state')
                 self.power_on()
             else:

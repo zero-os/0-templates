@@ -10,4 +10,5 @@ struct Schema {
     ipxeUrl @6: Text; # URL to ipxe script
     racktivityPort @7: Int32; # Target's port on the Racktivity device
     racktivityPowerModule @8: Text; # Racktivity module ID (only Racktivity for SE models)
+    powerState @9: Bool; # Internally saved powerstate
 }

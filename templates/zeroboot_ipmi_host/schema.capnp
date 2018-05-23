@@ -8,4 +8,5 @@ struct Schema {
     ip @4: Text; # Target IP address
     hostname @5: Text; # Hostname of target
     ipxeUrl @6: Text; # URL to ipxe script
+    powerState @9: Bool; # Internally saved powerstate
 }
