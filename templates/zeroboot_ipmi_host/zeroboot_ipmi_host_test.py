@@ -131,10 +131,8 @@ class TestZerobootIpmiHostTemplate(TestCase):
         for tc in test_cases:
             instance = ZerobootIpmiHost(name="test", data=tc['data'])
             if tc['valid']:
-                try:
-                    instance.validate()
-                except BaseException as err:
-                    pytest.fail("Unexpected error: %s\n\nMessage: %s\n\nData: %s" %(err, tc['message'], tc['data']))
+                instance.validate()
+
             else:
                 with pytest.raises(
                         ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])) as excinfo:
@@ -186,10 +184,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance._host.configure_ipxe_boot.assert_called_with(self._valid_data['ipxeUrl'])
 
         # state check should pass
-        try:
-            instance.state.check('actions', 'install', 'ok')
-        except StateCheckError:
-            pytest.fail("State of install action should now be ok")
+        instance.state.check('actions', 'install', 'ok')
 
     @mock.patch.object(j.clients, '_zboot')
     def test_uninstall(self, zboot):

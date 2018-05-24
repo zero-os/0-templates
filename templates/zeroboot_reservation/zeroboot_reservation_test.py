@@ -57,7 +57,7 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.validate()
         if not "zerobootPool" in str(exinfo):
             pytest.fail("Validation failed but did not contain missing data 'zerobootPool': %s" % exinfo)
-    
+
     def test_validation_zeroboot_host(self):
         # provide zeroboot host before installing
         data = {
@@ -83,7 +83,7 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.validate()
         if not "zerobootHost" in str(exinfo):
             pytest.fail("Expected an error but received error was not for 'zerobootHost': %s" % exinfo)
-        
+
     def test_install(self):
         reservation = ZerobootReservation(name="test", data=self._valid_data)
         reservation.api = MagicMock()
@@ -94,12 +94,7 @@ class TestZerobootReservationTemplate(TestCase):
 
         reservation.install()
 
-        try:
-            reservation.state.check("actions", "install", "ok")
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
-
-        assert reservation.data["zerobootHost"] == "host1"
+        reservation.state.check("actions", "install", "ok")
 
     def test_uninstall(self):
         # install
@@ -110,10 +105,9 @@ class TestZerobootReservationTemplate(TestCase):
         mock_pool1.schedule_action().wait().result = reserved_host
         reservation.api.services.get = MagicMock(return_value=mock_pool1)
         reservation.install()
-        try:
-            reservation.state.check("actions", "install", "ok")
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        # should not fail as service was installed
+        reservation.state.check("actions", "install", "ok")
 
         # uninstall
         reservation.uninstall()
@@ -137,10 +131,8 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.power_on()
 
         reservation.install()
-        try:
-            reservation.power_on()
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        reservation.power_on()
 
     def test_power_off_installed(self):
         reservation = ZerobootReservation(name="test", data=self._valid_data)
@@ -150,10 +142,8 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.power_off()
 
         reservation.install()
-        try:
-            reservation.power_off()
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        reservation.power_off()
 
     def test_power_cycle_installed(self):
         reservation = ZerobootReservation(name="test", data=self._valid_data)
@@ -163,10 +153,8 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.power_cycle()
 
         reservation.install()
-        try:
-            reservation.power_cycle()
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        reservation.power_cycle()
 
     def test_power_status_installed(self):
         reservation = ZerobootReservation(name="test", data=self._valid_data)
@@ -176,10 +164,8 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.power_status()
 
         reservation.install()
-        try:
-            reservation.power_status()
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        reservation.power_status()
 
     def test_monitor_installed(self):
         reservation = ZerobootReservation(name="test", data=self._valid_data)
@@ -189,10 +175,8 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.monitor()
 
         reservation.install()
-        try:
-            reservation.monitor()
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        reservation.monitor()
 
     def test_configure_ipxe_boot_installed(self):
         reservation = ZerobootReservation(name="test", data=self._valid_data)
@@ -202,7 +186,5 @@ class TestZerobootReservationTemplate(TestCase):
             reservation.configure_ipxe_boot("some.boot.url")
 
         reservation.install()
-        try:
-            reservation.configure_ipxe_boot("some.boot.url")
-        except BaseException as err:
-            pytest.fail("Unexpected error when installing: %s" % err)
+
+        reservation.configure_ipxe_boot("some.boot.url")

@@ -33,10 +33,7 @@ class TestZerobootPoolTemplate(TestCase):
         pool.api.services.get = MagicMock(return_value=MagicMock(template_uid="github.com/zero-os/0-templates/zeroboot_racktivity_host/0.0.1"))
         pool.api.services.get().state.check = MagicMock(return_value=None)
 
-        try:
-            pool._validate_host("test_host_instance")
-        except BaseException as err:
-            pytest.fail("unexpected error: %s" % err)
+        pool._validate_host("test_host_instance")
 
     def test_host_validation_invalid_template(self):
         pool = ZerobootPool(name="test")
@@ -61,10 +58,7 @@ class TestZerobootPoolTemplate(TestCase):
         pool = ZerobootPool(name="test", data={"zerobootHosts": ["host1", "host2"]})
         pool._validate_host = MagicMock()
 
-        try:
-            pool.validate()
-        except BaseException as err:
-            pytest.fail("Unexpected error: %s" % err)
+        pool.validate()
 
         # data contains duplicate hosts
         pool = ZerobootPool(name="test", data={"zerobootHosts": ["host1", "host2", "host1"]})
