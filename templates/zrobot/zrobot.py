@@ -88,7 +88,7 @@ class Zrobot(TemplateBase):
         return self.api.services.find_or_create(CONTAINER_TEMPLATE, self._container_name, data)
     
     @property
-    def sshkey(self):
+    def sshkey_path(self):
         if self.data.get('sshkey'):
             return '/root/.ssh/config_key'
 
@@ -96,7 +96,7 @@ class Zrobot(TemplateBase):
     def zrobot_sal(self):
         container_sal = self.node_sal.containers.get(self._container_name)
         return j.clients.zos.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], data_repo=self.data.get('dataRepo'), 
-                                                config_repo = self.data.get('configRepo'), config_key=self.sshkey, organization=(self.data.get('organization') or None))
+                                                config_repo = self.data.get('configRepo'), config_key=self.sshkey_path, organization=(self.data.get('organization') or None))
 
     def install(self, force=False):
         try:
@@ -111,7 +111,7 @@ class Zrobot(TemplateBase):
         if self.data.get('sshkey'):
             container_sal = container.container_sal
             container_sal.client.filesystem.mkdir('/root/.ssh')
-            container_sal.upload_content(self.sshkey, self.data['sshkey'])
+            container_sal.upload_content(self.sshkey_path, self.data['sshkey'])
 
         self.zrobot_sal.start()
         self.state.set('actions', 'install', 'ok')

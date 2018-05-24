@@ -75,7 +75,7 @@ class TestZrobotTemplate(ZrobotBaseTest):
             'organization': self.valid_data['organization'],
             'data_repo': self.valid_data['dataRepo'],
             'config_repo': self.valid_data['configRepo'],
-            'config_key': zrobot.sshkey
+            'config_key': zrobot.sshkey_path
         }
         assert zrobot_sal == zrobot_sal_return
         j.clients.zos.sal.get_zerorobot.assert_called_with(**kwargs)
@@ -145,7 +145,7 @@ class TestZrobotTemplate(ZrobotBaseTest):
         zrobot.state.check('actions', 'install', 'ok')
         zrobot.state.check('actions', 'start', 'ok')
         container.schedule_action.assert_called_once_with('install')
-        container_sal.upload_content.assert_called_once_with(zrobot.sshkey, zrobot.data['sshkey'])
+        container_sal.upload_content.assert_called_once_with(zrobot.sshkey_path, zrobot.data['sshkey'])
 
     def test_start(self):
         zrobot = Zrobot('zrobot', data=self.valid_data)
