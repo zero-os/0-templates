@@ -5,9 +5,10 @@ from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-FLIST_ZROBOT = 'https://hub.gig.tech/gig-autobuilder/zero-os-0-robot-tft-f904c05549.flist'
+FLIST_ZROBOT = 'https://hub.gig.tech/gig-official-apps/zero-os-0-robot-latest.flist'
 NODE_TEMPLATE = 'github.com/zero-os/0-templates/node/0.0.1'
 CONTAINER_TEMPLATE = 'github.com/zero-os/0-templates/container/0.0.1'
+NODE_CLIENT = 'local'
 
 
 class Zrobot(TemplateBase):
@@ -20,15 +21,15 @@ class Zrobot(TemplateBase):
         self.recurring_action('_monitor', 30)  # every 30 seconds
 
     def validate(self):
-        if not self.data['node']:
-            raise ValueError("parameter node not valid: %s" % (str(self.data['node'])))
+        if self.data.get('configRepo') and not self.data.get('sshkey'):
+            raise ValueError("Need to specify sshkey when specifying configRepo")
 
         # ensure the node service we depend on exists
-        self.api.services.get(template_uid=NODE_TEMPLATE, name=self.data['node'])
+        self.api.services.get(template_uid=NODE_TEMPLATE)
 
     @property
     def node_sal(self):
-        return j.clients.zos.sal.get_node(self.data['node'])
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     @property
     def _container_name(self):
@@ -50,7 +51,6 @@ class Zrobot(TemplateBase):
             ports = ['%s:6600' % self.data['port']]
 
         data = {
-            'node': self.data['node'],
             'flist': FLIST_ZROBOT,
             'nics': nics,
             'hostname': self.name,
@@ -58,7 +58,8 @@ class Zrobot(TemplateBase):
             'ports': ports,
             'env': [
                 {'name': 'LC_ALL', 'value': 'C.UTF-8'},
-                {'name': 'LANG', 'value': 'C.UTF-8'}
+                {'name': 'LANG', 'value': 'C.UTF-8'},
+                {'name': 'SSH_AUTH_SOCK', 'value': '/tmp/sshagent_socket'}
             ]
         }
 
@@ -71,17 +72,11 @@ class Zrobot(TemplateBase):
         # prepare persistant volume to mount into the container
         node_fs = self.node_sal.client.filesystem
         ssh_vol = os.path.join(fs.path, 'ssh')
-        data_vol = os.path.join(fs.path, 'zrobot_data')
-        config_vol = os.path.join(fs.path, 'config')
         jsconfig_vol = os.path.join(fs.path, 'jsconfig')
-        for vol in [ssh_vol, data_vol, config_vol, jsconfig_vol]:
+        for vol in [ssh_vol, jsconfig_vol]:
             node_fs.mkdir(vol)
 
         data['mounts'] = [
-            {'source': data_vol,
-             'target': '/opt/code/zrobot/zrobot_data'},
-            {'source': config_vol,
-             'target': '/opt/code/zrobot/config'},
             {'source': ssh_vol,
              'target': '/root/.ssh'},
             {'source': jsconfig_vol,
@@ -93,9 +88,15 @@ class Zrobot(TemplateBase):
         return self.api.services.find_or_create(CONTAINER_TEMPLATE, self._container_name, data)
     
     @property
+    def sshkey(self):
+        if self.data.get('sshkey'):
+            return '/root/.ssh/config_key'
+
+    @property
     def zrobot_sal(self):
         container_sal = self.node_sal.containers.get(self._container_name)
-        return j.clients.zos.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], organization=(self.data.get('organization') or None))
+        return j.clients.zos.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], data_repo=self.data.get('dataRepo'), 
+                                                config_repo = self.data.get('configRepo'), config_key=self.sshkey, organization=(self.data.get('organization') or None))
 
     def install(self, force=False):
         try:
@@ -107,6 +108,10 @@ class Zrobot(TemplateBase):
 
         container = self._get_container()
         container.schedule_action('install').wait(die=True)
+        if self.data.get('sshkey'):
+            container_sal = container.container_sal
+            container_sal.client.filesystem.mkdir('/root/.ssh')
+            container_sal.upload_content(self.sshkey, self.data['sshkey'])
 
         self.zrobot_sal.start()
         self.state.set('actions', 'install', 'ok')
