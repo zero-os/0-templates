@@ -48,23 +48,9 @@ class ZerobootIpmiHost(TemplateBase):
         return self._network.hosts.get(self.data['hostname'])
 
     def validate(self):
-        if not self.data.get('zerobootClient'):
-            raise ValueError("No zeroboot instance specified (zerobootClient)")
-
-        if not self.data.get('ipmiClient'):
-            raise ValueError("No ipmi instance specified (ipmiClient)")
-
-        if not self.data.get('network'):
-            raise ValueError("No network specified")
-
-        if not self.data.get('mac'):
-            raise ValueError("No mac specified")
-
-        if not self.data.get('ip'):
-            raise ValueError("No ip specified")
-
-        if not self.data.get('hostname'):
-            raise ValueError("No hostname specified")
+        for key in ['zerobootClient', 'ipmiClient', 'ipmiClient', 'mac', 'ip', 'network', 'hostname']:
+            if not self.data.get(key):
+                raise ValueError("data key '%s' not specified." % key)
 
         # check if clients exists
         if self.data['zerobootClient'] not in j.clients.zboot.list():

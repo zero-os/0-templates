@@ -212,8 +212,8 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance.power_on()
         ipmi.get().power_on.assert_called_with()
 
-        # check if instance._power_state True
-        assert instance._powerstate
+        # check if instance power state True
+        assert instance.data['powerState']
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
@@ -229,8 +229,8 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance.power_off()
         ipmi.get().power_off.assert_called_with()
 
-        # check if instance._power_state False
-        assert not instance._powerstate
+        # check if instance power state False
+        assert not instance.data['powerState']
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
@@ -278,7 +278,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
         instance.power_status = MagicMock(return_value=True)
-        instance._power_state = True
+        instance.data['powerState'] = True
 
         instance.monitor()
 
@@ -292,7 +292,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
         instance.power_status = MagicMock(return_value=False)
-        instance._power_state = True
+        instance.data['powerState'] = True
 
         instance.monitor()
 
@@ -306,7 +306,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
         instance.power_status = MagicMock(return_value=True)
-        instance._power_state = False
+        instance.data['powerState'] = False
 
         instance.monitor()
 

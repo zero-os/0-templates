@@ -233,8 +233,8 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         zboot.get().port_power_on.assert_called_with(
             self._valid_data['racktivityPort'], mock.ANY, None)
 
-        # check if instance._power_state True
-        assert instance._powerstate
+        # check if instance power state True
+        assert instance.data['powerState']
 
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
@@ -252,8 +252,8 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         zboot.get().port_power_off.assert_called_with(
             self._valid_data['racktivityPort'], mock.ANY, None)
 
-        # check if instance._power_state False
-        assert not instance._powerstate
+        # check if instance power state False
+        assert not instance.data['powerState']
 
     @mock.patch.object(j.clients, '_racktivity')
     @mock.patch.object(j.clients, '_zboot')
@@ -298,7 +298,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
         instance.power_status = MagicMock(return_value=True)
-        instance._power_state = True
+        instance.data['powerState'] = True
 
         instance.monitor()
 
@@ -312,7 +312,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
         instance.power_status = MagicMock(return_value=False)
-        instance._power_state = True
+        instance.data['powerState'] = True
 
         instance.monitor()
 
@@ -326,7 +326,7 @@ class TestZerobootRacktivityHostTemplate(TestCase):
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
         instance.power_status = MagicMock(return_value=True)
-        instance._power_state = False
+        instance.data['powerState'] = False
 
         instance.monitor()
 
