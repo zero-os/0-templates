@@ -31,6 +31,10 @@ class ZerobootReservation(TemplateBase):
         return self.api.services.get(name=self.data['zerobootHost'])
 
     def validate(self):
+        for key in ['zerobootPool', 'ipxeUrl']:
+            if not self.data.get(key):
+                raise ValueError("data key '%s' not specified." % key)
+
         # zerobootHost can only be set when installed
         try:
             self.state.check('actions', 'install', 'ok')
@@ -39,12 +43,6 @@ class ZerobootReservation(TemplateBase):
         except StateCheckError:
             if self.data.get('zerobootHost'):
                 raise ValueError("zerobootHost can not only be set when installed")
-
-        if not self.data.get('zerobootPool'):
-            raise ValueError("No zerobootPool specified")
-
-        if not self.data.get('ipxeUrl'):
-            raise ValueError("No ipxeUrl specified")
 
     def install(self):
         """ Install the reservation

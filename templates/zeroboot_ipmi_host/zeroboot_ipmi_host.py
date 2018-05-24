@@ -54,10 +54,10 @@ class ZerobootIpmiHost(TemplateBase):
 
         # check if clients exists
         if self.data['zerobootClient'] not in j.clients.zboot.list():
-            raise RuntimeError("No zboot client instance found named '%s'" % self.data['zerobootClient'])
+            raise LookupError("No zboot client instance found named '%s'" % self.data['zerobootClient'])
 
         if self.data['ipmiClient'] not in j.clients.ipmi.list():
-            raise RuntimeError("No ipmi client instance found named '%s'" % self.data['ipmiClient'])
+            raise LookupError("No ipmi client instance found named '%s'" % self.data['ipmiClient'])
 
     def install(self):
         # add host to zeroboot

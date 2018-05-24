@@ -39,6 +39,14 @@ class TestZerobootIpmiHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
+    def test_validation_valid_data(self, zboot, ipmi):
+        zboot.list = MagicMock(return_value=[self._valid_data['zerobootClient']])
+        ipmi.list = MagicMock(return_value=[self._valid_data['ipmiClient']])
+
+        _ = ZerobootIpmiHost(name="test", data=self._valid_data)
+
+    @mock.patch.object(j.clients, '_ipmi')
+    @mock.patch.object(j.clients, '_zboot')
     def test_validation_required_fields(self, zboot, ipmi):
         zboot.list = MagicMock(return_value=[self._valid_data['zerobootClient']])
         ipmi.list = MagicMock(return_value=[self._valid_data['ipmiClient']])
@@ -54,7 +62,6 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'ipxeUrl': 'some.ixpe.url',
                 },
                 'message': "Should fail: missing zerobootClient",
-                'valid': False,
                 'missing': 'zerobootClient',
             },
             {
@@ -67,7 +74,6 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'ipxeUrl': 'some.ixpe.url',
                 },
                 'message': "Should fail: missing ipmiClient",
-                'valid': False,
                 'missing': 'ipmiClient',
             },
             {
@@ -80,7 +86,6 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'ipxeUrl': 'some.ixpe.url',
                 },
                 'message': "Should fail: missing network",
-                'valid': False,
                 'missing': 'network',
             },
             {
@@ -93,7 +98,6 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'ipxeUrl': 'some.ixpe.url',
                 },
                 'message': "Should fail: missing hostname",
-                'valid': False,
                 'missing': 'hostname',
             },
             {
@@ -106,7 +110,6 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'ipxeUrl': 'some.ixpe.url',
                 },
                 'message': "Should fail: missing mac address",
-                'valid': False,
                 'missing': 'mac',
             },
             {
@@ -118,29 +121,20 @@ class TestZerobootIpmiHostTemplate(TestCase):
                     'hostname': 'test-01',
                 },
                 'message': "Should fail: missing ip address",
-                'valid': False,
                 'missing': 'ip',
-            },
-            {
-                'data': self._valid_data,
-                'message': "Should succeed: all mandatory fields should be provided",
-                'valid': True,
             },
         ]
 
         for tc in test_cases:
             instance = ZerobootIpmiHost(name="test", data=tc['data'])
-            if tc['valid']:
-                instance.validate()
 
-            else:
-                with pytest.raises(
-                        ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])) as excinfo:
-                    instance.validate()
-                
-                if tc['missing'] not in str(excinfo):
-                    pytest.fail(
-                        "Error message did not contain missing field('%s'): %s" % (tc['missing'], str(excinfo)))
+            with pytest.raises(
+                    ValueError, message="Unexpected success: %s\n\nData: %s" %(tc['message'], tc['data'])) as excinfo:
+                instance.validate()
+            
+            if tc['missing'] not in str(excinfo):
+                pytest.fail(
+                    "Error message did not contain missing field('%s'): %s" % (tc['missing'], str(excinfo)))
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
@@ -151,7 +145,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
         ipmi.list = MagicMock(return_value=[self._valid_data['ipmiClient']])
         instance.power_status = MagicMock(return_value=True)
 
-        with pytest.raises(RuntimeError, message="zeroboot instance should not be present") as excinfo:
+        with pytest.raises(LookupError, message="zeroboot instance should not be present") as excinfo:
             instance.validate()
         if "zboot client" not in str(excinfo.value):
             pytest.fail("Received unexpected error message for missing zboot instance: %s" % str(excinfo.value))
@@ -165,7 +159,7 @@ class TestZerobootIpmiHostTemplate(TestCase):
         ipmi.list = MagicMock(return_value=[])
         instance.power_status = MagicMock(return_value=True)
 
-        with pytest.raises(RuntimeError, message="ipmi instance should not be present") as excinfo:
+        with pytest.raises(LookupError, message="ipmi instance should not be present") as excinfo:
             instance.validate()
         if "ipmi client" not in str(excinfo.value):
             pytest.fail("Received unexpected error message for missing ipmi instance: %s" % str(excinfo.value))
@@ -200,13 +194,15 @@ class TestZerobootIpmiHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_on(self, zboot, ipmi):
-        # check when not installed
+    def test_power_on_not_installed(self, zboot, ipmi):
         instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_on should be not be able to be called before install"):
             instance.power_on()
 
-        # prep mock
+    @mock.patch.object(j.clients, '_ipmi')
+    @mock.patch.object(j.clients, '_zboot')
+    def test_power_on(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
 
         instance.power_on()
@@ -217,13 +213,15 @@ class TestZerobootIpmiHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_off(self, zboot, ipmi):
-        # check when not installed
+    def test_power_off_not_installed(self, zboot, ipmi):
         instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_off should be not be able to be called before install"):
             instance.power_off()
 
-        # prep mock
+    @mock.patch.object(j.clients, '_ipmi')
+    @mock.patch.object(j.clients, '_zboot')
+    def test_power_off(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
 
         instance.power_off()
@@ -234,13 +232,15 @@ class TestZerobootIpmiHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_cycle(self, zboot, ipmi):
-        # check when not installed
+    def test_power_cycle_not_installed(self, zboot, ipmi):
         instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_cycle should be not be able to be called before install"):
             instance.power_cycle()
 
-        # prep mock
+    @mock.patch.object(j.clients, '_ipmi')
+    @mock.patch.object(j.clients, '_zboot')
+    def test_power_cycle(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
 
         instance.power_cycle()
@@ -248,13 +248,15 @@ class TestZerobootIpmiHostTemplate(TestCase):
 
     @mock.patch.object(j.clients, '_ipmi')
     @mock.patch.object(j.clients, '_zboot')
-    def test_power_status(self, zboot, ipmi):
-        # check when not installed
+    def test_power_status_not_installed(self, zboot, ipmi):
         instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="power_status should be not be able to be called before install"):
             instance.power_status()
 
-        # prep mock
+    @mock.patch.object(j.clients, '_ipmi')
+    @mock.patch.object(j.clients, '_zboot')
+    def test_power_status(self, zboot, ipmi):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
         ipmi.get().power_status = MagicMock(return_value="on")
 
@@ -267,13 +269,13 @@ class TestZerobootIpmiHostTemplate(TestCase):
 
         assert status == False
 
-    def test_monitor_matching_state(self):
-        # check when not installed
+    def test_monitor_not_installed(self):
         instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="monitor should be not be able to be called before install"):
             instance.monitor()
 
-        # prep mock
+    def test_monitor_matching_state(self):
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
         instance.power_on = MagicMock()
         instance.power_off = MagicMock()
@@ -315,13 +317,16 @@ class TestZerobootIpmiHostTemplate(TestCase):
         instance.power_off.assert_called_with()
 
     @mock.patch.object(j.clients, '_zboot')
-    def test_configure_ipxe_boot(self, zboot):
+    def test_configure_ipxe_boot_not_installed(self, zboot):
         boot_url = "some.url"
-
-        # check when not installed
         instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         with pytest.raises(StateCheckError, message="monitor should be not be able to be called before install"):
             instance.configure_ipxe_boot(boot_url)
+
+    @mock.patch.object(j.clients, '_zboot')
+    def test_configure_ipxe_boot(self, zboot):
+        boot_url = "some.url"
+        instance = ZerobootIpmiHost(name="test", data=self._valid_data)
         instance.state.set('actions', 'install', 'ok')
 
         # call with same ipxe URL as set in data

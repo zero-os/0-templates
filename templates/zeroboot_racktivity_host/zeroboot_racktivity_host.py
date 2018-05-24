@@ -68,10 +68,10 @@ class ZerobootRacktivityHost(TemplateBase):
 
         # check if clients exists
         if self.data['zerobootClient'] not in j.clients.zboot.list():
-            raise RuntimeError("No zboot client instance found named '%s'" % self.data['zerobootClient'])
+            raise LookupError("No zboot client instance found named '%s'" % self.data['zerobootClient'])
 
         if self.data['racktivityClient'] not in j.clients.racktivity.list():
-            raise RuntimeError("No racktivity client instance found named '%s'" % self.data['racktivityClient'])
+            raise LookupError("No racktivity client instance found named '%s'" % self.data['racktivityClient'])
 
     def install(self):
         # add host to zeroboot
