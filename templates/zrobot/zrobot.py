@@ -6,7 +6,6 @@ from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
 FLIST_ZROBOT = 'https://hub.gig.tech/gig-official-apps/zero-os-0-robot-latest.flist'
-NODE_TEMPLATE = 'github.com/zero-os/0-templates/node/0.0.1'
 CONTAINER_TEMPLATE = 'github.com/zero-os/0-templates/container/0.0.1'
 NODE_CLIENT = 'local'
 
@@ -23,9 +22,6 @@ class Zrobot(TemplateBase):
     def validate(self):
         if self.data.get('configRepo') and not self.data.get('sshkey'):
             raise ValueError("Need to specify sshkey when specifying configRepo")
-
-        # ensure the node service we depend on exists
-        self.api.services.get(template_uid=NODE_TEMPLATE)
 
     @property
     def node_sal(self):

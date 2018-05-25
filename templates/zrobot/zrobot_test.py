@@ -80,16 +80,6 @@ class TestZrobotTemplate(ZrobotBaseTest):
         assert zrobot_sal == zrobot_sal_return
         j.clients.zos.sal.get_zerorobot.assert_called_with(**kwargs)
 
-    def test_install_zrobot_node_not_found(self):
-        """
-        Test installing a zrobot with no service found for the node
-        """
-        with pytest.raises(scol.ServiceNotFoundError,
-                           message='install action should raise an error if node service is not found'):
-            zrobot = Zrobot('zrobot', data=self.valid_data)
-            zrobot.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
-            zrobot.validate()
-
     def test_already_installed_no_force(self):
         """
         Test installation when already installed without force option
