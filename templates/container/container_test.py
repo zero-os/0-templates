@@ -1,7 +1,4 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 
 import pytest
@@ -9,14 +6,15 @@ import pytest
 from container import Container
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
+
+from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
 
 
-class TestContainerTemplate(TestCase):
+class TestContainerTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Container)
         cls.valid_data = {
             'bridges': [],
             'env': {},
@@ -32,15 +30,6 @@ class TestContainerTemplate(TestCase):
             'storage': '',
             'zerotierNetwork': ''
         }
-
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Container.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Container.template_name, Container.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
         patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()

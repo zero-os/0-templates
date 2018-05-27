@@ -8,7 +8,7 @@ from http.client import HTTPSConnection
 class ErpRegisteration(TemplateBase):
 
     version = '0.0.1'
-    template_name = 'hardware_check'
+    template_name = 'erp_registeration'
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)

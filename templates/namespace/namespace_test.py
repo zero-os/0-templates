@@ -1,28 +1,19 @@
-from unittest import TestCase
 from unittest.mock import MagicMock
-import tempfile
-import shutil
 import os
 import pytest
 
 from namespace import Namespace
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-
-def _task_mock(result):
-    task = MagicMock()
-    task.wait = MagicMock(return_value=task)
-    task.result = result
-    return task
+from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest, task_mock
 
 
-class TestNamespaceTemplate(TestCase):
+class TestNamespaceTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Namespace)
         cls.valid_data = {
             'diskType': 'HDD',
             'mode': 'user',
@@ -30,14 +21,6 @@ class TestNamespaceTemplate(TestCase):
             'public': False,
             'size': 20,
         }
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Namespace.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Namespace.template_name, Namespace.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def test_invalid_data(self):
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the size'):
@@ -77,7 +60,7 @@ class TestNamespaceTemplate(TestCase):
     def test_install(self):
         ns = Namespace(name='namespace', data=self.valid_data)
         node = MagicMock()
-        node.schedule_action = MagicMock(return_value=_task_mock(('instance', 'nsName')))
+        node.schedule_action = MagicMock(return_value=task_mock(('instance', 'nsName')))
         ns.api = MagicMock()
         ns.api.services.get = MagicMock(return_value=node)
         ns.install()
@@ -103,7 +86,7 @@ class TestNamespaceTemplate(TestCase):
         ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
-        task = _task_mock('info')
+        task = task_mock('info')
         ns._zerodb.schedule_action = MagicMock(return_value=task)
 
         assert ns.info() == 'info'
@@ -133,7 +116,7 @@ class TestNamespaceTemplate(TestCase):
         ns.state.set('status', 'running', 'ok')
         ns.api = MagicMock()
         result = {'ip': '127.0.0.1', 'port': 9900}
-        task = _task_mock(result)
+        task = task_mock(result)
         ns._zerodb.schedule_action = MagicMock(return_value=task)
         assert ns.connection_info() == result
         ns._zerodb.schedule_action.assert_called_once_with('connection_info')
@@ -148,7 +131,7 @@ class TestNamespaceTemplate(TestCase):
         ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
-        ns._zerodb.schedule_action = MagicMock(return_value=_task_mock('url'))
+        ns._zerodb.schedule_action = MagicMock(return_value=task_mock('url'))
 
         assert ns.url() == 'url'
         ns._zerodb.schedule_action.assert_called_once_with('namespace_url', args={'name': 'nsName'})
@@ -163,7 +146,7 @@ class TestNamespaceTemplate(TestCase):
         ns.data['nsName'] = 'nsName'
         ns.state.set('actions', 'install', 'ok')
         ns.api = MagicMock()
-        ns._zerodb.schedule_action = MagicMock(return_value=_task_mock('url'))
+        ns._zerodb.schedule_action = MagicMock(return_value=task_mock('url'))
 
         assert ns.private_url() == 'url'
         ns._zerodb.schedule_action.assert_called_once_with('namespace_private_url', args={'name': 'nsName'})

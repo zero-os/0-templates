@@ -1,22 +1,19 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
-
 import pytest
 
 from js9 import j
 from vm import Vm, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
+
+from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
 
 
-class TestVmTemplate(TestCase):
+class TestVmTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Vm)
         cls.valid_data = {
             'cpu': 1,
             'flist': 'flist',
@@ -33,15 +30,7 @@ class TestVmTemplate(TestCase):
             'ipxeUrl': '',
 
         }
-
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Vm.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Vm.template_name, Vm.version))
         cls.vnc_port = 5900
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
         patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()

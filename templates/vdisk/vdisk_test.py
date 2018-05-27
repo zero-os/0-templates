@@ -1,28 +1,19 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 import pytest
 
 from vdisk import Vdisk
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-
-def _task_mock(result):
-    task = MagicMock()
-    task.wait = MagicMock(return_value=task)
-    task.result = result
-    return task
+from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest, task_mock
 
 
-class TestVdiskTemplate(TestCase):
+class TestVdiskTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Vdisk)
         cls.valid_data = {
             'diskType': 'HDD',
             'size': 20,
@@ -31,14 +22,6 @@ class TestVdiskTemplate(TestCase):
             'mode': 'user',
             'public': False
         }
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Vdisk.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Vdisk.template_name, Vdisk.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
         patch('js9.j.clients.zos.sal', MagicMock()).start()
@@ -86,7 +69,7 @@ class TestVdiskTemplate(TestCase):
     def test_install(self):
         vdisk = Vdisk(name='vdisk', data=self.valid_data)
         node = MagicMock()
-        node.schedule_action = MagicMock(return_value=_task_mock(('instance', 'ns_name')))
+        node.schedule_action = MagicMock(return_value=task_mock(('instance', 'ns_name')))
         vdisk.api = MagicMock()
         vdisk.api.services.get = MagicMock(return_value=node)
         vdisk.install()
@@ -112,7 +95,7 @@ class TestVdiskTemplate(TestCase):
         vdisk.data['nsName'] = 'ns_name'
         vdisk.state.set('actions', 'install', 'ok')
         vdisk.api = MagicMock()
-        task = _task_mock('info')
+        task = task_mock('info')
         vdisk._zerodb.schedule_action = MagicMock(return_value=task)
 
         assert vdisk.info() == 'info'
@@ -141,7 +124,7 @@ class TestVdiskTemplate(TestCase):
         vdisk.data['nsName'] = 'ns_name'
         vdisk.state.set('actions', 'install', 'ok')
         vdisk.api = MagicMock()
-        vdisk._zerodb.schedule_action = MagicMock(return_value=_task_mock('url'))
+        vdisk._zerodb.schedule_action = MagicMock(return_value=task_mock('url'))
 
         assert vdisk.url() == 'url'
         vdisk._zerodb.schedule_action.assert_called_once_with('namespace_url', args={'name': 'ns_name'})
@@ -156,7 +139,7 @@ class TestVdiskTemplate(TestCase):
         vdisk.data['nsName'] = 'ns_name'
         vdisk.state.set('actions', 'install', 'ok')
         vdisk.api = MagicMock()
-        vdisk._zerodb.schedule_action = MagicMock(return_value=_task_mock('url'))
+        vdisk._zerodb.schedule_action = MagicMock(return_value=task_mock('url'))
 
         assert vdisk.private_url() == 'url'
         vdisk._zerodb.schedule_action.assert_called_once_with('namespace_private_url', args={'name': 'ns_name'})

@@ -1,40 +1,24 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 
 import pytest
 
 from node import Node, NODE_CLIENT
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
-
-def mockdecorator(func):
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    return wrapper
+from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest, mock_decorator
 
 
-patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mockdecorator)).start()
-patch("zerorobot.template.decorator.retry", MagicMock(return_value=mockdecorator)).start()
+patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mock_decorator)).start()
+patch("zerorobot.template.decorator.retry", MagicMock(return_value=mock_decorator)).start()
 patch("gevent.sleep", MagicMock()).start()
 
 
-class TestNodeTemplate(TestCase):
+class TestNodeTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Node.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
+        super().preTest(os.path.dirname(__file__), Node)
 
     def setUp(self):
         self.client_get = patch('js9.j.clients', MagicMock()).start()
