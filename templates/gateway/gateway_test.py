@@ -80,10 +80,25 @@ class TestGatewayTemplate(ZrobotBaseTest):
         gw.state.set('actions', 'start', 'ok')
         portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
         gw.add_portforward(portforward)
-        gw._gateway_sal.deploy.assert_called_once_with()
+        gw._gateway_sal.configure_fw.assert_called_once_with()
         assert gw.data['portforwards'] == [portforward]
 
-    def test_add_portforward_network_doesnt_exost(self):
+    def test_add_portforward_exception(self):
+        """
+        Test add_portforward action raises exception
+        """
+        with pytest.raises(RuntimeError,
+                           message='action should raise an error if configure_fw raises an exception'):
+            self.valid_data['networks'] = [{'name': 'network'}]
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            gw._gateway_sal.configure_fw.side_effect = RuntimeError
+            portforward = {'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 22, 'srcnetwork': 'network', 'srcport': 22, 'protocols': ['tcp']}
+            gw.add_portforward(portforward)
+            assert gw._gateway_sal.configure_fw.call_count == 2
+            assert gw.data['portforwards'] == []
+
+    def test_add_portforward_network_doesnt_exist(self):
         """
         Test add_portforward action using a network that doesn't exist
         """
@@ -154,6 +169,21 @@ class TestGatewayTemplate(ZrobotBaseTest):
         gw.remove_portforward('pf')
         assert gw.data['portforwards'] == []
 
+    def test_remove_portforward_exception(self):
+        """
+        Test remove_portforward action raises exception
+        """
+        with pytest.raises(RuntimeError,
+                           message='action should raise an error if configure_fw raises an exception'):
+            forwards = [{'name': 'pf', 'dstip': '196.23.12.42', 'dstport': 21, 'srcnetwork': 'network', 'srcport': 21, 'protocols': ['tcp']}]
+            self.valid_data['portforwards'] = forwards
+            gw = Gateway('gw', data=self.valid_data)
+            gw._gateway_sal.configure_fw.side_effect = RuntimeError
+            gw.state.set('actions', 'start', 'ok')
+            gw.remove_portforward('pf')
+            assert gw._gateway_sal.configure_fw.call_count == 2
+            assert gw.data['portforwards'] == forwards
+
     def test_remove_portforward_before_start(self):
         """
         Test remove_portforward action before gateway start
@@ -184,6 +214,20 @@ class TestGatewayTemplate(ZrobotBaseTest):
         assert gw.data['httpproxies'] == [proxy]
         gw._gateway_sal.configure_http.assert_called_once_with()
 
+    def test_add_http_proxy_exception(self):
+        """
+        Test add_http_proxy action raises exception
+        """
+        with pytest.raises(RuntimeError,
+                           message='action should raise an error if configure_http raises an exception'):
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            proxy = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
+            gw._gateway_sal.configure_http.side_effect = RuntimeError
+            gw.add_http_proxy(proxy)
+            assert gw.data['httpproxies'] == []
+            assert gw._gateway_sal.configure_http.call_count == 2
+
     def test_add_http_proxy_before_start(self):
         """
         Test add_http_proxy action before gateway start
@@ -198,7 +242,7 @@ class TestGatewayTemplate(ZrobotBaseTest):
         Test add_http_proxy action if another proxy with the same name exists
         """
         with pytest.raises(ValueError,
-                   message='action should raise an error if another http proxy with the same name exist'):
+                           message='action should raise an error if another http proxy with the same name exist'):
             proxy = {'host': 'host', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
             proxy2 = {'host': 'host2', 'destinations': ['destination'],  'types': ['http'], 'name': 'proxy'}
             self.valid_data['httpproxies'].append(proxy)
@@ -229,6 +273,21 @@ class TestGatewayTemplate(ZrobotBaseTest):
         gw.remove_http_proxy('proxy')
         assert gw.data['httpproxies'] == []
         gw._gateway_sal.configure_http.assert_called_once_with()
+
+    def test_remove_http_proxy_exception(self):
+        """
+        Test remove_http_proxy action
+        """
+        with pytest.raises(RuntimeError,
+                           message='action should raise an error if configure_http raises an exception'):
+            proxies = [{'host': 'host', 'destinations': ['destination'], 'types': ['http'], 'name': 'proxy'}]
+            self.valid_data['httpproxies'] = proxies
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            gw._gateway_sal.configure_http.side_effect = RuntimeError
+            gw.remove_http_proxy('proxy')
+            assert gw.data['httpproxies'] == proxies
+            assert gw._gateway_sal.configure_http.call_count == 2
 
     def test_remove_http_proxy_before_start(self):
         """
@@ -261,6 +320,21 @@ class TestGatewayTemplate(ZrobotBaseTest):
         assert gw.data['networks'] == [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}, {'macaddress': 'address2'}]}}]
         gw._gateway_sal.configure_dhcp.assert_called_once_with()
         gw._gateway_sal.configure_cloudinit.assert_called_once_with()
+
+    def test_add_dhcp_host_exception(self):
+        """
+        Test add_dhcp_host action raises exception
+        """
+        with pytest.raises(RuntimeError,
+                           message='action should raise an error if configure_dhcp raises an exception'):
+            self.valid_data['networks'] = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            gw._gateway_sal.configure_dhcp.side_effect = RuntimeError
+            gw.add_dhcp_host('network', {'macaddress': 'address2'})
+            assert gw.data['networks'] == []
+            assert gw._gateway_sal.configure_dhcp.call_count == 2
+            assert gw._gateway_sal.configure_cloudinit.call_count == 2
 
     def test_add_dhcp_host_before_start(self):
         """
@@ -303,6 +377,22 @@ class TestGatewayTemplate(ZrobotBaseTest):
         assert gw.data['networks'] == [{'name': 'network', 'dhcpserver': {'hosts': []}}]
         gw._gateway_sal.configure_dhcp.assert_called_once_with()
         gw._gateway_sal.configure_cloudinit.assert_called_once_with()
+
+    def test_remove_dhcp_host_exception(self):
+        """
+        Test remove_dhcp_host action raises exception
+        """
+        with pytest.raises(RuntimeError,
+                           message='action should raise an error if configure_dhcp raises an exception'):
+            networks = [{'name': 'network', 'dhcpserver': {'hosts': [{'macaddress': 'address1'}]}}]
+            self.valid_data['networks'] = networks
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            gw._gateway_sal.configure_dhcp.side_effect = RuntimeError
+            gw.remove_dhcp_host('network', {'macaddress': 'address1'})
+            assert gw.data['networks'] == networks
+            assert gw._gateway_sal.configure_dhcp.call_count == 2
+            assert gw._gateway_sal.configure_cloudinit.call_count == 2
 
     def test_remove_dhcp_host_before_start(self):
         """
@@ -363,6 +453,19 @@ class TestGatewayTemplate(ZrobotBaseTest):
         assert gw.data['networks'] == [network]
         gw._gateway_sal.deploy.assert_called_once_with()
 
+    def test_add_network_exception(self):
+        """
+        Test add_network action raises exception
+        """
+        with pytest.raises(RuntimeError, message='actions should raise an error deploy raises an exception'):
+            network = {'name': 'network', 'type': 'default', 'id': 'id'}
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            gw._gateway_sal.deploy.side_effect = RuntimeError
+            gw.add_network(network)
+            assert gw.data['networks'] == []
+            assert gw._gateway_sal.deploy.call_count == 2
+
     def test_add_network_name_exist(self):
         """
         Test add_network action if network with another name exists
@@ -410,6 +513,20 @@ class TestGatewayTemplate(ZrobotBaseTest):
         gw.remove_network('network')
         assert gw.data['networks'] == []
         gw._gateway_sal.deploy.assert_called_once_with()
+
+    def test_remove_network_exception(self):
+        """
+        Test remove_network action raises exception
+        """
+        with pytest.raises(RuntimeError, message='actions should raise an error if deploy raises an exception'):
+            network = {'name': 'network', 'type': 'default', 'id': 'id'}
+            self.valid_data['networks'] = [network]
+            gw = Gateway('gw', data=self.valid_data)
+            gw.state.set('actions', 'start', 'ok')
+            gw._gateway_sal.deploy.side_effect = RuntimeError
+            gw.remove_network('network')
+            assert gw.data['networks'] == [network]
+            assert gw._gateway_sal.deploy.call_count == 2
 
     def test_remove_network_name_exist(self):
         """
