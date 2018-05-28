@@ -49,7 +49,14 @@ class Gateway(TemplateBase):
                 if set(fw['protocols']).intersection(set(forward['protocols'])):
                     raise ValueError('Forward conflicts with existing forward')
         self.data['portforwards'].append(forward)
-        self._gateway_sal.deploy()
+
+        try:
+            self._gateway_sal.configure_fw()
+        except:
+            self.logger.error('Failed to add portforward, restoring gateway to previous state')
+            self.data['portforwards'].remove(forward)
+            self._gateway_sal.configure_fw()
+            raise
 
     def remove_portforward(self, forward_name):
         self.logger.info('Remove portforward {}'.format(forward_name))
@@ -61,7 +68,14 @@ class Gateway(TemplateBase):
                 break
         else:
             raise LookupError('Forward {} doesn\'t exist'.format(forward_name))
-        self._gateway_sal.configure_fw()
+
+        try:
+            self._gateway_sal.configure_fw()
+        except:
+            self.logger.error('Failed to remove portforward, restoring gateway to previous state')
+            self.data['portforwards'].append(fw)
+            self._gateway_sal.configure_fw()
+            raise
 
     def add_http_proxy(self, proxy):
         self.logger.info('Add http proxy {}'.format(proxy['name']))
@@ -74,7 +88,14 @@ class Gateway(TemplateBase):
             if combination:
                 raise ValueError("Proxy with host {} already exists".format(proxy['host']))
         self.data['httpproxies'].append(proxy)
-        self._gateway_sal.configure_http()
+
+        try:
+            self._gateway_sal.configure_http()
+        except:
+            self.logger.error('Failed to add http proxy, restoring gateway to previous state')
+            self.data['httpproxies'].remove(proxy)
+            self._gateway_sal.configure_http()
+            raise
 
     def remove_http_proxy(self, proxy_name):
         self.logger.info('Remove http proxy {}'.format(proxy_name))
@@ -86,7 +107,13 @@ class Gateway(TemplateBase):
                 break
         else:
             raise LookupError('Proxy with name {} doesn\'t exist'.format(proxy_name))
-        self._gateway_sal.configure_http()
+        try:
+            self._gateway_sal.configure_http()
+        except:
+            self.logger.error('Failed to remove http proxy, restoring gateway to previous state')
+            self.data['httpproxies'].append(existing_proxy)
+            self._gateway_sal.configure_http()
+            raise
 
     def add_dhcp_host(self, network_name, host):
         self.logger.info('Add dhcp to network {}'.format(network_name))
@@ -102,8 +129,16 @@ class Gateway(TemplateBase):
             if existing_host['macaddress'] == host['macaddress']:
                 raise ValueError('Host with macaddress {} already exists'.format(host['macaddress']))
         dhcpserver['hosts'].append(host)
-        self._gateway_sal.configure_dhcp()
-        self._gateway_sal.configure_cloudinit()
+
+        try:
+            self._gateway_sal.configure_dhcp()
+            self._gateway_sal.configure_cloudinit()
+        except:
+            self.logger.error('Failed to add dhcp host, restoring gateway to previous state')
+            dhcpserver['hosts'].remove(host)
+            self._gateway_sal.configure_dhcp()
+            self._gateway_sal.configure_cloudinit()
+            raise
 
     def remove_dhcp_host(self, network_name, host):
         self.logger.info('Add dhcp to network {}'.format(network_name))
@@ -122,8 +157,16 @@ class Gateway(TemplateBase):
                 break
         else:
             raise LookupError('Host with macaddress {} doesn\'t exist'.format(host['macaddress']))
-        self._gateway_sal.configure_dhcp()
-        self._gateway_sal.configure_cloudinit()
+
+        try:
+            self._gateway_sal.configure_dhcp()
+            self._gateway_sal.configure_cloudinit()
+        except:
+            self.logger.error('Failed to remove dhcp, restoring gateway to previous state')
+            dhcpserver['hosts'].append(existing_host)
+            self._gateway_sal.configure_dhcp()
+            self._gateway_sal.configure_cloudinit()
+            raise
 
     def _compare_objects(self, obj1, obj2, *keys):
         """
@@ -151,7 +194,14 @@ class Gateway(TemplateBase):
             if combination:
                 raise ValueError('network with same type/id combination already exists')
         self.data['networks'].append(network)
-        self._gateway_sal.deploy()
+
+        try:
+            self._gateway_sal.deploy()
+        except:
+            self.logger.error('Failed to add network, restoring gateway to previous state')
+            self.data['networks'].remove(network)
+            self._gateway_sal.deploy()
+            raise
 
     def remove_network(self, network_name):
         self.logger.info('Remove network {}'.format(network_name))
@@ -163,7 +213,13 @@ class Gateway(TemplateBase):
                 break
         else:
             raise LookupError('Network with name {} doesn\'t exists'.format(network_name))
-        self._gateway_sal.deploy()
+        try:
+            self._gateway_sal.deploy()
+        except:
+            self.logger.error('Failed to remove network, restoring gateway to previous state')
+            self.data['networks'].append(network)
+            self._gateway_sal.deploy()
+            raise
 
     def uninstall(self):
         self.logger.info('Uninstall gateway {}'.format(self.name))
