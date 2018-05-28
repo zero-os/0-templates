@@ -7,7 +7,7 @@ import pytest
 from gateway import Gateway, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
 class TestGatewayTemplate(ZrobotBaseTest):

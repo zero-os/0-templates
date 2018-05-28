@@ -6,7 +6,7 @@ from zeroos_bootstrap import ZeroosBootstrap
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest, mock_decorator
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest, mock_decorator
 
 
 patch('zerorobot.template.decorator.timeout', MagicMock(return_value=mock_decorator)).start()

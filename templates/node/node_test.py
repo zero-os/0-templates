@@ -6,7 +6,7 @@ import pytest
 from node import Node, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest, mock_decorator
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest, mock_decorator
 
 
 patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mock_decorator)).start()

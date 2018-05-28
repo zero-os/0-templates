@@ -6,7 +6,7 @@ import pytest
 from erp_registeration import ErpRegisteration
 from js9 import j
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
 class TestErpRegisterationTemplate(ZrobotBaseTest):

@@ -7,7 +7,7 @@ from zrobot import Zrobot
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
 class TestZrobotTemplate(ZrobotBaseTest):

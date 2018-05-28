@@ -5,7 +5,7 @@ import pytest
 
 from zeroos_client import ZeroosClient
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
 class TestZeroosClientTemplate(ZrobotBaseTest):

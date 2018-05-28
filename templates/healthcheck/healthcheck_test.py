@@ -3,7 +3,7 @@ import os
 
 from healthcheck import Healthcheck, _update_healthcheck_state, _update, NODE_CLIENT
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
 class TestHealthcheckTemplate(ZrobotBaseTest):

@@ -7,7 +7,7 @@ from zerodb import Zerodb, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
 class TestZerodbTemplate(ZrobotBaseTest):

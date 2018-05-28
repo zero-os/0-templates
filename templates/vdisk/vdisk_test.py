@@ -6,7 +6,7 @@ from vdisk import Vdisk
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-from JumpScale9Zrobot.utils.test_utils import ZrobotBaseTest, task_mock
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest, task_mock
 
 
 class TestVdiskTemplate(ZrobotBaseTest):
