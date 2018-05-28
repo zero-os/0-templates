@@ -1,35 +1,23 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 
 import pytest
 
 from hardware_check import HardwareCheck
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from js9 import j
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
-class TestHardwareCheckTemplate(TestCase):
+class TestHardwareCheckTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), HardwareCheck)
         cls.valid_data = {
             'chatId': 'chatId',
             'supported': [{'hddCount': 2, 'ram': 8, 'cpu': 'cpu', 'ssdCount': 2, 'name': 'name'}],
             'botToken': 'botToken'}
-
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        HardwareCheck.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (HardwareCheck.template_name, HardwareCheck.version))
         patch('js9.j.tools')
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def tearDown(self):
         patch.stopall()

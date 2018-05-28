@@ -1,20 +1,17 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 import pytest
 
 from minio import Minio, CONTAINER_TEMPLATE_UID, MINIO_FLIST
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
-class TestMinioTemplate(TestCase):
+class TestMinioTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Minio)
         cls.valid_data = {
             'container': 'container_minio',
             'node': 'node',
@@ -30,14 +27,6 @@ class TestMinioTemplate(TestCase):
             'resticRepoPassword': '',
             'resticUsername': 'username'
         }
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Minio.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Minio.template_name, Minio.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
         patch('js9.j.clients.zos.sal', MagicMock()).start()

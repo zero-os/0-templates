@@ -1,35 +1,26 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
 from js9 import j
-import tempfile
-import shutil
 import os
 import pytest
 
 from zrobot import Zrobot
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
+
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
-class TestZrobotTemplate(TestCase):
+class TestZrobotTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Zrobot)
         cls.valid_data = {
             'node': 'node',
             'templates': [],
             'organization': None,
             'nics': []
         }
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Zrobot.template_uid = TemplateUID.parse('github.com/zero-os/0-templates/%s/%s' % (Zrobot.template_name, Zrobot.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def setUp(self): 
         patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()

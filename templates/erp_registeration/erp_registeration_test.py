@@ -1,21 +1,19 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 
 import pytest
 
 from erp_registeration import ErpRegisteration
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from js9 import j
 
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
-class TestErpRegisterationTemplate(TestCase):
+
+class TestErpRegisterationTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), ErpRegisteration)
         cls.valid_data = {
             'url': 'url',
             'db': 'db',
@@ -25,14 +23,6 @@ class TestErpRegisterationTemplate(TestCase):
             'botToken': 'botToken',
             'chatId': 'chatId'
         }
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        ErpRegisteration.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (ErpRegisteration.template_name, ErpRegisteration.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def tearDown(self):
         patch.stopall()

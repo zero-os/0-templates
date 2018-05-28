@@ -1,28 +1,16 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
-
 import pytest
 
 from zerotier_client import ZerotierClient
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
-class TestZerotierClientTemplate(TestCase):
+class TestZerotierClientTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        ZerotierClient.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (ZerotierClient.template_name, ZerotierClient.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
+        super().preTest(os.path.dirname(__file__), ZerotierClient)
 
     def setUp(self):
         self.list = patch('js9.j.clients.zerotier.list', MagicMock(return_value=[])).start()
