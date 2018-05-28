@@ -35,11 +35,10 @@ class BasicTests(ZOS_BaseTest):
 
         self.log('Create vm[vm1], should succeed.')
         vm1_name = self.random_string()
-        self.vms = {vm1_name: {'flist': self.vm_flist}}
+        self.vms = {vm1_name: {'flist': self.vm_flist, 'memory': 512}}
         res = self.create_vm(vms=self.vms, temp_actions=self.temp_actions)
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(vm1_name, res[vm1_name]['install'])
-
         self.log('Check that the vm have been created.')
         time.sleep(3)
         vms = self.zos_client.kvm.list()
@@ -69,8 +68,7 @@ class BasicTests(ZOS_BaseTest):
         """
         self.log('Create a vm without providing flist parameter, should fail.')
         vm1_name = self.random_string()
-        self.vms = {vm1_name: {     
-                               'nics': {"name": self.random_string(), "type": "default"}}}
+        self.vms = {vm1_name: {}}
                                                               
         res = self.create_vm(vms=self.vms, temp_actions=self.temp_actions)
         self.assertEqual(res, "invalid input. Vm requires flist or ipxeUrl to be specifed.")
@@ -85,17 +83,13 @@ class VM_actions(ZOS_BaseTest):
     def setUpClass(cls):
         self = cls()
         super(VM_actions, cls).setUpClass()
-        super(VM_actions, self).setUp()
 
         cls.temp_actions = {
                              'vm': {'actions': ['install']}
                             }
-        self.log('Create vm[vm1], should succeed.')
         cls.vm1_name = cls.random_string()
         cls.vms = {cls.vm1_name: {'flist': self.vm_flist,
-                                  'memory': 512,
-                                  'nics': {"name": self.random_string(), "type": "default"},
-                                  'ports': [{"source": 22, "target": randint(1000, 60000), "name": 'ssh'}]}}
+                                  'memory': 2048}}
 
         res = self.create_vm(vms=cls.vms, temp_actions=cls.temp_actions)
         self.assertEqual(type(res), type(dict()))
