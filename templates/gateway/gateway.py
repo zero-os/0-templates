@@ -221,6 +221,14 @@ class Gateway(TemplateBase):
             self._gateway_sal.deploy()
             raise
 
+    def info(self):
+        return {
+            'name': self.name,
+            'portforwards': self.data['portforwards'],
+            'httpproxies': self.data['httpproxies'],
+            'networks': self.data['networks']
+        }
+
     def uninstall(self):
         self.logger.info('Uninstall gateway {}'.format(self.name))
         self.state.check('actions', 'install', 'ok')
