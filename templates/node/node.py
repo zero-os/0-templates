@@ -3,6 +3,7 @@ from js9 import j
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.decorator import retry, timeout
 from zerorobot.template.state import StateCheckError
+import netaddr
 
 CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 VM_TEMPLATE_UID = 'github.com/zero-os/0-templates/vm/0.0.1'
@@ -20,6 +21,19 @@ class Node(TemplateBase):
         super().__init__(name=name, guid=guid, data=data)
         self.recurring_action('_monitor', 30)  # every 30 seconds
         self.recurring_action('_register', 3600 * 2)  # every 2hours
+
+    def validate(self):
+        network = self.data.get('network')
+        if network:
+            self._validate_network(network)
+
+    def _validate_network(self, network):
+        cidr = network.get('cidr')
+        if cidr:
+            netaddr.IPNetwork(cidr)
+        vlan = network.get('vlan')
+        if not isinstance(vlan, int):
+            raise ValueError('Network should have vlan configured')
 
     @property
     def node_sal(self):
@@ -92,6 +106,23 @@ class Node(TemplateBase):
             raise RuntimeWarning("Aborting monitor because system is rebooting for a migration.")
         self.logger.error('error: %s' % result.stderr)
 
+    def _configure_network(self):
+        network = self.data.get('network')
+        if network and network.get('cidr'):
+            self.logger.info("install OpenVSwitch container")
+            driver = network.get('driver')
+            if driver:
+                self.logger.info("reload driver {}".format(driver))
+                self.node_sal.network.reload_driver(driver)
+
+            self.logger.info("configure network: cidr: {cidr} - vlang tag: {vlan}".format(**network))
+            self.node_sal.network.configure(
+                cidr=network['cidr'],
+                vlan_tag=network['vlan'],
+                ovs_container_name='ovs',
+                bonded=network.get('bonded', False),
+            )
+
     @retry(Exception, tries=2, delay=2)
     def install(self):
         self.logger.info('Installing node %s' % self.name)
@@ -100,18 +131,25 @@ class Node(TemplateBase):
         # Set host name
         self.node_sal.client.system('hostname %s' % self.data['hostname']).get()
         self.node_sal.client.bash('echo %s > /etc/hostname' % self.data['hostname']).get()
-
-        # @todo rethink the network cycle
-        # configure networks
-        # tasks = []
-        # for nw in self.data.get('networks', []):
-        #     network = self.api.services.get(name=nw)
-        #     self.logger.info("configure network %s", nw)
-        #     tasks.append(network.schedule_action('configure', args={'node_name': self.name}))
-        # self._wait_all(tasks, timeout=120, die=True)
+        # Configure networkj
+        self._configure_network()
 
         self.data['uptime'] = self.node_sal.uptime()
         self.state.set('actions', 'install', 'ok')
+
+    def configure_network(self, cidr, vlan, bonded=False, driver=None):
+        network = self.data.get('network')
+        if network.get('cidr'):
+            raise ValueError('Network is already configured')
+        network = {
+            'cidr': cidr,
+            'vlan': vlan,
+            'bonded': bonded,
+            'driver': driver
+        }
+        self._validate_network(network)
+        self.data['network'] = network
+        self._configure_network()
 
     def _create_zdb(self, namespace_name, diskname, mountpoint, mode, password, public, size):
         zdb_name = 'zdb_%s_%s' % (self.name, diskname)
