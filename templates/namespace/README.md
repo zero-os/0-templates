@@ -7,12 +7,13 @@ This template is responsible for managing a 0-db namespace
 
 - `zerodb`: the zerodb to create the namespace on
 - `size`: the namespace size
-- `secret`: The namespace secret **optional**
+- `password`: The namespace password **optional**
 
 ### Actions
 - `install`: creates the namespace.
 - `info`: returns info about the namespace. 
-
+- `url`: return the public url of the namespace
+- `private_url`: return the private url of the namespace
 
 ### Usage example via the 0-robot DSL
 
@@ -24,7 +25,7 @@ robot = j.clients.zrobot.robots['main']
 args = {
     'zerodb': 'zerodb_one',
     'size': 10,
-    'secret': 'password',
+    'password': 'password',
 }
 namespace = robot.services.create('github.com/zero-os/0-templates/namespace/0.0.1', 'namespace_one', data=args)
 namespace.schedule_action('install')
@@ -41,7 +42,7 @@ services:
     - github.com/zero-os/0-templates/namespace/0.0.1__namespace_one:
           zerodb: 'zerodb_one'
           size: 10
-          secret: 'password'
+          password: 'password'
           
 actions:
     - template: 'github.com/zero-os/0-templates/namespace/0.0.1'

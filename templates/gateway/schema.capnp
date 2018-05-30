@@ -4,23 +4,21 @@
 struct Schema {
     status @0 :Status;
     hostname @1 :Text;
-    nics @2 :List(Nic); # Configuration of the attached nics to the container
+    networks @2 :List(Network); # Configuration of the attached nics to the container
     portforwards @3 :List(PortForward);
     httpproxies @4 :List(HTTPProxy);
-    container @5 :Text; # Container spawned by this service
-    domain @6: Text;
-    advanced @7: Bool; # flag to check if http config has been set manually
-    zerotiernodeid @8:Text;
-    certificates @9 :List(Certificate);
+    domain @5: Text;
+    certificates @6 :List(Certificate);
+    ztIdentity @7: Text; #
 
-    struct Nic {
-        type @0: NicType;
+    struct Network {
+        type @0: NetworkType;
         id @1: Text;
-        config @2: NicConfig;
+        config @2: NetworkConfig;
         name @3: Text;
         dhcpserver @4: DHCP;
-        zerotierbridge @5: Bridge;
-        token @6: Text;
+        ztBridge @5: Bridge;
+        ztClient @6: Text;
     }
 
     struct Bridge {
@@ -43,9 +41,11 @@ struct Schema {
     struct DHCP {
         nameservers @0: List(Text);
         hosts @1: List(Host);
+        poolStart @2: Int32;
+        poolSize @3: Int32;
     }
 
-    struct NicConfig {
+    struct NetworkConfig {
         cidr @0: Text;
         gateway @1: Text;
     }
@@ -59,6 +59,7 @@ struct Schema {
         host @0: Text;
         destinations @1: List(Text);
         types @2: List(HTTPType);
+        name @3: Text;
     }
 
     enum Status{
@@ -74,11 +75,12 @@ struct Schema {
     struct PortForward{
         protocols @0: List(IPProtocol);
         srcport @1: Int32;
-        srcip @2: Text;
+        srcnetwork @2: Text;
         dstport @3: Int32;
         dstip @4: Text;
+        name @5: Text;
     }
-    enum NicType {
+    enum NetworkType {
         default @0;
         zerotier @1;
         vlan @2;

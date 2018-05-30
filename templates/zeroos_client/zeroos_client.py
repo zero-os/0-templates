@@ -12,7 +12,7 @@ class ZeroosClient(TemplateBase):
         super().__init__(name=name, guid=guid, data=data)
 
         # client instance already exists
-        if self.name in j.clients.zero_os.list():
+        if self.name in j.clients.zos.list():
             return
 
         # create the client instance
@@ -29,12 +29,12 @@ class ZeroosClient(TemplateBase):
             'unixsocket': self.data['unixSocket'],
         }
         # this will create a configuration for this instance
-        _ = j.clients.zero_os.get(self.name, data=client_data)
+        _ = j.clients.zos.get(self.name, data=client_data)
 
     def delete(self):
         """
         delete the client configuration
         """
-        j.clients.zero_os.delete(self.name)
+        j.clients.zos.delete(self.name)
         # call the delete of the base class
         super().delete()

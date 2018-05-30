@@ -1,20 +1,17 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 import pytest
 
 from minio import Minio, CONTAINER_TEMPLATE_UID, MINIO_FLIST
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
-class TestMinioTemplate(TestCase):
+class TestMinioTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Minio)
         cls.valid_data = {
             'container': 'container_minio',
             'node': 'node',
@@ -31,17 +28,9 @@ class TestMinioTemplate(TestCase):
             'resticUsername': 'username',
             'metaPrivateKey': '1234567890abcdef'
         }
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Minio.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Minio.template_name, Minio.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
 
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal', MagicMock()).start()
+        patch('js9.j.clients.zos.sal', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -77,14 +66,14 @@ class TestMinioTemplate(TestCase):
         """
         Test node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node_sal')).start()
         minio = Minio('minio', data=self.valid_data)
 
         assert minio.node_sal == 'node_sal'
         get_node.assert_called_once_with(minio.data['node'])
 
     def test_container_sal(self):
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
         minio = Minio('minio', data=self.valid_data)
         minio.node_sal.containers.get = MagicMock(return_value='container')
 
@@ -95,7 +84,7 @@ class TestMinioTemplate(TestCase):
         """
         Test node_sal property
         """
-        minio_sal = patch('js9.j.clients.zero_os.sal.get_minio', MagicMock(return_value='minio_sal')).start()
+        minio_sal = patch('js9.j.clients.zos.sal.get_minio', MagicMock(return_value='minio_sal')).start()
         minio = Minio('minio', data=self.valid_data)
         minio._get_zdbs = MagicMock()
 

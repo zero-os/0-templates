@@ -85,7 +85,7 @@ class HardwareCheck(TemplateBase):
         return cpu
 
     def check(self, node_name):
-        cl = j.clients.zero_os.get(instance=node_name)
+        cl = j.clients.zos.get(instance=node_name)
         message = "Node with id {} has completed the hardwarecheck successfully.".format(
             node_name)
 

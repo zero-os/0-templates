@@ -1,7 +1,4 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 
 import pytest
@@ -9,21 +6,22 @@ import pytest
 from container import Container
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
+
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
 
-class TestContainerTemplate(TestCase):
+class TestContainerTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
+        super().preTest(os.path.dirname(__file__), Container)
         cls.valid_data = {
             'bridges': [],
             'env': {},
             'flist': 'flist',
             'hostNetworking': False,
             'hostname': '',
-            'identity': '',
+            'ztIdentity': '',
             'initProcesses': [],
             'mounts': [],
             'nics': [],
@@ -33,17 +31,8 @@ class TestContainerTemplate(TestCase):
             'zerotierNetwork': ''
         }
 
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Container.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Container.template_name, Container.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
-
     def setUp(self):
-        patch('js9.j.clients.zero_os.sal.get_node', MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
 
     def tearDown(self):
         patch.stopall()
@@ -65,7 +54,7 @@ class TestContainerTemplate(TestCase):
         """
         Test the node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node')).start()
         container = Container('container', data=self.valid_data)
         node_sal = container.node_sal
         assert get_node.called

@@ -22,7 +22,7 @@ class Container(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.get_node(NODE_CLIENT)
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     @property
     def container_sal(self):
@@ -34,7 +34,7 @@ class Container(TemplateBase):
 
     def install(self):
         # convert "src:dst" to {src:dst}
-        ports = j.clients.zero_os.sal.format_ports(self.data['ports'])
+        ports = j.clients.zos.sal.format_ports(self.data['ports'])
 
         mounts = {}
         for mount in self.data['mounts']:

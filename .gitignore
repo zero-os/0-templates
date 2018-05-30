@@ -45,6 +45,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache/
 
 # Translations
 *.mo
@@ -74,6 +75,9 @@ target/
 
 # pyenv
 .python-version
+
+# pytest
+.pytest_cache/
 
 # celery beat schedule file
 celerybeat-schedule

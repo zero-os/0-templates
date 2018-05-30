@@ -1,40 +1,24 @@
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
-import tempfile
-import shutil
 import os
 
 import pytest
 
 from node import Node, NODE_CLIENT
-from zerorobot import config
-from zerorobot.template_uid import TemplateUID
 from zerorobot.template.state import StateCheckError
 
-
-def mockdecorator(func):
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    return wrapper
+from JumpScale9Zrobot.test.utils import ZrobotBaseTest, mock_decorator
 
 
-patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mockdecorator)).start()
-patch("zerorobot.template.decorator.retry", MagicMock(return_value=mockdecorator)).start()
+patch("zerorobot.template.decorator.timeout", MagicMock(return_value=mock_decorator)).start()
+patch("zerorobot.template.decorator.retry", MagicMock(return_value=mock_decorator)).start()
 patch("gevent.sleep", MagicMock()).start()
 
 
-class TestNodeTemplate(TestCase):
+class TestNodeTemplate(ZrobotBaseTest):
 
     @classmethod
     def setUpClass(cls):
-        config.DATA_DIR = tempfile.mkdtemp(prefix='0-templates_')
-        Node.template_uid = TemplateUID.parse(
-            'github.com/zero-os/0-templates/%s/%s' % (Node.template_name, Node.version))
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(config.DATA_DIR):
-            shutil.rmtree(config.DATA_DIR)
+        super().preTest(os.path.dirname(__file__), Node)
 
     def setUp(self):
         self.client_get = patch('js9.j.clients', MagicMock()).start()
@@ -46,7 +30,7 @@ class TestNodeTemplate(TestCase):
         """
         Test node_sal property
         """
-        get_node = patch('js9.j.clients.zero_os.sal.get_node', MagicMock(return_value='node_sal')).start()
+        get_node = patch('js9.j.clients.zos.sal.get_node', MagicMock(return_value='node_sal')).start()
         node = Node(name='node')
         node_sal = node.node_sal
         get_node.assert_called_with(NODE_CLIENT)
@@ -61,6 +45,19 @@ class TestNodeTemplate(TestCase):
         node.install()
 
         node.state.check('actions', 'install', 'ok')
+
+    def test_network(self):
+        node = Node(name='node')
+        node.data['network'] = {'vlan': 100, 'cidr': '192.168.122.0/24'}
+        node.node_sal.client.info.version = MagicMock(return_value={'branch': 'master', 'revision': 'revision'})
+        node.install()
+        node.node_sal.network.configure.assert_called_with(bonded=False, cidr='192.168.122.0/24', ovs_container_name='ovs', vlan_tag=100)
+
+    def test_configure_network(self):
+        node = Node(name='node')
+        node.configure_network('192.168.122.0/24', 100)
+        node.node_sal.network.configure.assert_called_with(bonded=False, cidr='192.168.122.0/24', ovs_container_name='ovs', vlan_tag=100)
+
 
     def test_node_info_node_running(self):
         """

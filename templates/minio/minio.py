@@ -29,7 +29,7 @@ class Minio(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zero_os.sal.get_node(self.data['node'])
+        return j.clients.zos.sal.get_node(self.data['node'])
 
     @property
     def container_sal(self):
@@ -46,12 +46,12 @@ class Minio(TemplateBase):
             'port': self.data['listenPort'],
             'private_key': self.data['privateKey']
         }
-        return j.clients.zero_os.sal.get_minio(**kwargs)
+        return j.clients.zos.sal.get_minio(**kwargs)
 
     @property
     def restic_sal(self):
         bucket = '{repo}{bucket}'.format(repo=self.data['resticRepo'], bucket=self.guid)
-        return j.clients.zero_os.sal.get_restic(self.container_sal, bucket)
+        return j.clients.zos.sal.get_restic(self.container_sal, bucket)
 
     def _backup_minio(self):
         self.state.check('actions', 'start', 'ok')
