@@ -17,7 +17,7 @@ This template is responsible for managing [minio](https://minio.io/) server inst
 - `resticUsername`: restic username
 - `resticPassword`: restic password
 - `privateKey`: encryption private key
-
+- `metaPrivateKey`: metadata encryption private key
 
 ### Actions
 - `install`: install the minio server. It will create a container on the node and run minio inside the container

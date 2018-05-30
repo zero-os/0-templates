@@ -15,4 +15,5 @@ struct Schema {
     resticUsername @10: Text="zaibon"; # rustic username
     resticPassword @11: Text="coucou01"; # rustic password
     privateKey @12: Text; # encryption private key
+    metaPrivateKey @13: Text; # metadata encryption private key
 }
