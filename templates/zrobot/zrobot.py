@@ -22,6 +22,9 @@ class Zrobot(TemplateBase):
     def validate(self):
         if self.data.get('configRepo') and not self.data.get('sshkey'):
             raise ValueError("Need to specify sshkey when specifying configRepo")
+        if self.data.get('dataRepo') and not self.data.get('sshkey'):
+            raise ValueError("Need to specify sshkey when specifying dataRepo")
+
 
     @property
     def node_sal(self):
@@ -55,7 +58,8 @@ class Zrobot(TemplateBase):
             'env': [
                 {'name': 'LC_ALL', 'value': 'C.UTF-8'},
                 {'name': 'LANG', 'value': 'C.UTF-8'},
-                {'name': 'SSH_AUTH_SOCK', 'value': '/tmp/sshagent_socket'}
+                {'name': 'SSH_AUTH_SOCK', 'value': '/tmp/sshagent_socket'},
+                {'name': 'HOME', 'value': '/root'}
             ]
         }
 
@@ -69,14 +73,17 @@ class Zrobot(TemplateBase):
         node_fs = self.node_sal.client.filesystem
         ssh_vol = os.path.join(fs.path, 'ssh')
         jsconfig_vol = os.path.join(fs.path, 'jsconfig')
-        for vol in [ssh_vol, jsconfig_vol]:
+        data_vol = os.path.join(fs.path, 'data')
+        for vol in (ssh_vol, jsconfig_vol, data_vol):
             node_fs.mkdir(vol)
 
         data['mounts'] = [
             {'source': ssh_vol,
              'target': '/root/.ssh'},
             {'source': jsconfig_vol,
-             'target': '/js9host/cfg'},
+             'target': '/root/js9host/cfg'},
+            {'source': data_vol,
+             'target': '/opt/var/data/zrobot/zrobot_data'},
             {'source': '/var/run/redis.sock',  # mount zero-os redis socket into container, so the robot can talk to the os directly
              'target': '/tmp/redis.sock'}
         ]
@@ -86,13 +93,22 @@ class Zrobot(TemplateBase):
     @property
     def sshkey_path(self):
         if self.data.get('sshkey'):
-            return '/root/.ssh/config_key'
+            return '/root/.ssh/id_rsa'
 
     @property
     def zrobot_sal(self):
         container_sal = self.node_sal.containers.get(self._container_name)
         return j.clients.zos.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], data_repo=self.data.get('dataRepo'), 
                                                 config_repo = self.data.get('configRepo'), config_key=self.sshkey_path, organization=(self.data.get('organization') or None))
+
+    def get_port(self):
+        """returns the port of the created robot
+        
+        Returns:
+            int -- portnumber of host
+        """
+        self.state.check('actions', 'start', 'ok')
+        return self.data['port']
 
     def install(self, force=False):
         try:
@@ -108,6 +124,7 @@ class Zrobot(TemplateBase):
             container_sal = container.container_sal
             container_sal.client.filesystem.mkdir('/root/.ssh')
             container_sal.upload_content(self.sshkey_path, self.data['sshkey'])
+            container_sal.client.filesystem.chmod(self.sshkey_path, int('400', 8))
 
         self.zrobot_sal.start()
         self.state.set('actions', 'install', 'ok')
@@ -150,7 +167,7 @@ class Zrobot(TemplateBase):
         self.start()
 
     def uninstall(self):
-        self.state.check('actions', 'install', 'ok')
+        
         try:
             container = self.api.services.get(name=self._container_name)
             self.zrobot_sal.stop()

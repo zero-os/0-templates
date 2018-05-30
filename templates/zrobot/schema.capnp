@@ -7,6 +7,7 @@ struct Schema {
     dataRepo @3 :Text; # optional, otherwise use default zrobot client data repo
     configRepo @4 :Text; #  optional, otherwise use default zrobot client config repo
     sshkey @5 :Text; # optional if configRepo not sepcified otherwise needed, private sshkey data
+    port @6 : UInt16; # port the created zrobot is listening on
 
     struct Nic {
         type @0: NicType;
