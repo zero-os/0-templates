@@ -1,5 +1,6 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
+from zerorobot.template.state import StateCheckError
 
 NODE_CLIENT = 'local'
 
@@ -10,10 +11,28 @@ class Gateway(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.recurring_action('_monitor', 30)
 
     def validate(self):
         if not self.data['hostname']:
             raise ValueError('Must supply a valid hostname')
+
+    def _monitor(self):
+        try:
+            self.state.check('actions', 'start', 'ok')
+            if not self._gateway_sal.is_running():
+                try:
+                    self.install()
+                    if self._gateway_sal.is_running():
+                        self.state.set('state', 'running', 'ok')
+                    else:
+                        self.state.delete('state', 'running')
+                except:
+                    self.state.delete('state', 'running')
+                    raise
+        except StateCheckError:
+            # gateway is not supposed to be running
+            pass
 
     @property
     def _node_sal(self):
@@ -30,6 +49,7 @@ class Gateway(TemplateBase):
         self.data['ztIdentity'] = gateway_sal.zt_identity
         self.state.set('actions', 'install', 'ok')
         self.state.set('actions', 'start', 'ok')
+        self.state.set('state', 'running', 'ok')
 
     def add_portforward(self, forward):
         self.logger.info('Add portforward {}'.format(forward['name']))
@@ -231,16 +251,15 @@ class Gateway(TemplateBase):
 
     def uninstall(self):
         self.logger.info('Uninstall gateway {}'.format(self.name))
-        self.state.check('actions', 'install', 'ok')
         self._gateway_sal.stop()
         self.state.delete('actions', 'install')
         self.state.delete('actions', 'start')
 
     def stop(self):
         self.logger.info('Stop gateway {}'.format(self.name))
-        self.state.check('actions', 'start', 'ok')
         self._gateway_sal.stop()
         self.state.delete('actions', 'start')
+        self.state.delete('state', 'running')
 
     def start(self):
         self.logger.info('Start gateway {}'.format(self.name))
