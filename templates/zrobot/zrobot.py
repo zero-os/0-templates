@@ -5,7 +5,7 @@ from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 from zerorobot.service_collection import ServiceNotFoundError
 
-FLIST_ZROBOT = 'https://hub.gig.tech/gig-official-apps/zero-os-0-robot-latest.flist'
+FLIST_ZROBOT_DEFAULT = 'https://hub.gig.tech/gig-official-apps/zero-os-0-robot-latest.flist'
 CONTAINER_TEMPLATE = 'github.com/zero-os/0-templates/container/0.0.1'
 NODE_CLIENT = 'local'
 
@@ -24,8 +24,9 @@ class Zrobot(TemplateBase):
             raise ValueError("Need to specify sshkey when specifying configRepo")
         if self.data.get('dataRepo') and not self.data.get('sshkey'):
             raise ValueError("Need to specify sshkey when specifying dataRepo")
-
-
+        if self.data.get('flist') is None or self.data.get('flist') == '':
+            self.data['flist'] = FLIST_ZROBOT_DEFAULT
+    
     @property
     def node_sal(self):
         return j.clients.zos.sal.get_node(NODE_CLIENT)
@@ -50,7 +51,7 @@ class Zrobot(TemplateBase):
             ports = ['%s:6600' % self.data['port']]
 
         data = {
-            'flist': FLIST_ZROBOT,
+            'flist': self.data['flist'],
             'nics': nics,
             'hostname': self.name,
             'privileged': False,
@@ -98,8 +99,18 @@ class Zrobot(TemplateBase):
     @property
     def zrobot_sal(self):
         container_sal = self.node_sal.containers.get(self._container_name)
-        return j.clients.zos.sal.get_zerorobot(container=container_sal, port=6600, template_repos=self.data['templates'], data_repo=self.data.get('dataRepo'), 
-                                                config_repo = self.data.get('configRepo'), config_key=self.sshkey_path, organization=(self.data.get('organization') or None))
+        interval = self.data.get('autoPushInterval') if self.data.get('autoPushInterval') and self.data.get('autoPushInterval') != '' else None
+        return j.clients.zos.sal.get_zerorobot(
+            container=container_sal,
+            port=6600,
+            template_repos=self.data['templates'],
+            data_repo=self.data.get('dataRepo'),
+            config_repo = self.data.get('configRepo'),
+            config_key=self.sshkey_path,
+            organization=(self.data.get('organization') or None),
+            auto_push=True if interval else False,
+            auto_push_interval=interval,
+        )
 
     def get_port(self):
         """returns the port of the created robot
