@@ -119,7 +119,8 @@ class Zrobot(TemplateBase):
             int -- portnumber of host
         """
         self.state.check('actions', 'start', 'ok')
-        return self.data['port']
+        if self.data.get('port'):
+            return self.data['port']
 
     def install(self, force=False):
         try:
