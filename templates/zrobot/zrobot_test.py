@@ -21,7 +21,9 @@ class TestZrobotTemplate(ZrobotBaseTest):
             'nics': [],
             'dataRepo': 'https://example.com/account/data',
             'configRepo': 'https://example.com/account/config',
-            'sshkey': 'privdata'
+            'sshkey': 'privdata',
+            'autoPushInterval': 1,
+            'flist': 'https://hub.gig.tech/gig-official-apps/zero-os-0-robot-latest.flist',
         }
 
     def setUp(self): 
@@ -45,7 +47,10 @@ class TestZrobotTemplate(ZrobotBaseTest):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         zrobot.api.services.get = MagicMock()
         zrobot.validate()
-        assert zrobot.data == self.valid_data
+
+        valid_data = self.valid_data.copy()
+        valid_data['port'] = 0
+        assert zrobot.data == valid_data
 
     def test_node_sal(self):
         """
@@ -75,7 +80,9 @@ class TestZrobotTemplate(ZrobotBaseTest):
             'organization': self.valid_data['organization'],
             'data_repo': self.valid_data['dataRepo'],
             'config_repo': self.valid_data['configRepo'],
-            'config_key': zrobot.sshkey_path
+            'config_key': zrobot.sshkey_path,
+            'auto_push': True,
+            'auto_push_interval':1,
         }
         assert zrobot_sal == zrobot_sal_return
         j.clients.zos.sal.get_zerorobot.assert_called_with(**kwargs)
@@ -163,14 +170,6 @@ class TestZrobotTemplate(ZrobotBaseTest):
         zrobot.state.delete = MagicMock(return_value=True)
         zrobot.stop()
         zrobot.state.delete.assert_called_with('status', 'running')
-
-    def test_uninstall_before_install(self):
-        """
-        Test uninstall without installing
-        """
-        with pytest.raises(StateCheckError, message='Uninstall before install should raise an error'):
-            zrobot = Zrobot('zrobot', data=self.valid_data)
-            zrobot.uninstall()
 
     def test_uninstall(self):
         zrobot = Zrobot('zrobot', data=self.valid_data)
