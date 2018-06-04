@@ -3,7 +3,7 @@ from js9 import j
 import os
 import pytest
 
-from zrobot import Zrobot
+from zrobot import Zrobot, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
 from zerorobot import service_collection as scol
 
@@ -16,10 +16,14 @@ class TestZrobotTemplate(ZrobotBaseTest):
     def setUpClass(cls):
         super().preTest(os.path.dirname(__file__), Zrobot)
         cls.valid_data = {
-            'node': 'node',
             'templates': [],
             'organization': None,
-            'nics': []
+            'nics': [],
+            'dataRepo': 'https://example.com/account/data',
+            'configRepo': 'https://example.com/account/config',
+            'sshkey': 'privdata',
+            'autoPushInterval': 1,
+            'flist': 'https://hub.gig.tech/gig-official-apps/zero-os-0-robot-latest.flist',
         }
 
     def setUp(self): 
@@ -32,8 +36,8 @@ class TestZrobotTemplate(ZrobotBaseTest):
         """
         Test creating a zrobot with invalid data
         """
-        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the node'):
-            zrobot = Zrobot(name='zrobot', data={})
+        with pytest.raises(ValueError, message='template should fail to instantiate if configRepo is sepcified without sshkey'):
+            zrobot = Zrobot(name='zrobot', data={'configRepo': 'https://example.com/account/config'})
             zrobot.validate()
 
     def test_valid_data(self):
@@ -43,7 +47,10 @@ class TestZrobotTemplate(ZrobotBaseTest):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         zrobot.api.services.get = MagicMock()
         zrobot.validate()
-        assert zrobot.data == self.valid_data
+
+        valid_data = self.valid_data.copy()
+        valid_data['port'] = 0
+        assert zrobot.data == valid_data
 
     def test_node_sal(self):
         """
@@ -55,7 +62,7 @@ class TestZrobotTemplate(ZrobotBaseTest):
         node_sal = zrobot.node_sal
 
         assert node_sal == node_sal_return
-        j.clients.zos.sal.get_node.assert_called_with(self.valid_data['node'])
+        j.clients.zos.sal.get_node.assert_called_with(NODE_CLIENT)
 
     def test_zrobot_sal(self):
         """
@@ -70,20 +77,15 @@ class TestZrobotTemplate(ZrobotBaseTest):
             'container': container_sal,
             'port': 6600,
             'template_repos': self.valid_data['templates'],
-            'organization': self.valid_data['organization']
+            'organization': self.valid_data['organization'],
+            'data_repo': self.valid_data['dataRepo'],
+            'config_repo': self.valid_data['configRepo'],
+            'config_key': zrobot.sshkey_path,
+            'auto_push': True,
+            'auto_push_interval':1,
         }
         assert zrobot_sal == zrobot_sal_return
         j.clients.zos.sal.get_zerorobot.assert_called_with(**kwargs)
-
-    def test_install_zrobot_node_not_found(self):
-        """
-        Test installing a zrobot with no service found for the node
-        """
-        with pytest.raises(scol.ServiceNotFoundError,
-                           message='install action should raise an error if node service is not found'):
-            zrobot = Zrobot('zrobot', data=self.valid_data)
-            zrobot.api.services.get = MagicMock(side_effect=scol.ServiceNotFoundError())
-            zrobot.validate()
 
     def test_already_installed_no_force(self):
         """
@@ -125,6 +127,23 @@ class TestZrobotTemplate(ZrobotBaseTest):
         zrobot.state.check('actions', 'start', 'ok')
         container.schedule_action.assert_called_once_with('install')
 
+    def test_install_with_sshkey(self):
+        """
+        Test installing while using an sshkey
+        """
+        zrobot = Zrobot('zrobot', data=self.valid_data)
+        container = MagicMock()
+        zrobot._get_container = MagicMock(return_value=container)
+        container.container_sal = MagicMock()
+        container_sal = container.container_sal
+        patch('js9.j.clients.zos.sal.get_node',  MagicMock()).start()
+        patch('js9.j.clients.zos.sal.get_zerorobot',  MagicMock()).start()
+        zrobot.install()
+        zrobot.state.check('actions', 'install', 'ok')
+        zrobot.state.check('actions', 'start', 'ok')
+        container.schedule_action.assert_called_once_with('install')
+        container_sal.upload_content.assert_called_once_with(zrobot.sshkey_path, zrobot.data['sshkey'])
+
     def test_start(self):
         zrobot = Zrobot('zrobot', data=self.valid_data)
         container = MagicMock()
@@ -151,14 +170,6 @@ class TestZrobotTemplate(ZrobotBaseTest):
         zrobot.state.delete = MagicMock(return_value=True)
         zrobot.stop()
         zrobot.state.delete.assert_called_with('status', 'running')
-
-    def test_uninstall_before_install(self):
-        """
-        Test uninstall without installing
-        """
-        with pytest.raises(StateCheckError, message='Uninstall before install should raise an error'):
-            zrobot = Zrobot('zrobot', data=self.valid_data)
-            zrobot.uninstall()
 
     def test_uninstall(self):
         zrobot = Zrobot('zrobot', data=self.valid_data)
