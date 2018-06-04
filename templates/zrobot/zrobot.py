@@ -99,7 +99,7 @@ class Zrobot(TemplateBase):
     @property
     def zrobot_sal(self):
         container_sal = self.node_sal.containers.get(self._container_name)
-        interval = self.data.get('autoPushInterval') if self.data.get('autoPushInterval') and self.data.get('autoPushInterval') != '' else None
+        interval = self.data.get('autoPushInterval') or None
         return j.clients.zos.sal.get_zerorobot(
             container=container_sal,
             port=6600,
