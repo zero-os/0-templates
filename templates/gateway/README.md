@@ -34,6 +34,7 @@ Network:
 - `ztClient`: reference to zerotier client to authorize this node into the zerotier network
 - `hwaddr`: hardware address.
 - `dhcpserver`: Config for dhcp entries to be services for this network.
+- `public`: Boolean flag that defines if the network should be treated as public or not.
 
 NetworkConfig:
 - `dhcp`: boolean indicating to use dhcp or not.
@@ -85,6 +86,7 @@ HTTPType enum:
 - `remove_dhcp_host`: Remove a host from a dhcp server
 - `add_network`: Adds a network to the gateway
 - `remove_network`: Remove a network from the gateway
+- `info`: Retreive information about your gateway
 
 ### Examples:
 

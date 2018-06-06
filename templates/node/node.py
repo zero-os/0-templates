@@ -115,7 +115,7 @@ class Node(TemplateBase):
                 self.logger.info("reload driver {}".format(driver))
                 self.node_sal.network.reload_driver(driver)
 
-            self.logger.info("configure network: cidr: {cidr} - vlang tag: {vlan}".format(**network))
+            self.logger.info("configure network: cidr: {cidr} - vlan tag: {vlan}".format(**network))
             self.node_sal.network.configure(
                 cidr=network['cidr'],
                 vlan_tag=network['vlan'],
