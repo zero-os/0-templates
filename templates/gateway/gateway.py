@@ -242,11 +242,12 @@ class Gateway(TemplateBase):
             raise
 
     def info(self):
+        data = self._gateway_sal.to_dict(live=True)
         return {
             'name': self.name,
-            'portforwards': self.data['portforwards'],
-            'httpproxies': self.data['httpproxies'],
-            'networks': self.data['networks']
+            'portforwards': data['portforwards'],
+            'httpproxies': data['httpproxies'],
+            'networks': data['networks']
         }
 
     def uninstall(self):

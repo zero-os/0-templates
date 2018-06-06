@@ -19,6 +19,7 @@ struct Schema {
         dhcpserver @4: DHCP;
         ztBridge @5: Bridge;
         ztClient @6: Text;
+        public @7: Bool;
     }
 
     struct Bridge {
@@ -86,6 +87,7 @@ struct Schema {
         vlan @2;
         vxlan @3;
         bridge @4;
+        passthrough @5;
     }
     struct Certificate{
       path @0: Text;
