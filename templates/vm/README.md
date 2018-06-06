@@ -56,6 +56,7 @@ Port:
 - `resume`: resume the vm.
 - `reboot`: reboot the vm.
 - `reset`: reset the vm.
+- `info`: Return status, nics, disks, vncport and ztIdentity from the vm
 - `enable_vnc`: if a vnc port is specified, it opens the port.
 - `disable_vnc`: if a vnc port is specified, it drops the port.
 
