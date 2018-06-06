@@ -35,7 +35,7 @@ class BasicTests(ZOS_BaseTest):
 
         self.log('Create vm[vm1], should succeed.')
         vm1_name = self.random_string()
-        self.vms = {vm1_name: {'flist': self.vm_flist, 'memory': 512}}
+        self.vms = {vm1_name: {'flist': self.vm_flist, 'memory': 2048}}
         res = self.create_vm(vms=self.vms, temp_actions=self.temp_actions)
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(vm1_name, res[vm1_name]['install'])
@@ -89,11 +89,26 @@ class VM_actions(ZOS_BaseTest):
                             }
         cls.vm1_name = cls.random_string()
         cls.vms = {cls.vm1_name: {'flist': self.vm_flist,
-                                  'memory': 2048}}
+                                  'memory': 2048,
+                                  'nics': [{'type': 'default', 'name': cls.random_string()}]}}
 
         res = self.create_vm(vms=cls.vms, temp_actions=cls.temp_actions)
         self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['install'])
+        self.wait_for_service_action_status(cls.vm1_name, res[cls.vm1_name]['install'])
+        cls.vm1_info = self.vm_info(cls.vm1_name)[0]
+        cls.vm_vnc_port = cls.vm1_info['vnc'] - 5900
+
+        temp_actions = {'container': {'actions': ['install']}}
+        cont1_name = self.random_string()
+        containers = {cont1_name: {'hostname': cont1_name,
+                                   'flist': 'https://hub.gig.tech/ah-elsayed/ubuntu.flist',
+                                   'storage': cls.cont_storage,
+                                   'nics': [{'type': 'default', 'name': cls.random_string()}],
+                                   'hostNetworking': True}}
+        res = self.create_container(containers=containers, temp_actions=temp_actions)
+        conts = self.zos_client.container.list()
+        (cont1_id, cont1) = [c for c in conts.items() if c[1]['container']['arguments']['name'] == cont1_name][0]
+        cls.ssh_client = self.zos_client.container.client(cont1_id)
 
     @classmethod
     def tearDownClass(cls):
@@ -157,7 +172,7 @@ class VM_actions(ZOS_BaseTest):
         self.log('%s STARTED' % self._testID)
         
         self.log('Shutdown [vm1], should succeed.')
-        temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name, 'args':{'force':True}}}
+        temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name, 'args': {'force':True}}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['shutdown'])        
@@ -180,3 +195,82 @@ class VM_actions(ZOS_BaseTest):
         self.assertEqual(vm1[0]['state'], "running")
 
         self.log('%s ENDED' % self._testID)
+
+    def test003_enable_and_disable_vm(self, action_type):
+        """ ZRT-ZOS-007
+        *Test case for testing reset vm*
+
+        **Test Scenario:**
+
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Enable vnc_port for [vm1], should succeed.
+        #. Check that vnc_port has been enabled successfully.
+        #. Disable vnc_port for [vm1], should succeed.
+        #. Check that vnc_port has been disabled successfully.
+        """
+        self.log('%s STARTED' % self._testID)
+        
+        self.log('Enable vnc_port for [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])        
+
+        self.log("Check that vnc_port has been enabled successfully.")
+        vm_vnc_url = '{}:{}'.format(self.zos_redisaddr, self.vm_vnc_port)
+        result = self.check_vnc(vm_vnc_url)
+        self.assertNotIn("timeout caused connection failure", result)
+
+        self.log("Disable vnc_port for [vm1], should succeed.")
+        temp_actions = {'vm': {'actions': ['disable_vnc'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['disable_vnc'])        
+
+        self.log("Check that vnc_port has been disabled successfully.")
+        vm_vnc_url = '{}:{}'.format(self.zos_redisaddr, self.vm_vnc_port)
+        result = self.check_vnc(vm_vnc_url)       
+        self.assertIn("timeout caused connection failure", result)
+
+    @parameterized.expand(["reset", "reboot"])
+    def test004_reset_and_reboot_vm(self, action_type):
+        """ ZRT-ZOS-008
+        *Test case for testing reset vm*
+
+        **Test Scenario:**
+
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Enable vnc_port for [vm1], should succeed.
+        #. Enable ssh access to virtual machine [vm1].
+        #. Reset or reboot the vm, should suceeed.
+        #. Check that [vm] has been rebooted successfully.
+        """
+        self.log('%s STARTED' % self._testID)
+
+        self.log("%s the vm, should suceeed."%action_type)
+        temp_actions = {'vm': {'actions': [action_type], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name][action_type])
+        if action_type == 'reboot':        
+            time.sleep(10)
+        time.sleep(10)
+
+        self.log('Enable vnc_port for [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])        
+
+        self.log("Enable ssh access to virtual machine (VM0)")
+        vm_vnc_url = '{}:{}'.format(self.zos_redisaddr, self.vm_vnc_port)
+        self.enable_ssh_access(vm_vnc_url)
+
+        self.log("Check that [vm] has been rebooted successfully.")
+        vm_ip = self.vm1_info['default_ip']
+        response = self.execute_command_inside_vm(self.ssh_client, vm_ip, 'uptime')
+        x = response.stdout.strip()
+        uptime = int(x[x.find('up')+2:x.find('min')])
+
+        self.assertEqual(response.state, 'SUCCESS')
+        self.assertAlmostEqual(uptime, 0, delta=1)
