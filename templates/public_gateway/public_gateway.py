@@ -58,6 +58,14 @@ class PublicGateway(TemplateBase):
             p['name'] = self._prefix_name(proxy['name'])
             gw_service.schedule_action('add_http_proxy', args={'proxy': p}).wait(die=True)
 
+    def get_zt_member(self, identity):
+        address = identity.split(':')[0]
+        for network in self._gateway_service.info()['networks']:
+            if network['type'] == 'zerotier':
+                client = j.clients.zerotier.get(network['ztClient'])
+                ztnetwork = client.network_get(network['id'])
+                return ztnetwork.member_get(address=address).data
+
     def add_portforward(self, forward):
         self.logger.info('Add portforward {}'.format(forward['name']))
         gw_service = self._gateway_service
