@@ -208,7 +208,7 @@ class VM_actions(ZOS_BaseTest):
         self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])        
 
         self.log("Check that vnc_port has been enabled successfully.")
-        self.assertTrue(self.check_vnc(self.vm_ip_vncport))
+        self.assertTrue(self.check_vnc_connection(self.vm_ip_vncport))
 
         self.log("Disable vnc_port for [vm1], should succeed.")
         temp_actions = {'vm': {'actions': ['disable_vnc'], 'service': self.vm1_name}}
@@ -217,7 +217,7 @@ class VM_actions(ZOS_BaseTest):
         self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['disable_vnc'])        
 
         self.log("Check that vnc_port has been disabled successfully.")
-        self.assertFalse(self.check_vnc(self.vm_ip_vncport))
+        self.assertFalse(self.check_vnc_connection(self.vm_ip_vncport))
 
     @parameterized.expand(["reset", "reboot"])
     def test004_reset_and_reboot_vm(self, action_type):
