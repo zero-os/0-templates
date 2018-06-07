@@ -229,8 +229,7 @@ class VM_actions(ZOS_BaseTest):
         #. Create a vm[vm1]  on node, should succeed.
         #. Enable vnc_port for [vm1], should succeed.
         #. Reset or reboot the vm, should suceeed.
-        #. Try to execute command through the rebooting, should fail.
-        #. Check that [vm] has been rebooted successfully.
+        #. Check that [vm] has been rebooted/reset successfully.
         """
         self.log('%s STARTED' % self._testID)
         
@@ -254,24 +253,20 @@ class VM_actions(ZOS_BaseTest):
         temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])        
-        self.log("%s the vm, should suceeed."%action_type)
-        temp_actions = {'vm': {'actions': [action_type], 'service': self.vm1_name}}
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])      
 
+        self.log("%s the vm, should suceeed."%action_type)
+        time.sleep(30)
+        temp_actions = {'vm': {'actions': [action_type], 'service': self.vm1_name}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
         self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name][action_type])
         vm_ip = self.get_vm(self.vm1_name)[0]['default_ip']
 
-        self.log('Try to execute command through the rebooting, should fail.')
-        self.enable_ssh_access(self.vm_ip_vncport)
-        response = self.execute_command_inside_vm(ssh_client, vm_ip, 'uptime')
-        self.assertFalse(response.stdout)
-
-        self.log("Check that [vm] has been rebooted successfully.")
+        self.log("Check that [vm] has been %s successfully."%action_type)
         if action_type == 'reboot':        
             time.sleep(15)
-        time.sleep(10)
+        time.sleep(15)
         self.enable_ssh_access(self.vm_ip_vncport)
         response = self.execute_command_inside_vm(ssh_client, vm_ip, 'uptime')
         x = response.stdout.strip()
