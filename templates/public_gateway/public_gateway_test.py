@@ -58,47 +58,47 @@ class TestPublicGatewayTemplate(ZrobotBaseTest):
         data = copy.deepcopy(self.valid_data)
         service, gwservice = self._mock_service(data)
         service.validate()
-        with pytest.raises(RuntimeError, 'Gateway service missing'):
+        with pytest.raises(RuntimeError, message='Gateway service missing'):
             service, gwservice = self._mock_service(data, mockfind=False)
             service.validate()
 
-        with pytest.raises(ValueError, 'Portforward withouth name'):
+        with pytest.raises(ValueError, message='Portforward withouth name'):
             data = copy.deepcopy(self.valid_data)
             data['portforwards'][0].pop('name')
             service, gwservice = self._mock_service(data)
             service.validate()
 
-        with pytest.raises(ValueError, 'Portforward with invalid srcport'):
+        with pytest.raises(ValueError, message='Portforward with invalid srcport'):
             data = copy.deepcopy(self.valid_data)
             data['portforwards'][0]['srcport'] = '233'
             service, gwservice = self._mock_service(data)
             service.validate()
 
-        with pytest.raises(ValueError, 'Portforward with invalid dstport'):
+        with pytest.raises(ValueError, message='Portforward with invalid dstport'):
             data = copy.deepcopy(self.valid_data)
             data['portforwards'][0]['dstport'] = '233'
             service, gwservice = self._mock_service(data)
             service.validate()
 
-        with pytest.raises(netaddr.AddrFormatError, 'Portforward with invalid dstip'):
+        with pytest.raises(netaddr.AddrFormatError, message='Portforward with invalid dstip'):
             data = copy.deepcopy(self.valid_data)
             data['portforwards'][0]['dstip'] = 'gdfgdf'
             service, gwservice = self._mock_service(data)
             service.validate()
 
-        with pytest.raises(ValueError, 'HTTP Proxy with missing name'):
+        with pytest.raises(ValueError, message='HTTP Proxy with missing name'):
             data = copy.deepcopy(self.valid_data)
             data['httpproxies'][0].pop('name')
             service, gwservice = self._mock_service(data)
             service.validate()
 
-        with pytest.raises(ValueError, 'HTTP Proxy with missing host'):
+        with pytest.raises(ValueError, message='HTTP Proxy with missing host'):
             data = copy.deepcopy(self.valid_data)
             data['httpproxies'][0].pop('host')
             service, gwservice = self._mock_service(data)
             service.validate()
 
-        with pytest.raises(ValueError, 'HTTP Proxy with missing destinations'):
+        with pytest.raises(ValueError, message='HTTP Proxy with missing destinations'):
             data = copy.deepcopy(self.valid_data)
             data['httpproxies'][0].pop('destinations')
             service, gwservice = self._mock_service(data)

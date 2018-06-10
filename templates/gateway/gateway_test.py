@@ -556,16 +556,6 @@ class TestGatewayTemplate(ZrobotBaseTest):
         gw.uninstall()
         gw._gateway_sal.stop.called_once_with()
 
-    def test_uninstall_gateway_not_installed(self):
-        """
-        Test uninstall action if gateway isnt installed
-        """
-        with pytest.raises(StateCheckError,
-                           message='action should raise an error if another gateway isnt installed'):
-            gw = Gateway('gw', data=self.valid_data)
-            gw.uninstall()
-            gw._gateway_sal.stop.called_once_with()
-
     def test_stop(self):
         """
         Test uninstall action
@@ -575,12 +565,3 @@ class TestGatewayTemplate(ZrobotBaseTest):
         gw.stop()
         gw._gateway_sal.stop.called_once_with()
 
-    def test_stop_gateway_not_started(self):
-        """
-        Test uninstall action if gateway isnt started
-        """
-        with pytest.raises(StateCheckError,
-                           message='action should raise an error if another gateway isnt installed'):
-            gw = Gateway('gw', data=self.valid_data)
-            gw.stop()
-            gw._gateway_sal.stop.called_once_with()

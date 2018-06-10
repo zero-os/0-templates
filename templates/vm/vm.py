@@ -58,6 +58,7 @@ class Vm(TemplateBase):
         vm_sal = self._vm_sal
         vm_sal.deploy()
         self.data['uuid'] = vm_sal.uuid
+        self.data['ztIdentity'] = vm_sal.zt_identity
         self.state.set('actions', 'install', 'ok')
         self.state.set('status', 'running', 'ok')
 
@@ -114,6 +115,16 @@ class Vm(TemplateBase):
         self.logger.info('Enable vnc for vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
         self._vm_sal.enable_vnc()
+
+    def info(self):
+        info = self._vm_sal.info or {}
+        return {
+            'vnc': info.get('vnc'),
+            'status': info.get('state', 'halted'),
+            'disks': self.data['disks'],
+            'nics': self.data['nics'],
+            'ztIdentity': self.data.get('ztIdentity')
+        }
 
     def disable_vnc(self):
         self.logger.info('Disable vnc for vm %s' % self.name)

@@ -164,7 +164,7 @@ class Zerodb(TemplateBase):
         """
         self.state.check('status', 'running', 'ok')
         if not self._namespace_exists_update_delete(name, delete=True):
-            raise LookupError('Namespace {} doesn\'t exist'.format(name))
+            return
 
         self._zerodb_sal.deploy()
 

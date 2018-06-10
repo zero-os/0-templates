@@ -32,6 +32,7 @@ HTTPType enum:
 
 ### Actions:
 - `install`: creates a the initial forwards
+- `get_zt_member`: Get information about a member inside the zerotier network of the public gateway
 - `add_portforward`: Adds a portforward to the firewall
 - `remove_portforward`: Removes a portforward from the firewall
 - `add_http_porxy`: Adds a httpproxy to the http server

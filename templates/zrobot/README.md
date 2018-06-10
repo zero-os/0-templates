@@ -6,13 +6,17 @@ This template will start a 0-robot on a node inside a container.
 
 ### schema:
 
-- `node`: name of the node service.
-
 - `templates`: 0-robot repo templates to be loaded on process starts.
 
 - `organization`: optional, if specified enable JWT authentication for this organization
 
 - `nics`: configuration of the attached nics to the container. If left empty will use default nic and create a port forward on the container exposing the 0-robot port.
+
+- `dataRepo`: URL of the git repository that holds the data of the 0-robot, if not specified will use the default data repo specified in the zrobot sal
+
+- `configRepo`: URL of the git repository used to store JS9 configmanager data, see [doc](https://github.com/Jumpscale/core9/blob/master/docs/config/configmanager.md), if not specified will use the default data repo specified in the zrobot sal
+
+- `sshkey`: private sshkey used to initialize the config repo, needs to be specified if `configRepo` is specified 
 
 ### Actions
 
@@ -33,7 +37,6 @@ api = ZeroRobotAPI.ZeroRobotAPI()
 robot = api.robots['main']
 
 args = {
-    'node': '525400123456',
     'templates': ["https://github.com/zero-os/0-templates.git"],
 }
 zrobot = robot.services.create('github.com/zero-os/0-templates/zrobot/0.0.1', 'zrobot', data=args)
@@ -51,8 +54,13 @@ To deploy 0-robot `robot2` on the node `525400123456`:
 ```yaml
 services:
 - github.com/zero-os/0-templates/zrobot/0.0.1__robot2:
-    node: "525400123456"
     templates: ["https://github.com/zero-os/0-templates.git"]
+    dataRepo: "https://github.com/account/zerorobot"
+    configRepo: "https://github.com/account/config"
+    sshkey: |
+        -----BEGIN RSA PRIVATE KEY-----
+        ...
+        -----END RSA PRIVATE KEY-----
 
 actions:
     - actions: ['install']
@@ -87,4 +95,3 @@ actions:
       actions: ['uninstall']
 
 ```
-
