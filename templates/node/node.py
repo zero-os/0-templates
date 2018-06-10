@@ -172,17 +172,11 @@ class Node(TemplateBase):
         zdb.schedule_action('start').wait(die=True)
         return zdb_name
 
-    def create_zdb_namespace(self, disktype, mode, password, public, size):
-        if disktype not in ['HDD', 'SSD']:
-            raise ValueError('Disktype should be HDD, SSD')
-        if mode not in ['seq', 'user', 'direct']:
-            raise ValueError('ZDB mode should be user, direct or seq')
+    def _namespace_available(self, name, size, mode, disktype):
         if disktype == 'HDD':
             disktypes = ['HDD', 'ARCHIVE']
         else:
             disktypes = ['SSD', 'NVME']
-
-        namespace_name = j.data.idgenerator.generateXCharID(10)
         potentials = {info['mountpoint']: info['disk'] for info in self.node_sal.zerodbs.partition_and_mount_disks()}
         tasks = []
 
@@ -200,19 +194,50 @@ class Node(TemplateBase):
             disks.sort(key=lambda disk: disk[0].size, reverse=True)
             if disks:
                 bestfreedisk, mountpoint = disks[0]
-                return self._create_zdb(namespace_name, bestfreedisk.name, mountpoint, mode, password, public, size),  namespace_name
+                return True, bestfreedisk, mountpoint, None, None
         zdbinfo = list(filter(lambda info: info[0].data['mode'] == mode and (info[1]['free'] / 1024 ** 3) > size and info[1]['type'] in disktypes, zdbinfo))
         if not zdbinfo:
-            raise RuntimeError('Not enough free space for namespace creation with size {} and type {}'.format(size, disktype))
-        bestzdb, info = zdbinfo[0]
+            message = 'Not enough free space for namespace creation with size {} and type {}'.format(size, ','.join(disktypes))
+            return False, None, None, None, message
+
+        for bestzdb, _ in zdbinfo:
+            namespaces = [namespace['name'] for namespace in bestzdb.schedule_action('namespace_list').wait(die=True).result]
+            if name not in namespaces:
+                return True, None, None, bestzdb, None
+        else:
+            message = 'Namespace {} already exists on all zerodbs'.format(name)
+            return False, None, None, None, message
+
+    def _create_namespace(self, bestfreedisk, mountpoint, bestzdb, name, mode, password, public, size):
+        if bestfreedisk and mountpoint:
+        # there are free disks that are not used lets use them first
+            return self._create_zdb(name, bestfreedisk.name, mountpoint, mode, password, public, size), name
+
         kwargs = {
-            'name': namespace_name,
+            'name': name,
             'size': size,
             'password': password,
             'public': public,
         }
         bestzdb.schedule_action('namespace_create', kwargs).wait(die=True)
-        return bestzdb.name, namespace_name
+        return bestzdb.name, name
+
+    def create_zdb_namespace(self, disktype, mode, password, public, size, name='', if_available=False):
+        if disktype not in ['HDD', 'SSD']:
+            raise ValueError('Disktype should be HDD, SSD')
+        if mode not in ['seq', 'user', 'direct']:
+            raise ValueError('ZDB mode should be user, direct or seq')
+
+        namespace_name = j.data.idgenerator.generateXCharID(10) if not name else name
+        available, bestfreedisk, mountpoint, bestzdb, message = self._namespace_available(namespace_name, size, mode, disktype)
+        if not available:
+            if not if_available:
+                raise RuntimeError(message)
+            else:
+                return False, None, None
+
+        zdb, _ = self._create_namespace(bestfreedisk, mountpoint, bestzdb, namespace_name, mode, password, public, size)
+        return True, zdb, name
 
     def reboot(self):
         self._stop_all_containers()

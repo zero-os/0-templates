@@ -59,8 +59,12 @@ class Vm(TemplateBase):
         vm_sal.deploy()
         self.data['uuid'] = vm_sal.uuid
         self.data['ztIdentity'] = vm_sal.zt_identity
+
         self.state.set('actions', 'install', 'ok')
         self.state.set('status', 'running', 'ok')
+
+    def zt_identity(self):
+        return self.data['ztIdentity']
 
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
