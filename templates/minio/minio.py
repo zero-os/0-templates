@@ -2,11 +2,10 @@ from js9 import j
 
 from zerorobot.template.base import TemplateBase
 
-ZDB_TEMPLATE_UID = 'github.com/zero-os/0-templates/zerodb/0.0.1'
-CONTAINER_TEMPLATE_UID = 'github.com/zero-os/0-templates/container/0.0.1'
 
 MINIO_FLIST = 'https://hub.gig.tech/gig-official-apps/minio.flist'
 META_DIR = '/bin/zerostor_meta'
+NODE_CLIENT = 'local'
 
 
 class Minio(TemplateBase):
@@ -20,7 +19,7 @@ class Minio(TemplateBase):
         self.recurring_action('_backup_minio', 30)
 
     def validate(self):
-        for param in ['node', 'zerodbs', 'namespace', 'login', 'password']:
+        for param in ['zerodbs', 'namespace', 'login', 'password']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
@@ -29,29 +28,30 @@ class Minio(TemplateBase):
 
     @property
     def node_sal(self):
-        return j.clients.zos.sal.get_node(self.data['node'])
-
-    @property
-    def container_sal(self):
-        return self.node_sal.containers.get(self.data['container'])
+        return j.clients.zos.sal.get_node(NODE_CLIENT)
 
     @property
     def minio_sal(self):
         kwargs = {
             'name': self.name,
-            'container': self.container_sal,
+            'node': self.node_sal,
             'namespace': self.data['namespace'],
             'namespace_secret': self.data['nsSecret'],
             'zdbs': self.data['zerodbs'],
-            'port': self.data['listenPort'],
-            'private_key': self.data['privateKey']
+            'node_port': self.data['listenPort'],
+            'private_key': self.data['privateKey'],
+            'login': self.data['login'],
+            'password': self.data['password'],
+            'restic_username': self.data['resticUsername'],
+            'restic_password': self.data['resticPassword'],
+            'meta_private_key': self.data['metaPrivateKey'],
         }
         return j.clients.zos.sal.get_minio(**kwargs)
 
     @property
     def restic_sal(self):
         bucket = '{repo}{bucket}'.format(repo=self.data['resticRepo'], bucket=self.guid)
-        return j.clients.zos.sal.get_restic(self.container_sal, bucket)
+        return j.clients.zos.sal.get_restic(self.minio_sal.container, bucket)
 
     def _backup_minio(self):
         self.state.check('actions', 'start', 'ok')
@@ -60,39 +60,6 @@ class Minio(TemplateBase):
 
     def install(self):
         self.logger.info('Installing minio %s' % self.name)
-        env = [
-            {
-                'name': 'MINIO_ACCESS_KEY',
-                'value': self.data['login'],
-            },
-            {
-                'name': 'MINIO_SECRET_KEY',
-                'value': self.data['password'],
-            }, {
-                'name': 'AWS_ACCESS_KEY_ID',
-                'value': self.data['resticUsername'],
-            },
-            {
-                'name': 'AWS_SECRET_ACCESS_KEY',
-                'value': self.data['resticPassword'],
-            },
-            {
-                'name': 'MINIO_ZEROSTOR_META_PRIVKEY',
-                'value': self.data['metaPrivateKey'],
-            }
-        ]
-        container_data = {
-            'flist': MINIO_FLIST,
-            'node': self.data['node'],
-            'env': env,
-            'ports': ['%s:%s' % (self.data['listenPort'], self.data['listenPort'])],
-            'nics': [{'type': 'default'}],
-        }
-        self.data['container'] = 'container_%s' % self.name
-        container = self.api.services.find_or_create(
-            CONTAINER_TEMPLATE_UID, self.data['container'], data=container_data)
-        container.schedule_action('install').wait(die=True)
-
         self.minio_sal.create_config()
         if not self.data['resticRepoPassword']:
             self.data['resticRepoPassword'] = j.data.idgenerator.generateXCharID(10)
@@ -106,8 +73,6 @@ class Minio(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         self.logger.info('Starting minio %s' % self.name)
-        container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
-        container.schedule_action('start').wait(die=True)
         self.minio_sal.start()
         self.restic_sal.restore(META_DIR)
         self.state.set('actions', 'start', 'ok')
@@ -122,9 +87,6 @@ class Minio(TemplateBase):
         self.state.delete('actions', 'start')
 
     def uninstall(self):
-        self.state.check('actions', 'install', 'ok')
         self.logger.info('Uninstalling minio %s' % self.name)
-        self.stop()
-        container = self.api.services.get(template_uid=CONTAINER_TEMPLATE_UID, name=self.data['container'])
-        container.schedule_action('uninstall').wait(die=True)
+        self.minio_sal.destroy()
         self.state.delete('actions', 'install')
