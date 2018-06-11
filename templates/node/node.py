@@ -52,6 +52,9 @@ class Node(TemplateBase):
         if not sp.mountpoint:
             self.node_sal.ensure_persistance()
 
+        # make sure the disk for the zerodbs are mounted
+        self.node_sal.zerodbs.partition_and_mount_disks()
+
         if self.node_sal.uptime() < self.data['uptime']:
             self.install()
 
@@ -89,7 +92,7 @@ class Node(TemplateBase):
         try:
             sp = self.node_sal.storagepools.get(poolname)
         except ValueError:
-            self.logger.info("storage pool %s doesn't exist on node %s" % (poolname, self.node_sal.name))
+            self.logger.debug("storage pool %s doesn't exist on node %s" % (poolname, self.node_sal.name))
             return
 
         if sp.mountpoint:
