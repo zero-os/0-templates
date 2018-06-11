@@ -35,23 +35,30 @@ class Vm(TemplateBase):
     def _monitor(self):
         self.logger.info('Monitor vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
+        self.state.check('actions', 'start', 'ok')
 
-        if self._vm_sal.is_running():
-            self.state.set('status', 'running', 'ok')
-            try:
-                self.state.check('status', 'rebooting', 'ok')
-                self.state.delete('status', 'rebooting')
-            except StateCheckError:
-                pass
+        if not self._vm_sal.is_running():
+            self._vm_sal.deploy()
+            if self._vm_sal.is_running():
+                self.state.set('status', 'running', 'ok')
 
-            try:
-                self.state.check('status', 'shutdown', 'ok')
-                self.state.delete('status', 'shutdown')
-            except StateCheckError:
-                pass
-        else:
-            self.state.delete('status', 'running')
-            self.state.set('status', 'shutdown', 'ok')
+                # handle reboot
+                try:
+                    self.state.check('status', 'rebooting', 'ok')
+                    self.state.delete('status', 'rebooting')
+                except StateCheckError:
+                    pass
+
+                # handle shutdown
+                try:
+                    self.state.check('status', 'shutdown', 'ok')
+                    self.state.delete('status', 'shutdown')
+                except StateCheckError:
+                    pass
+                update_state()
+            else:
+                self.state.delete('status', 'running')
+                self.state.set('status', 'shutdown', 'ok')
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)
@@ -60,6 +67,7 @@ class Vm(TemplateBase):
         self.data['uuid'] = vm_sal.uuid
         self.data['ztIdentity'] = vm_sal.zt_identity
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
         self.state.set('status', 'running', 'ok')
 
     def uninstall(self):
@@ -67,6 +75,7 @@ class Vm(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self._vm_sal.destroy()
         self.state.delete('actions', 'install')
+        self.state.delete('actions', 'start')
         self.state.delete('status', 'running')
 
     def shutdown(self, force=False):
@@ -77,6 +86,7 @@ class Vm(TemplateBase):
         else:
             self._vm_sal.destroy()
         self.state.delete('status', 'running')
+        self.state.delete('actions', 'start')
         self.state.set('status', 'shutdown', 'ok')
 
     def pause(self):
@@ -84,6 +94,7 @@ class Vm(TemplateBase):
         self.state.check('status', 'running', 'ok')
         self._vm_sal.pause()
         self.state.delete('status', 'running')
+        self.state.delete('actions', 'start')
         self.state.set('actions', 'pause', 'ok')
 
     def start(self):
@@ -92,6 +103,7 @@ class Vm(TemplateBase):
         self._vm_sal.deploy()
         self.state.delete('status', 'shutdown')
         self.state.set('actions', 'running', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def resume(self):
         self.logger.info('Resuming vm %s' % self.name)
@@ -99,6 +111,7 @@ class Vm(TemplateBase):
         self._vm_sal.resume()
         self.state.delete('actions', 'pause')
         self.state.set('status', 'running', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def reboot(self):
         self.logger.info('Rebooting vm %s' % self.name)
