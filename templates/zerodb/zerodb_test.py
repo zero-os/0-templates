@@ -265,17 +265,6 @@ class TestZerodbTemplate(ZrobotBaseTest):
         zdb.namespace_delete('namespace')
         zdb._zerodb_sal.deploy.assert_called_once_with()
 
-    def test_namespace_delete_namespace_doesnt_exist(self):
-        """
-        Test namespace_delete action if namespace doesn't exist
-        """
-        with pytest.raises(LookupError,
-                           message='namespace_delete action should raise an error if namespace doesn\'t exists'):
-            zdb = Zerodb('zdb', data=self.valid_data)
-            zdb.state.set('status', 'running', 'ok')
-            zdb._namespace_exists_update_delete = MagicMock(return_value=False)
-            zdb.namespace_delete('namespace')
-
     def test_deploy(self):
         """
         Test _deploy helper function

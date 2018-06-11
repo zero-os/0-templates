@@ -101,11 +101,6 @@ class TestVdiskTemplate(ZrobotBaseTest):
         assert vdisk.info() == 'info'
         vdisk._zerodb.schedule_action.assert_called_once_with('namespace_info', args={'name': vdisk.data['nsName']})
 
-    def test_uninstall_without_install(self):
-        with pytest.raises(StateCheckError, message='Executing uninstall action without install should raise an error'):
-            vdisk = Vdisk(name='vdisk', data=self.valid_data)
-            vdisk.uninstall()
-
     def test_uninstall(self):
         vdisk = Vdisk(name='vdisk', data=self.valid_data)
         vdisk.data['nsName'] = 'ns_name'

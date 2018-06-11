@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 import os
 import pytest
 
-from minio import Minio, CONTAINER_TEMPLATE_UID, MINIO_FLIST
+from minio import Minio, MINIO_FLIST, NODE_CLIENT
 from zerorobot.template.state import StateCheckError
 from JumpScale9Zrobot.test.utils import ZrobotBaseTest
 
@@ -70,15 +70,7 @@ class TestMinioTemplate(ZrobotBaseTest):
         minio = Minio('minio', data=self.valid_data)
 
         assert minio.node_sal == 'node_sal'
-        get_node.assert_called_once_with(minio.data['node'])
-
-    def test_container_sal(self):
-        patch('js9.j.clients.zos.sal.get_node', MagicMock()).start()
-        minio = Minio('minio', data=self.valid_data)
-        minio.node_sal.containers.get = MagicMock(return_value='container')
-
-        assert minio.container_sal == 'container'
-        minio.node_sal.containers.get.assert_called_once_with(minio.data['container'])
+        get_node.assert_called_once_with(NODE_CLIENT)
 
     def test_minio_sal(self):
         """
@@ -111,8 +103,6 @@ class TestMinioTemplate(ZrobotBaseTest):
             'ports': ['9000:9000'],
             'nics': [{'type': 'default'}],
         }
-        minio.api.services.find_or_create.assert_called_once_with(
-            CONTAINER_TEMPLATE_UID, self.valid_data['container'], data=container_data)
         minio.state.check('actions', 'install', 'ok')
 
     def test_start(self):
@@ -124,9 +114,6 @@ class TestMinioTemplate(ZrobotBaseTest):
         minio.api.services.get = MagicMock()
         minio._get_zdbs = MagicMock()
         minio.start()
-
-        minio.api.services.get.assert_called_once_with(
-            template_uid=CONTAINER_TEMPLATE_UID, name=self.valid_data['container'])
         minio.minio_sal.start.assert_called_once_with()
         minio.state.check('actions', 'start', 'ok')
 
@@ -166,21 +153,8 @@ class TestMinioTemplate(ZrobotBaseTest):
         Test uninstall action
         """
         minio = Minio('minio', data=self.valid_data)
-        minio.state.set('actions', 'install', 'ok')
         minio.state.delete = MagicMock()
-        minio.stop = MagicMock()
-        minio.api.services.get = MagicMock()
 
         minio.uninstall()
-
-        minio.stop.assert_called_once_with()
+        minio.minio_sal.destroy.assert_called_once_with()
         minio.state.delete.assert_called_once_with('actions', 'install')
-
-    def test_uninstall_before_install(self):
-        """
-        Test uninstall action without install
-        """
-        with pytest.raises(StateCheckError,
-                           message='uninstall action should raise an error if minio is not installed'):
-            minio = Minio('minio', data=self.valid_data)
-            minio.uninstall()
