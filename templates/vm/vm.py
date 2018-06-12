@@ -53,6 +53,13 @@ class Vm(TemplateBase):
             self.state.delete('status', 'running')
             self.state.set('status', 'shutdown', 'ok')
 
+    def update_ipxeurl(self, url):
+        self.data['ipxeUrl'] = url
+
+    def generate_identity(self):
+        self.data['ztIdentity'] = self._node_sal.generate_zerotier_identity()
+        return self.data['ztIdentity']
+
     def install(self):
         self.logger.info('Installing vm %s' % self.name)
         vm_sal = self._vm_sal
@@ -127,7 +134,7 @@ class Vm(TemplateBase):
             'status': info.get('state', 'halted'),
             'disks': self.data['disks'],
             'nics': self.data['nics'],
-            'ztIdentity': self.data.get('ztIdentity')
+            'ztIdentity': self.data['ztIdentity'],
         }
 
     def disable_vnc(self):

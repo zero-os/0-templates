@@ -237,7 +237,7 @@ class Node(TemplateBase):
                 return False, None, None
 
         zdb, _ = self._create_namespace(bestfreedisk, mountpoint, bestzdb, namespace_name, mode, password, public, size)
-        return True, zdb, name
+        return True, zdb, namespace_name
 
     def reboot(self):
         self._stop_all_containers()
