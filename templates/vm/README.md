@@ -44,7 +44,7 @@ Config:
 Port:
 - `name`: name for this portforward
 - `source`: node source port
-- `destination`: container destination port
+- `target`: container destination port
 
 ### Actions:
 - `install`: creates a a vm and the hypervisor on the node.
