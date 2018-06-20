@@ -58,9 +58,14 @@ class Minio(TemplateBase):
         self.logger.info('Backing up minio %s' % self.name)
         print(self.restic_sal.backup(META_DIR))
 
+    def node_port(self):
+        return self.data['node_port']
+
     def install(self):
         self.logger.info('Installing minio %s' % self.name)
-        self.minio_sal.create_config()
+        minio_sal = self.minio_sal
+        minio_sal.create_config()
+        self.data['node_port'] = minio_sal.node_port
         if not self.data['resticRepoPassword']:
             self.data['resticRepoPassword'] = j.data.idgenerator.generateXCharID(10)
         self.restic_sal.init_repo(password=self.data['resticRepoPassword'])
