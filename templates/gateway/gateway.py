@@ -40,7 +40,9 @@ class Gateway(TemplateBase):
 
     @property
     def _gateway_sal(self):
-        return self._node_sal.primitives.from_dict('gateway', self.data)
+        gw = self._node_sal.primitives.from_dict('gateway', self.data)
+        gw.name = self.guid
+        return gw
 
     def install(self):
         self.logger.info('Install gateway {}'.format(self.name))
