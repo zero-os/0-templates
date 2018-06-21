@@ -198,10 +198,9 @@ class TestGatewayTemplate(ZrobotBaseTest):
         """
         Test remove_portforward action if the portforward doesn't exist
         """
-        with pytest.raises(LookupError, message='action should raise an error if portforward doesnt exist'):
-            gw = Gateway('gw', data=self.valid_data)
-            gw.state.set('actions', 'start', 'ok')
-            gw.remove_portforward('pf')
+        gw = Gateway('gw', data=self.valid_data)
+        gw.state.set('actions', 'start', 'ok')
+        gw.remove_portforward('pf')
 
     def test_add_http_proxy(self):
         """
@@ -303,11 +302,9 @@ class TestGatewayTemplate(ZrobotBaseTest):
         """
         Test remove_http_proxy action if proxy doesn't exist
         """
-
-        with pytest.raises(LookupError, message='actions should raise an error if gateway isn\'t started'):
-            gw = Gateway('gw', data=self.valid_data)
-            gw.state.set('actions', 'start', 'ok')
-            gw.remove_http_proxy('proxy')
+        gw = Gateway('gw', data=self.valid_data)
+        gw.state.set('actions', 'start', 'ok')
+        gw.remove_http_proxy('proxy')
 
     def test_add_dhcp_host(self):
         """
@@ -532,11 +529,9 @@ class TestGatewayTemplate(ZrobotBaseTest):
         """
         Test remove_network action if network with name doesnt exist
         """
-        with pytest.raises(LookupError,
-                           message='action should raise an error if network with name doesnt exist'):
-            gw = Gateway('gw', data=self.valid_data)
-            gw.state.set('actions', 'start', 'ok')
-            gw.remove_network('network')
+        gw = Gateway('gw', data=self.valid_data)
+        gw.state.set('actions', 'start', 'ok')
+        gw.remove_network('network')
 
     def test_remove_network_before_start(self):
         """

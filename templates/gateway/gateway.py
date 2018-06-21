@@ -80,16 +80,16 @@ class Gateway(TemplateBase):
             self._gateway_sal.configure_fw()
             raise
 
-    def remove_portforward(self, forward_name):
-        self.logger.info('Remove portforward {}'.format(forward_name))
+    def remove_portforward(self, name):
+        self.logger.info('Remove portforward {}'.format(name))
         self.state.check('actions', 'start', 'ok')
 
         for fw in self.data['portforwards']:
-            if fw['name'] == forward_name:
+            if fw['name'] == name:
                 self.data['portforwards'].remove(fw)
                 break
         else:
-            raise LookupError('Forward {} doesn\'t exist'.format(forward_name))
+            return
 
         try:
             self._gateway_sal.configure_fw()
@@ -119,16 +119,16 @@ class Gateway(TemplateBase):
             self._gateway_sal.configure_http()
             raise
 
-    def remove_http_proxy(self, proxy_name):
-        self.logger.info('Remove http proxy {}'.format(proxy_name))
+    def remove_http_proxy(self, name):
+        self.logger.info('Remove http proxy {}'.format(name))
         self.state.check('actions', 'start', 'ok')
 
         for existing_proxy in self.data['httpproxies']:
-            if existing_proxy['name'] == proxy_name:
+            if existing_proxy['name'] == name:
                 self.data['httpproxies'].remove(existing_proxy)
                 break
         else:
-            raise LookupError('Proxy with name {} doesn\'t exist'.format(proxy_name))
+            return
         try:
             self._gateway_sal.configure_http()
         except:
@@ -225,16 +225,16 @@ class Gateway(TemplateBase):
             self._gateway_sal.deploy()
             raise
 
-    def remove_network(self, network_name):
-        self.logger.info('Remove network {}'.format(network_name))
+    def remove_network(self, name):
+        self.logger.info('Remove network {}'.format(name))
         self.state.check('actions', 'start', 'ok')
 
         for network in self.data['networks']:
-            if network['name'] == network_name:
+            if network['name'] == name:
                 self.data['networks'].remove(network)
                 break
         else:
-            raise LookupError('Network with name {} doesn\'t exists'.format(network_name))
+            return
         try:
             self._gateway_sal.deploy()
         except:
