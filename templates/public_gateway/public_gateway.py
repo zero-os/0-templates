@@ -78,12 +78,12 @@ class PublicGateway(TemplateBase):
     def _prefix_name(self, name):
         return '{}_{}'.format(self.guid, name)
 
-    def remove_portforward(self, forward_name):
-        self.logger.info('Remove portforward {}'.format(forward_name))
-        name = self._prefix_name(forward_name)
-        self._gateway_service.schedule_action('remove_portforward', args={'forward_name': name}).wait(die=True)
+    def remove_portforward(self, name):
+        self.logger.info('Remove portforward {}'.format(name))
+        pname = self._prefix_name(name)
+        self._gateway_service.schedule_action('remove_portforward', args={'name': pname}).wait(die=True)
         for forward in self.data['portforwards']:
-            if forward['name'] == forward_name:
+            if forward['name'] == name:
                 self.data['portforwards'].remove(forward)
                 return
 
@@ -94,12 +94,12 @@ class PublicGateway(TemplateBase):
         self._gateway_service.schedule_action('add_http_proxy', args={'proxy': gwproxy}).wait(die=True)
         self.data['httpproxies'].append(proxy)
 
-    def remove_http_proxy(self, proxy_name):
-        self.logger.info('Remove http proxy {}'.format(proxy_name))
-        name = self._prefix_name(proxy_name)
-        self._gateway_service.schedule_action('remove_http_proxy', args={'proxy_name': name}).wait(die=True)
+    def remove_http_proxy(self, name):
+        self.logger.info('Remove http proxy {}'.format(name))
+        pname = self._prefix_name(name)
+        self._gateway_service.schedule_action('remove_http_proxy', args={'name': pname}).wait(die=True)
         for proxy in self.data['httpproxies']:
-            if proxy['name'] == proxy_name:
+            if proxy['name'] == name:
                 self.data['httpproxies'].remove(proxy)
                 return
 
@@ -126,11 +126,11 @@ class PublicGateway(TemplateBase):
         self.logger.info('Uninstall publicservice {}'.format(self.name))
         for portforward in self.data['portforwards']:
             name = self._prefix_name(portforward['name'])
-            gw_service.schedule_action('remove_portforward', args={'forward_name': name}).wait(die=True)
+            gw_service.schedule_action('remove_portforward', args={'name': name}).wait(die=True)
 
         proxies = self.data.get('httpproxies')
         for proxy in proxies:
             name = self._prefix_name(proxy['name'])
-            gw_service.schedule_action('remove_http_proxy', args={'proxy_name': name}).wait(die=True)
+            gw_service.schedule_action('remove_http_proxy', args={'name': name}).wait(die=True)
 
 
