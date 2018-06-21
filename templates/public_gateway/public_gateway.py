@@ -11,6 +11,10 @@ class PublicGateway(TemplateBase):
     version = '0.0.1'
     template_name = "public_gateway"
 
+    def __init__(self, name, guid=None, data=None):
+        super().__init__(name=name, guid=guid, data=data)
+        self.add_delete_callback(self.uninstall)
+
     def validate(self):
         services = self.api.services.find(template_uid=GATEWAY_TEMPLATE_UID, name='publicgw')
         if len(services) != 1:
