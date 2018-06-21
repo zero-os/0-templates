@@ -32,7 +32,7 @@ class Namespace(TemplateBase):
     def _zerodb(self):
         return self.api.services.get(template_uid=ZERODB_TEMPLATE_UID, name=self.data['zerodb'])
 
-    def install(self, if_available=False):
+    def install(self):
         try:
             # no op is already installed
             self.state.check('actions', 'install', 'ok')
@@ -48,14 +48,11 @@ class Namespace(TemplateBase):
             'public': self.data['public'],
             'size': self.data['size'],
             'name': self.data['nsName'],
-            'if_available': if_available,
         }
         # use the method on the node service to create the zdb and the namespace.
         # this action hold the logic of the capacity planning for the zdb and namespaces
-        available, self.data['zerodb'], self.data['nsName'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
-        if available:
-            self.state.set('actions', 'install', 'ok')
-        return available
+        self.data['zerodb'], self.data['nsName'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
+        self.state.set('actions', 'install', 'ok')
 
     def info(self):
         self.state.check('actions', 'install', 'ok')
