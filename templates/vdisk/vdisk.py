@@ -58,7 +58,7 @@ class Vdisk(TemplateBase):
         }
         # use the method on the node service to create the zdb and the namespace.
         # this action hold the logic of the capacity planning for the zdb and namespaces
-        _, self.data['zerodb'], self.data['nsName'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
+        self.data['zerodb'], self.data['nsName'] = node.schedule_action('create_zdb_namespace', kwargs).wait(die=True).result
 
         zerodb_data = self._zerodb.data.copy()
         zerodb_data['name'] = self._zerodb.name
