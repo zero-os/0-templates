@@ -20,6 +20,7 @@ class TestNamespaceTemplate(ZrobotBaseTest):
             'password': 'mypasswd',
             'public': False,
             'size': 20,
+            'nsName': '',
         }
 
     def test_invalid_data(self):
@@ -63,14 +64,16 @@ class TestNamespaceTemplate(ZrobotBaseTest):
         node.schedule_action = MagicMock(return_value=task_mock(('instance', 'nsName')))
         ns.api = MagicMock()
         ns.api.services.get = MagicMock(return_value=node)
-        ns.install()
         args = {
             'disktype': ns.data['diskType'].upper(),
             'mode': ns.data['mode'],
             'password': ns.data['password'],
             'public': ns.data['public'],
             'size': ns.data['size'],
+            'name': ns.data['nsName']
         }
+        ns.install()
+
         node.schedule_action.assert_called_once_with('create_zdb_namespace', args)
         ns.state.check('actions', 'install', 'ok')
         assert ns.data['nsName'] == 'nsName'
