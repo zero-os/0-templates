@@ -72,9 +72,9 @@ class BasicTests(ZOS_BaseTest):
             zdb.schedule_action('namespace_set', args={'name': ns_name, 'value': size, 'prop': 'size'})
 
             self.log('Check that NS setting has been changed')
-            ns_info = zdb.schedule_action('namespace_info', args={'name': ns_name})
-            self.assertEqual(ns_info.wait().result['public'], 'no')
-            self.assertEqual(ns_info.wait().result['password'], 'yes')
+            ns_info = zdb.schedule_action('namespace_info', args={'name': ns_name}).wait()
+            self.assertEqual(ns_info.result['public'], 'no')
+            self.assertEqual(ns_info.result['password'], 'yes')
             namespaces = zdb.schedule_action('namespace_list')
             self.assertEqual(namespaces.result[0]['size'], size)
             zdb.schedule_action('stop').wait(die=True, timeout=30)
