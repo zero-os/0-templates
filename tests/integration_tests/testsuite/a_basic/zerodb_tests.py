@@ -37,8 +37,6 @@ class BasicTests(ZOS_BaseTest):
                       'mode': 'user',
                       'admin': adminpassword,
                       'path': '/var/cache'})
-            zdb.schedule_action('install')
-            time.sleep(1)
             zdb.schedule_action('install').wait(die=True, timeout=30)
 
             self.log('Check that the params has been reflected correctly.')
@@ -108,8 +106,6 @@ class BasicTests(ZOS_BaseTest):
                       'mode': 'user',
                       'admin': self.random_string(),
                       'path': '/var/cache'})
-            zdb.schedule_action('install')
-            time.sleep(1)
             zdb.schedule_action('install').wait(die=True, timeout=30)
 
             self.log('Create namespace (NS), should succeed')
@@ -119,7 +115,6 @@ class BasicTests(ZOS_BaseTest):
             self.assertEqual(namespace.state, 'ok')
 
             self.log('Stop zerodb service, should succeed')
-            zdb.schedule_action('stop')
             zdb.schedule_action('stop').wait(die=True, timeout=30)
 
             self.log('Make sure zerodb container has been removed')
@@ -127,7 +122,6 @@ class BasicTests(ZOS_BaseTest):
             self.assertFalse([c for c in conts.values() if zdb_service_name in c['container']['arguments']['name']])
 
             self.log('Start zerodb service, should succeed.')
-            zdb.schedule_action('start')
             zdb.schedule_action('start').wait(die=True, timeout=30)
             conts = self.zos_client.container.list()
             self.assertTrue([c for c in conts.values() if zdb_service_name in c['container']['arguments']['name']])
