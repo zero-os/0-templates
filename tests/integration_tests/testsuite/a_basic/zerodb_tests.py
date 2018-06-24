@@ -77,7 +77,6 @@ class BasicTests(ZOS_BaseTest):
             self.assertEqual(ns_info.wait().result['password'], 'yes')
             namespaces = zdb.schedule_action('namespace_list')
             self.assertEqual(namespaces.result[0]['size'], size)
-            zdb.schedule_action('stop')
             zdb.schedule_action('stop').wait(die=True, timeout=30)
 
             self.log('%s ENDED' % self._testID)
