@@ -38,9 +38,9 @@ class Zerodb(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self.state.check('actions', 'start', 'ok')
 
-        if not self._zerodb_sal.is_running():
+        if not self._zerodb_sal.is_running()[0]:
             self._zerodb_sal.start()
-            if self._zerodb_sal.is_running():
+            if self._zerodb_sal.is_running()[0]:
                 self.state.set('status', 'running', 'ok')
             else:
                 self.state.delete('status', 'running')

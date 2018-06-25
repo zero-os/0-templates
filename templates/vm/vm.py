@@ -35,23 +35,22 @@ class Vm(TemplateBase):
     def _monitor(self):
         self.logger.info('Monitor vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
+        self.state.check('actions', 'start', 'ok')
 
-        if self._vm_sal.is_running():
-            self.state.set('status', 'running', 'ok')
-            try:
-                self.state.check('status', 'rebooting', 'ok')
-                self.state.delete('status', 'rebooting')
-            except StateCheckError:
-                pass
+        if not self._vm_sal.is_running():
+            self._vm_sal.deploy()
+            if self._vm_sal.is_running():
+                self.state.set('status', 'running', 'ok')
 
-            try:
-                self.state.check('status', 'shutdown', 'ok')
-                self.state.delete('status', 'shutdown')
-            except StateCheckError:
-                pass
-        else:
-            self.state.delete('status', 'running')
-            self.state.set('status', 'shutdown', 'ok')
+                # handle reboot
+                try:
+                    self.state.check('status', 'rebooting', 'ok')
+                    self.state.delete('status', 'rebooting')
+                except StateCheckError:
+                    pass
+
+            else:
+                self.state.delete('status', 'running')
 
     def update_ipxeurl(self, url):
         self.data['ipxeUrl'] = url
@@ -68,6 +67,7 @@ class Vm(TemplateBase):
         self.data['ztIdentity'] = vm_sal.zt_identity
 
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
         self.state.set('status', 'running', 'ok')
 
     def zt_identity(self):
@@ -75,9 +75,9 @@ class Vm(TemplateBase):
 
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
-        self.state.check('actions', 'install', 'ok')
         self._vm_sal.destroy()
         self.state.delete('actions', 'install')
+        self.state.delete('actions', 'start')
         self.state.delete('status', 'running')
 
     def shutdown(self, force=False):
@@ -88,21 +88,23 @@ class Vm(TemplateBase):
         else:
             self._vm_sal.destroy()
         self.state.delete('status', 'running')
-        self.state.set('status', 'shutdown', 'ok')
+        self.state.delete('actions', 'start')
 
     def pause(self):
         self.logger.info('Pausing vm %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
         self.state.check('status', 'running', 'ok')
         self._vm_sal.pause()
         self.state.delete('status', 'running')
+        self.state.delete('actions', 'start')
         self.state.set('actions', 'pause', 'ok')
 
     def start(self):
         self.logger.info('Starting vm {}'.format(self.name))
-        self.state.check('status', 'shutdown', 'ok')
+        self.state.check('actions', 'install', 'ok')
         self._vm_sal.deploy()
-        self.state.delete('status', 'shutdown')
-        self.state.set('actions', 'running', 'ok')
+        self.state.set('status', 'running', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def resume(self):
         self.logger.info('Resuming vm %s' % self.name)
@@ -110,6 +112,7 @@ class Vm(TemplateBase):
         self._vm_sal.resume()
         self.state.delete('actions', 'pause')
         self.state.set('status', 'running', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def reboot(self):
         self.logger.info('Rebooting vm %s' % self.name)
@@ -127,6 +130,12 @@ class Vm(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self._vm_sal.enable_vnc()
 
+    def disable_vnc(self):
+        self.logger.info('Disable vnc for vm %s' % self.name)
+        self.state.check('actions', 'install', 'ok')
+        self.state.check('vnc', self._vm_sal.info['vnc'], 'ok')
+        self._vm_sal.disable_vnc()
+
     def info(self):
         info = self._vm_sal.info or {}
         return {
@@ -136,9 +145,3 @@ class Vm(TemplateBase):
             'nics': self.data['nics'],
             'ztIdentity': self.data['ztIdentity'],
         }
-
-    def disable_vnc(self):
-        self.logger.info('Disable vnc for vm %s' % self.name)
-        self.state.check('actions', 'install', 'ok')
-        self.state.check('vnc', self._vm_sal.info['vnc'], 'ok')
-        self._vm_sal.disable_vnc()
