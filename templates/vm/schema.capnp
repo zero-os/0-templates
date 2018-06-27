@@ -37,6 +37,7 @@ struct Schema {
       name @1: Text;
       mountPoint @2: Text;
       filesystem @3: Text;
+      label @4: Text;
     }
 
     struct Nic {
