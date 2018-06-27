@@ -3,6 +3,7 @@ from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
 
 NODE_CLIENT = 'local'
+VDISK_TEMPLATE_UID = 'github.com/zero-os/0-templates/vdisk/0.0.1'
 
 
 class Vm(TemplateBase):
@@ -21,6 +22,7 @@ class Vm(TemplateBase):
 
     @property
     def _vm_sal(self):
+        self._update_vdisk_url()
         data = self.data.copy()
         data['name'] = self.name
         return self._node_sal.primitives.from_dict('vm', data)
@@ -59,6 +61,11 @@ class Vm(TemplateBase):
     def generate_identity(self):
         self.data['ztIdentity'] = self._node_sal.generate_zerotier_identity()
         return self.data['ztIdentity']
+
+    def _update_vdisk_url(self):
+        for disk in self.data['disks']:
+            vdisk = self.api.services.get(template_uid=VDISK_TEMPLATE_UID, name=disk['name'])
+            disk['url'] = vdisk.schedule_action('private_url').wait(die=True).result
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)

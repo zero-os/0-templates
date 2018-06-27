@@ -69,7 +69,7 @@ class Vdisk(TemplateBase):
                                                      mountpoint=self.data['mountPoint'] or None,
                                                      filesystem=self.data['filesystem'] or None,
                                                      size=int(self.data['size']),
-                                                     label=self.name)
+                                                     label=self.data['label'])
         disk.deploy()
 
         self.state.set('actions', 'install', 'ok')

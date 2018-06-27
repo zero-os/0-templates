@@ -31,10 +31,11 @@ NicType enum:
 - `bridge`
 
 Disk:
-- `name`: name of the disk
-- `url`: media location
+- `name`: name of the vdisk service to be used for this disk
+- `url`: disk url, set by the template by executing the `private_url` action on the vdisk.
 - `mountPoint`: path where this disk should be mounted
 - `filesystem`: filesystem of the disk
+- `label`: label to be used for the disk on the vm
 
 Config:
 - `path`: the file path 
