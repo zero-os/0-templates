@@ -170,10 +170,15 @@ class Zrobot(TemplateBase):
         """
         if flist:
             self.data['flist'] = flist
-            container = self._get_container()
-
+            
             # uninstall and delete container service
-            self.uninstall()
+            try:
+                container = self.api.services.get(name=self._container_name)
+                self.zrobot_sal.stop()
+                container.schedule_action('uninstall').wait(die=True)
+                container.delete()
+            except (ServiceNotFoundError, LookupError):
+                pass
 
             # recreate container
             self.install(force=True)
