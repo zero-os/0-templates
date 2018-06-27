@@ -20,7 +20,8 @@ class TestVdiskTemplate(ZrobotBaseTest):
             'mountPoint': '',
             'filesystem': '',
             'mode': 'user',
-            'public': False
+            'public': False,
+            'label': 'label',
         }
 
     def setUp(self):
@@ -30,10 +31,18 @@ class TestVdiskTemplate(ZrobotBaseTest):
         patch.stopall()
 
     def test_invalid_data(self):
+        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the diskType'):
+            vdisk = Vdisk(name='vdisk', data={})
+            vdisk.api.services.get = MagicMock()
+            vdisk.validate()
+
         with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the size'):
-            data = self.valid_data.copy()
-            data.pop('size')
-            vdisk = Vdisk(name='vdisk', data=data)
+            vdisk = Vdisk(name='vdisk', data={'diskType': 'hdd'})
+            vdisk.api.services.get = MagicMock()
+            vdisk.validate()
+
+        with pytest.raises(ValueError, message='template should fail to instantiate if data dict is missing the label'):
+            vdisk = Vdisk(name='vdisk', data={'diskType': 'hdd', 'size': 5})
             vdisk.api.services.get = MagicMock()
             vdisk.validate()
 

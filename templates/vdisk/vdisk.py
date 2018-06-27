@@ -25,7 +25,7 @@ class Vdisk(TemplateBase):
         except:
             raise RuntimeError("not node service found, can't install the namespace")
 
-        for param in ['diskType', 'size']:
+        for param in ['diskType', 'size', 'label']:
             if not self.data.get(param):
                 raise ValueError("parameter '%s' not valid: %s" % (param, str(self.data[param])))
 
