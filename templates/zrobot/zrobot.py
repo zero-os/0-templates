@@ -170,6 +170,15 @@ class Zrobot(TemplateBase):
         """
         if flist:
             self.data['flist'] = flist
+            container = self._get_container()
+
+            # uninstall and delete container service
+            self.uninstall()
+
+            # recreate container
+            self.install(force=True)
+
+            return
 
         # stop the robot process
         self.stop()
