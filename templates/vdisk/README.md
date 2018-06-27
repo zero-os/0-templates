@@ -11,6 +11,7 @@ This template is responsible for managing a vdisk
 - `filesystem`: filesystem to create on the disk
 - `zerodb`: the zerodb the namespace is created on
 - `nsName`: the name of the namespace created on zerodb
+- `label`: label to be given to the disk when it is attached to a vm
 
 ### Actions
 - `install`: creates the vdisk and namespace.
@@ -29,6 +30,7 @@ robot = j.clients.zrobot.robots['main']
 args = {
     'size': 10,
     'diskType': 'hdd',
+    'label': 'label',
 }
 vdisk = robot.services.create('github.com/zero-os/0-templates/vdisk/0.0.1', 'vdisk_one', data=args)
 vdisk.schedule_action('install')
@@ -45,6 +47,7 @@ services:
     - github.com/zero-os/0-templates/vdisk/0.0.1__vdisk_one:
           size: 10
           diskType: 'hdd'
+          label: 'label'
           
 actions:
     - template: 'github.com/zero-os/0-templates/vdisk/0.0.1'
