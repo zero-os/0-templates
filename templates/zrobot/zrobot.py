@@ -160,11 +160,17 @@ class Zrobot(TemplateBase):
         self.state.delete('actions', 'start')
         self.state.delete('status', 'running')
 
-    def upgrade(self):
+    def upgrade(self, flist=None):
         """
         upgrade the container with an updated flist
         this is done by stopping the container and respawn again with the updated flist
+        
+        Keyword Arguments:
+            flist str -- flist to upgrade to if provided. (default: {None})
         """
+        if flist:
+            self.data['flist'] = flist
+
         # stop the robot process
         self.stop()
 
