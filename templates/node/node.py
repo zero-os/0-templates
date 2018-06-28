@@ -271,3 +271,7 @@ class Node(TemplateBase):
         for t in tasks:
             results.append(t.wait(timeout=timeout, die=die).result)
         return results
+
+
+class NoNamespaceAvailability(Exception):
+    pass
