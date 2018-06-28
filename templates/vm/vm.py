@@ -82,7 +82,6 @@ class Vm(TemplateBase):
 
     def uninstall(self):
         self.logger.info('Uninstalling vm %s' % self.name)
-        self.state.check('actions', 'install', 'ok')
         self._vm_sal.destroy()
         self.state.delete('actions', 'install')
         self.state.delete('status', 'running')

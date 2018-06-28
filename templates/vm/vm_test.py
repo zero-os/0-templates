@@ -104,14 +104,6 @@ class TestVmTemplate(ZrobotBaseTest):
         with pytest.raises(StateCheckError):
             vm.state.check('status', 'running', 'ok')
 
-    def test_uninstall_vm_not_installed(self):
-        """
-        Test uninstalling vm before install
-        """
-        with pytest.raises(StateCheckError, message='uninstall vm before install should raise an error'):
-            vm = Vm('vm', data=self.valid_data)
-            vm.uninstall()
-
     def test_shutdown_vm_not_running(self):
         """
         Test shutting down the vm without creation
