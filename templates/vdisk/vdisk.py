@@ -89,3 +89,10 @@ class Vdisk(TemplateBase):
     def uninstall(self):
         self._zerodb.schedule_action('namespace_delete', args={'name': self.data['nsName']}).wait(die=True)
         self.state.delete('actions', 'install')
+
+    def is_running(self):
+        try:
+            self._zerodb.state.check('status', 'running', 'ok')
+            return True
+        except StateCheckError:
+            return False

@@ -19,6 +19,7 @@ class Node(TemplateBase):
 
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.state.delete('disks', 'mounted')
         self.recurring_action('_monitor', 30)  # every 30 seconds
         self.recurring_action('_register', 3600 * 2)  # every 2hours
 
@@ -54,6 +55,11 @@ class Node(TemplateBase):
 
         if self.node_sal.uptime() < self.data['uptime']:
             self.install()
+        try:
+            self.state.check('disks', 'mounted', 'ok')
+        except StateCheckError:
+            self.node_sal.zerodbs.partition_and_mount_disks()
+            self.state.set('disks', 'mounted', 'ok')
 
         self.data['uptime'] = self.node_sal.uptime()
 
