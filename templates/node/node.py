@@ -66,6 +66,7 @@ class Node(TemplateBase):
         except StateCheckError:
             pass
 
+    @retry(RuntimeError, tries=5, delay=5, backoff=2)
     def _register(self):
         """
         register the node capacity
