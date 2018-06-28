@@ -20,6 +20,10 @@ class Vm(TemplateBase):
         if not (self.data['flist'] or self.data['ipxeUrl']):
             raise ValueError("invalid input. Vm requires flist or ipxeUrl to be specifed.")
 
+        for disk in self.data['disks']:
+            if 'url' not in disk:
+                disk['url'] = ''
+
     @property
     def _vm_sal(self):
         data = self.data.copy()
