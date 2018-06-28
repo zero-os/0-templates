@@ -22,7 +22,6 @@ class Vm(TemplateBase):
 
     @property
     def _vm_sal(self):
-        self._update_vdisk_url()
         data = self.data.copy()
         data['name'] = self.name
         return self._node_sal.primitives.from_dict('vm', data)
@@ -69,6 +68,7 @@ class Vm(TemplateBase):
 
     def install(self):
         self.logger.info('Installing vm %s' % self.name)
+        self._update_vdisk_url()
         vm_sal = self._vm_sal
         vm_sal.deploy()
         self.data['uuid'] = vm_sal.uuid
@@ -106,6 +106,7 @@ class Vm(TemplateBase):
     def start(self):
         self.logger.info('Starting vm {}'.format(self.name))
         self.state.check('status', 'shutdown', 'ok')
+        self._update_vdisk_url()
         self._vm_sal.deploy()
         self.state.delete('status', 'shutdown')
         self.state.set('actions', 'running', 'ok')
@@ -113,6 +114,7 @@ class Vm(TemplateBase):
     def resume(self):
         self.logger.info('Resuming vm %s' % self.name)
         self.state.check('actions', 'pause', 'ok')
+        self._update_vdisk_url()
         self._vm_sal.resume()
         self.state.delete('actions', 'pause')
         self.state.set('status', 'running', 'ok')
@@ -120,6 +122,7 @@ class Vm(TemplateBase):
     def reboot(self):
         self.logger.info('Rebooting vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
+        self._update_vdisk_url()
         self._vm_sal.reboot()
         self.state.set('status', 'rebooting', 'ok')
 
@@ -134,6 +137,7 @@ class Vm(TemplateBase):
         self._vm_sal.enable_vnc()
 
     def info(self):
+        self._update_vdisk_url()
         info = self._vm_sal.info or {}
         return {
             'vnc': info.get('vnc'),
