@@ -147,5 +147,4 @@ class Vm(TemplateBase):
     def disable_vnc(self):
         self.logger.info('Disable vnc for vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.state.check('vnc', self._vm_sal.info['vnc'], 'ok')
         self._vm_sal.disable_vnc()
