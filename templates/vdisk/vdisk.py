@@ -42,7 +42,7 @@ class Vdisk(TemplateBase):
         return self.api.services.get(template_uid=ZERODB_TEMPLATE_UID, name=self.data['zerodb'])
 
     def _monitor(self):
-        self.state.check('action', 'install', 'ok')
+        self.state.check('actions', 'install', 'ok')
 
         try:
             self._zerodb.state.check('status', 'running', 'ok')
