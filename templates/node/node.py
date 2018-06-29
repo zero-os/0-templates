@@ -60,11 +60,8 @@ class Node(TemplateBase):
 
         self.data['uptime'] = self.node_sal.uptime()
 
-        try:
-            self.state.check('disks', 'mounted', 'ok')
-        except StateCheckError:
-            self.node_sal.zerodbs.partition_and_mount_disks()
-            self.state.set('disks', 'mounted', 'ok')
+        self.node_sal.zerodbs.partition_and_mount_disks()
+        self.state.set('disks', 'mounted', 'ok')
 
         try:
             # check if the node was rebooting and start containers and vms
