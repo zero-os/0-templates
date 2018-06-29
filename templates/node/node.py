@@ -60,8 +60,11 @@ class Node(TemplateBase):
 
         self.data['uptime'] = self.node_sal.uptime()
 
-        self.node_sal.zerodbs.partition_and_mount_disks()
-        self.state.set('disks', 'mounted', 'ok')
+        try:
+            self.node_sal.zerodbs.partition_and_mount_disks()
+            self.state.set('disks', 'mounted', 'ok')
+        except:
+            self.state.delete('disks', 'mounted')
 
         try:
             # check if the node was rebooting and start containers and vms
