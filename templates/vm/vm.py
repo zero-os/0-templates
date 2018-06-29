@@ -43,6 +43,8 @@ class Vm(TemplateBase):
         self.state.check('actions', 'start', 'ok')
 
         if not self._vm_sal.is_running():
+            self.state.delete('status', 'running')
+
             for disk in self.data['disks']:
                 vdisk = self.api.services.get(template_uid=VDISK_TEMPLATE_UID, name=disk['name'])
                 vdisk.state.check('status', 'running', 'ok')  # Cannot start vm until vdisks are running
@@ -50,16 +52,16 @@ class Vm(TemplateBase):
             self._vm_sal.deploy()
             if self._vm_sal.is_running():
                 self.state.set('status', 'running', 'ok')
+        else:
+            self.state.set('status', 'running', 'ok')
 
-                # handle reboot
-                try:
-                    self.state.check('status', 'rebooting', 'ok')
-                    self.state.delete('status', 'rebooting')
-                except StateCheckError:
-                    pass
-
-            else:
-                self.state.delete('status', 'running')
+        # handle reboot
+        try:
+            self.state.check('status', 'running', 'ok')
+            self.state.check('status', 'rebooting', 'ok')
+            self.state.delete('status', 'rebooting')
+        except StateCheckError:
+            pass
 
     def update_ipxeurl(self, url):
         self.data['ipxeUrl'] = url

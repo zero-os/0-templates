@@ -410,8 +410,13 @@ class TestZerodbTemplate(ZrobotBaseTest):
         """
         Test _monitor action when zerodb should be started and it can be started
         """
+        node = MagicMock()
+        node.state.check.return_value = True
+
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb._zerodb_sal.is_running = MagicMock(side_effect=[False, True])
+        zdb.api.services.get = MagicMock(return_value=node)
+
+        zdb._zerodb_sal.is_running = MagicMock(side_effect=[(False,), (True,)])
         zdb.state.set('actions', 'install', 'ok')
         zdb.state.set('actions', 'start', 'ok')
         zdb._monitor()
@@ -421,8 +426,13 @@ class TestZerodbTemplate(ZrobotBaseTest):
         """
         Test _monitor action when zerodb should be started and it cannot be re-started
         """
+        node = MagicMock()
+        node.state.check.return_value = True
+
         zdb = Zerodb('zdb', data=self.valid_data)
-        zdb._zerodb_sal.is_running = MagicMock(side_effect=[False, False])
+        zdb.api.services.get = MagicMock(return_value=node)
+
+        zdb._zerodb_sal.is_running = MagicMock(side_effect=[(False,), (False,)])
         zdb.state.set('actions', 'install', 'ok')
         zdb.state.set('actions', 'start', 'ok')
         zdb._monitor()

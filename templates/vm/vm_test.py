@@ -118,13 +118,15 @@ class TestVmTemplate(ZrobotBaseTest):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.state.set('status', 'running', 'ok')
-        vm.state.delete = MagicMock()
 
         vm.shutdown()
 
         vm._vm_sal.shutdown.assert_called_with()
-        vm.state.check('status', 'shutdown', 'ok')
-        vm.state.delete.assert_called_with('status', 'running')
+
+        with pytest.raises(StateCheckError):
+            vm.state.check("status", 'running', 'ok')
+        with pytest.raises(StateCheckError):
+            vm.state.check("actions", 'start', 'ok')
 
     def test_pause_vm_not_running(self):
         """
@@ -242,17 +244,35 @@ class TestVmTemplate(ZrobotBaseTest):
             vm = Vm('vm', data=self.valid_data)
             vm.disable_vnc()
 
-    def test_monitor_vm_not_running(self):
+    def test_monitor_vm_not_running_deploy_fails(self):
         """
-        Test monitor vm not running
+        Test monitor vm not running and deploy fails
         """
         vm = Vm('vm', data=self.valid_data)
         vm._vm_sal.is_running.return_value = False
+        vm._vm_sal.deploy = MagicMock()
         vm.state.delete = MagicMock()
         vm.state.set('actions', 'install', 'ok')
+        vm.state.set('actions', 'start', 'ok')
 
         vm._monitor()
         vm.state.delete.assert_called_once_with('status', 'running')
+        vm._vm_sal.deploy.assert_called_once_with()
+
+    def test_monitor_vm_not_running_deploy_success(self):
+        """
+        Test monitor vm not running and deploy fails
+        """
+        vm = Vm('vm', data=self.valid_data)
+        vm._vm_sal.is_running.side_effect = [False, True]
+        vm._vm_sal.deploy = MagicMock()
+        vm.state.delete = MagicMock()
+        vm.state.set('actions', 'install', 'ok')
+        vm.state.set('actions', 'start', 'ok')
+
+        vm._monitor()
+        vm.state.check("status", "running", "ok")
+        vm._vm_sal.deploy.assert_called_once_with()
 
     def test_monitor_vm_running(self):
         """
@@ -260,13 +280,15 @@ class TestVmTemplate(ZrobotBaseTest):
         """
         vm = Vm('vm', data=self.valid_data)
         vm.state.set('status', 'rebooting', 'ok')
-        vm.state.set('status', 'shutdown', 'ok')
         vm.state.set('actions', 'install', 'ok')
+        vm.state.set('actions', 'start', 'ok')
         vm._vm_sal.is_running.return_value = True
-        vm.state.delete = MagicMock()
 
         vm._monitor()
-        assert vm.state.delete.call_count == 2
+
+        vm.state.check('status', 'running', 'ok')
+        with pytest.raises(StateCheckError):
+            vm.state.check('status', 'rebooting', 'ok')
 
     def test_monitor_before_install(self):
         """
