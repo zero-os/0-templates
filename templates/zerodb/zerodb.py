@@ -45,11 +45,12 @@ class Zerodb(TemplateBase):
         node.state.check('disks', 'mounted', 'ok')
 
         if not self._zerodb_sal.is_running()[0]:
+            self.state.delete('status', 'running')
             self._zerodb_sal.start()
             if self._zerodb_sal.is_running()[0]:
                 self.state.set('status', 'running', 'ok')
-            else:
-                self.state.delete('status', 'running')
+        else:
+            self.state.set('status', 'running', 'ok')
 
     def install(self):
         self.logger.info('Installing zerodb %s' % self.name)
