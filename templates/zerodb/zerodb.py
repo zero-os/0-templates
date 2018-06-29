@@ -14,8 +14,10 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.recurring_action('_monitor', 10)  # every 10 seconds
+
+    def validate(self):
         self.state.delete('status', 'running')
-        self.recurring_action('_monitor', 10)  # every 30 seconds
 
     @property
     def _node_sal(self):

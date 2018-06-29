@@ -14,6 +14,7 @@ class Vdisk(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.recurring_action('_monitor', 10)
         if not self.data.get('password'):
             self.data['password'] = j.data.idgenerator.generateXCharID(32)
 
@@ -39,6 +40,15 @@ class Vdisk(TemplateBase):
     @property
     def _zerodb(self):
         return self.api.services.get(template_uid=ZERODB_TEMPLATE_UID, name=self.data['zerodb'])
+
+    def _monitor(self):
+        self.state.check('action', 'install', 'ok')
+
+        try:
+            self._zerodb.state.check('status', 'running', 'ok')
+            self.state.set('status', 'running', 'ok')
+        except StateCheckError:
+            self.state.delete('status', 'running')
 
     def install(self):
         try:
@@ -73,6 +83,7 @@ class Vdisk(TemplateBase):
         disk.deploy()
 
         self.state.set('actions', 'install', 'ok')
+        self.state.set('status', 'running', 'ok')
 
     def info(self):
         self.state.check('actions', 'install', 'ok')
@@ -89,10 +100,4 @@ class Vdisk(TemplateBase):
     def uninstall(self):
         self._zerodb.schedule_action('namespace_delete', args={'name': self.data['nsName']}).wait(die=True)
         self.state.delete('actions', 'install')
-
-    def is_running(self):
-        try:
-            self._zerodb.state.check('status', 'running', 'ok')
-            return True
-        except StateCheckError:
-            return False
+        self.state.delete('status', 'running')
