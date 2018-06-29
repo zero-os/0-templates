@@ -49,7 +49,9 @@ class Vm(TemplateBase):
                 vdisk = self.api.services.get(template_uid=VDISK_TEMPLATE_UID, name=disk['name'])
                 vdisk.state.check('status', 'running', 'ok')  # Cannot start vm until vdisks are running
 
+            self._update_vdisk_url()
             self._vm_sal.deploy()
+
             if self._vm_sal.is_running():
                 self.state.set('status', 'running', 'ok')
         else:
