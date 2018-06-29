@@ -23,6 +23,8 @@ class Node(TemplateBase):
         self.recurring_action('_register', 3600 * 2)  # every 2hours
 
     def validate(self):
+        self.state.delete('disks', 'mounted')
+
         network = self.data.get('network')
         if network:
             self._validate_network(network)
@@ -52,10 +54,17 @@ class Node(TemplateBase):
         if not sp.mountpoint:
             self.node_sal.ensure_persistance()
 
+        # check for reboot
         if self.node_sal.uptime() < self.data['uptime']:
             self.install()
 
         self.data['uptime'] = self.node_sal.uptime()
+
+        try:
+            self.node_sal.zerodbs.partition_and_mount_disks()
+            self.state.set('disks', 'mounted', 'ok')
+        except:
+            self.state.delete('disks', 'mounted')
 
         try:
             # check if the node was rebooting and start containers and vms

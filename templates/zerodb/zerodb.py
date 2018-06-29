@@ -14,7 +14,10 @@ class Zerodb(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self.recurring_action('_monitor', 30)  # every 30 seconds
+        self.recurring_action('_monitor', 10)  # every 10 seconds
+
+    def validate(self):
+        self.state.delete('status', 'running')
 
     @property
     def _node_sal(self):
@@ -38,9 +41,12 @@ class Zerodb(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self.state.check('actions', 'start', 'ok')
 
-        if not self._zerodb_sal.is_running():
+        node = self.api.services.get(template_account='zero-os', template_name='node')
+        node.state.check('disks', 'mounted', 'ok')
+
+        if not self._zerodb_sal.is_running()[0]:
             self._zerodb_sal.start()
-            if self._zerodb_sal.is_running():
+            if self._zerodb_sal.is_running()[0]:
                 self.state.set('status', 'running', 'ok')
             else:
                 self.state.delete('status', 'running')

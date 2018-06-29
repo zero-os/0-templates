@@ -40,23 +40,28 @@ class Vm(TemplateBase):
     def _monitor(self):
         self.logger.info('Monitor vm %s' % self.name)
         self.state.check('actions', 'install', 'ok')
+        self.state.check('actions', 'start', 'ok')
 
-        if self._vm_sal.is_running():
-            self.state.set('status', 'running', 'ok')
-            try:
-                self.state.check('status', 'rebooting', 'ok')
-                self.state.delete('status', 'rebooting')
-            except StateCheckError:
-                pass
-
-            try:
-                self.state.check('status', 'shutdown', 'ok')
-                self.state.delete('status', 'shutdown')
-            except StateCheckError:
-                pass
-        else:
+        if not self._vm_sal.is_running():
             self.state.delete('status', 'running')
-            self.state.set('status', 'shutdown', 'ok')
+
+            for disk in self.data['disks']:
+                vdisk = self.api.services.get(template_uid=VDISK_TEMPLATE_UID, name=disk['name'])
+                vdisk.state.check('status', 'running', 'ok')  # Cannot start vm until vdisks are running
+
+            self._vm_sal.deploy()
+            if self._vm_sal.is_running():
+                self.state.set('status', 'running', 'ok')
+        else:
+            self.state.set('status', 'running', 'ok')
+
+        # handle reboot
+        try:
+            self.state.check('status', 'running', 'ok')
+            self.state.check('status', 'rebooting', 'ok')
+            self.state.delete('status', 'rebooting')
+        except StateCheckError:
+            pass
 
     def update_ipxeurl(self, url):
         self.data['ipxeUrl'] = url
@@ -79,6 +84,7 @@ class Vm(TemplateBase):
         self.data['ztIdentity'] = vm_sal.zt_identity
 
         self.state.set('actions', 'install', 'ok')
+        self.state.set('actions', 'start', 'ok')
         self.state.set('status', 'running', 'ok')
 
     def zt_identity(self):
@@ -88,6 +94,7 @@ class Vm(TemplateBase):
         self.logger.info('Uninstalling vm %s' % self.name)
         self._vm_sal.destroy()
         self.state.delete('actions', 'install')
+        self.state.delete('actions', 'start')
         self.state.delete('status', 'running')
 
     def shutdown(self, force=False):
@@ -98,7 +105,7 @@ class Vm(TemplateBase):
         else:
             self._vm_sal.destroy()
         self.state.delete('status', 'running')
-        self.state.set('status', 'shutdown', 'ok')
+        self.state.delete('actions', 'start')
 
     def pause(self):
         self.logger.info('Pausing vm %s' % self.name)
@@ -109,11 +116,11 @@ class Vm(TemplateBase):
 
     def start(self):
         self.logger.info('Starting vm {}'.format(self.name))
-        self.state.check('status', 'shutdown', 'ok')
+        self.state.set('actions', 'install', 'ok')
         self._update_vdisk_url()
         self._vm_sal.deploy()
-        self.state.delete('status', 'shutdown')
-        self.state.set('actions', 'running', 'ok')
+        self.state.set('actions', 'start', 'ok')
+        self.state.set('status', 'running', 'ok')
 
     def resume(self):
         self.logger.info('Resuming vm %s' % self.name)
@@ -122,6 +129,7 @@ class Vm(TemplateBase):
         self._vm_sal.resume()
         self.state.delete('actions', 'pause')
         self.state.set('status', 'running', 'ok')
+        self.state.set('actions', 'start', 'ok')
 
     def reboot(self):
         self.logger.info('Rebooting vm %s' % self.name)
