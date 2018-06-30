@@ -1,6 +1,7 @@
 from js9 import j
 from zerorobot.template.base import TemplateBase
 from zerorobot.template.state import StateCheckError
+import copy
 
 NODE_CLIENT = 'local'
 VDISK_TEMPLATE_UID = 'github.com/zero-os/0-templates/vdisk/0.0.1'
@@ -150,14 +151,26 @@ class Vm(TemplateBase):
         self.state.check('actions', 'install', 'ok')
         self._vm_sal.enable_vnc()
 
-    def info(self):
+    def info(self, timeout=None):
         self._update_vdisk_url()
         info = self._vm_sal.info or {}
+        nics = copy.deepcopy(self.data['nics'])
+        for nic in nics:
+            if nic['type'] == 'zerotier' and nic.get('ztClient') and self.data.get('ztIdentity'):
+                ztAddress = self.data['ztIdentity'].split(':')[0]
+                zclient = j.clients.zerotier.get(nic['ztClient'])
+                try:
+                    network = zclient.network_get(nic['id'])
+                    member = network.member_get(address=ztAddress)
+                    member.timeout = None
+                    nic['ip'] = member.get_private_ip(timeout)
+                except (RuntimeError, ValueError) as e:
+                    self.logger('Failed to retreive zt ip: {}'.format(e))
         return {
             'vnc': info.get('vnc'),
             'status': info.get('state', 'halted'),
             'disks': self.data['disks'],
-            'nics': self.data['nics'],
+            'nics': nics,
             'ztIdentity': self.data['ztIdentity'],
         }
 

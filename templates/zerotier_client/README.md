@@ -9,6 +9,13 @@ This template is responsible for configuring the zerotier client on jumpscale. I
 
 
 ### Actions:
+- `add_to_robot`: Add zerotier_client on a node robot
+  - `url`: Url of the node robot
+  - `serviceguid`: Serviceguid to create the zerotier_client for
+- `remove_from_robot`: delete the client from jumpscale.
+  - `url`: Url of the node robot
+  - `serviceguid`: Serviceguid the zerotier_client was created for
+- `delete`: delete the client from jumpscale.
 - `delete`: delete the client from jumpscale.
 
 
