@@ -12,7 +12,7 @@ class ZerotierClient(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
-        self.add_delete_callback(self.delete)
+        self.add_delete_callback(self.uninstall)
 
         # client instance already exists
         if self.name in j.clients.zerotier.list():
@@ -26,13 +26,11 @@ class ZerotierClient(TemplateBase):
         # this will create a configuration for this instance
         j.clients.zerotier.get(self.name, data={'token_': self.data['token']})
 
-    def delete(self):
+    def uninstall(self):
         """
-        delete the client configuration
+        uninstall the client configuration
         """
         j.clients.zerotier.delete(self.name)
-        # call the delete of the base class
-        super().delete()
 
     def token(self):
         return self.data['token']
@@ -50,4 +48,3 @@ class ZerotierClient(TemplateBase):
         robotapi = self._get_remote_robot(url)
         for service in robotapi.services.find(template_uid=ZT_TEMPLATE_UID, name=serviceguid):
             service.delete()
-
