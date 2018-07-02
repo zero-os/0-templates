@@ -44,12 +44,12 @@ class TestZerotierClientTemplate(ZrobotBaseTest):
 
         assert self.get.called is False
 
-    def test_delete(self):
-        delete = patch('js9.j.clients.zerotier.delete', MagicMock()).start()
+    def test_uninstall(self):
+        uninstall = patch('js9.j.clients.zerotier.delete', MagicMock()).start()
         service = ZerotierClient(name='zttest', data={'token': 'foo'})
-        service.delete()
+        service.uninstall()
 
-        delete.assert_called_once_with('zttest')
+        uninstall.assert_called_once_with('zttest')
 
     def test_token(self):
         service = ZerotierClient(name='zttest', data={'token': 'foo'})
