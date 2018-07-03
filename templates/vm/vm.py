@@ -165,7 +165,8 @@ class Vm(TemplateBase):
                     member.timeout = None
                     nic['ip'] = member.get_private_ip(timeout)
                 except (RuntimeError, ValueError) as e:
-                    self.logger('Failed to retreive zt ip: {}'.format(e))
+                    self.logger.warning('Failed to retreive zt ip: %s', str(e))
+
         return {
             'vnc': info.get('vnc'),
             'status': info.get('state', 'halted'),
