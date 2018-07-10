@@ -63,14 +63,14 @@ if __name__ == "__main__":
     print(colored(' [*] packet machine IP : {} '.format(device.ip_addresses[0]['address']), 'green'))
 
     print(colored(' [*] Authorize it', 'white'))
-    for _ in range(10):
+    for _ in range(300):
         try:
             zos_zt_member = zt_network.member_get(public_ip=device.ip_addresses[0]['address'])
         except:
             time.sleep(10)
         else:
             zos_zt_member = zt_network.member_get(public_ip=device.ip_addresses[0]['address'])
-        
+
     zos_zt_member.authorize()
     packet_machine_zt_ip = zos_zt_member.private_ip
     with open('/tmp/ip.txt', 'w') as file:
