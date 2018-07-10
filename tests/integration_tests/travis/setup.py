@@ -20,6 +20,7 @@ def create_zerotier_nw(zt_token):
 
 
 if __name__ == "__main__":
+    print(colored(' [*] Setup Testing env ... '))
     parser = argparse.ArgumentParser()
     parser.add_argument("--zos-version", dest="zos_version", default='development', help="zos version")
     parser.add_argument("--zt-token", dest="zt_token", help="zerotier token")
@@ -41,6 +42,7 @@ if __name__ == "__main__":
 
     ipxe = 'http://unsecure.bootstrap.gig.tech/ipxe/{}/{}/console=ttyS1,115200%20development'.format(zos_version,
                                                                                                      zt_network.id)
+    print(colored(' [*] ipxe : {}'.format(ipxe), 'yellow'))
     print(colored(' [*] Install ZOS packet machine', 'white'))
     packet_machine_name = '0-core-TEST'
     plan = "baremetal_0"
@@ -53,8 +55,12 @@ if __name__ == "__main__":
                                                      facility=facility, operating_system="custom_ipxe",
                                                      ipxe_script_url=ipxe, termination_time=10800)
     print(colored(' [*] wait 240s .. booting .. ', 'yellow'))
-    time.sleep(240)
-    device = packet_client.client.get_device(device_data.id)
+    for _ in range(300):
+        try:
+            device = packet_client.client.get_device(device_data.id)
+        except:
+            time.sleep(10)
+    print(colored(' [*] packet machine IP : {} '.format(device.ip_addresses[0]['address']), 'green'))
 
     print(colored(' [*] Authorize it', 'white'))
     zos_zt_member = zt_network.member_get(public_ip=device.ip_addresses[0]['address'])
@@ -72,5 +78,4 @@ if __name__ == "__main__":
     host_member.authorize()
     host_ip = host_member.private_ip
     print(colored(' [*] Host IP {}'.format(host_ip), 'green'))
-
 
