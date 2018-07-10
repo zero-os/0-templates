@@ -31,7 +31,7 @@ if __name__ == "__main__":
     zt_config_instance_name = str(uuid.uuid4()).replace('-', '')[:10]
     zt_name = str(uuid.uuid4()).replace('-', '')[:10]
     zt_client = j.clients.zerotier.get(instance=zt_config_instance_name, data={'token_': zt_token})
-    zt_network = zt_client.network_create(public=False, name=zt_name, auto_assign=True,
+    zt_network = zt_client.network_create(public=True, name=zt_name, auto_assign=True,
                                           subnet='10.147.19.0/24')
     print(colored(' [*] ZT ID: {} '.format(zt_network.id), 'green'))
 

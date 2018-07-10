@@ -13,7 +13,7 @@ done
 pushd /opt/code/github/jumpscale
 
 # cloning source code
-for target in core9 lib9; do
+for target in core9 lib9 prefab9; do
     git clone --depth=1 -b ${BRANCH} https://github.com/jumpscale/${target}
 done
 
