@@ -54,7 +54,7 @@ if __name__ == "__main__":
     device_data = packet_client.client.create_device(project_id=project_id, hostname=packet_machine_name, plan=plan,
                                                      facility=facility, operating_system="custom_ipxe",
                                                      ipxe_script_url=ipxe, termination_time=10800)
-    print(colored(' [*] wait 240s .. booting .. ', 'yellow'))
+    print(colored(' [*] wait .. booting .. ', 'yellow'))
     for _ in range(300):
         try:
             device = packet_client.client.get_device(device_data.id)
@@ -63,7 +63,14 @@ if __name__ == "__main__":
     print(colored(' [*] packet machine IP : {} '.format(device.ip_addresses[0]['address']), 'green'))
 
     print(colored(' [*] Authorize it', 'white'))
-    zos_zt_member = zt_network.member_get(public_ip=device.ip_addresses[0]['address'])
+    for _ in range(10):
+        try:
+            zos_zt_member = zt_network.member_get(public_ip=device.ip_addresses[0]['address'])
+        except:
+            time.sleep(10)
+        else:
+            zos_zt_member = zt_network.member_get(public_ip=device.ip_addresses[0]['address'])
+        
     zos_zt_member.authorize()
     packet_machine_zt_ip = zos_zt_member.private_ip
     with open('/tmp/ip.txt', 'w') as file:
