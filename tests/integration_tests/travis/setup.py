@@ -14,11 +14,6 @@ def get_available_facility(client, plan):
     else:
         return None
 
-
-def create_zerotier_nw(zt_token):
-    return zt_network.id
-
-
 if __name__ == "__main__":
     print(colored(' [*] Setup Testing env ... '))
     parser = argparse.ArgumentParser()
