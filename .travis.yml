@@ -7,10 +7,10 @@ matrix:
       if: type IN (api, cron)
       install:
         - pip3 install -r tests/integration_tests/requirements.txt
+        - curl -s https://install.zerotier.com/ | sudo bash
         - ./utils/jumspcale_install.sh ${js9_branch}
         - python3 ./tests/integration_tests/travis/setup.py --zos-version ${core_0_branch} --zt-token ${zerotier_token} --pckt_token ${packet_token}
         - ./utils/zrobot_install.sh ${zrobot_branch}
-        - ./tests/integration_tests/prepare.sh
 
       script:
         - bash tests/integration_tests/travis/travis_script.sh

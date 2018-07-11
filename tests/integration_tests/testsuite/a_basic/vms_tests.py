@@ -104,10 +104,10 @@ class VM_actions(ZOS_BaseTest):
     def tearDownClass(cls):
         self = cls()
         temp_actions = {'vm': {'actions': ['uninstall']}}
-        if self.check_if_service_exist(self.vm1_name):
-            res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-            self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['uninstall'])
-        self.delete_services()
+        # if self.check_if_service_exist(self.vm1_name):
+        #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['uninstall'])
+        # self.delete_services()
 
     def test001_pause_and_resume_vm(self):
         """ ZRT-ZOS-005
@@ -270,6 +270,8 @@ class VM_actions(ZOS_BaseTest):
         self.enable_ssh_access(self.vm_ip_vncport)
         response = self.execute_command_inside_vm(ssh_client, vm_ip, 'uptime')
         x = response.stdout.strip()
+
+        self.log("############################## %s #########################"%x)
         uptime = int(x[x.find('up')+2:x.find('min')])
         self.assertEqual(response.state, 'SUCCESS')
         self.assertAlmostEqual(uptime, 0, delta=1)

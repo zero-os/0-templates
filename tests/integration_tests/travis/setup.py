@@ -33,6 +33,8 @@ if __name__ == "__main__":
     zt_client = j.clients.zerotier.get(instance=zt_config_instance_name, data={'token_': zt_token})
     zt_network = zt_client.network_create(public=True, name=zt_name, auto_assign=True,
                                           subnet='10.147.19.0/24')
+    with open('/tmp/testing_zt_network.txt', 'w') as file:
+        file.write(zt_network.id)
     print(colored(' [*] ZT ID: {} '.format(zt_network.id), 'green'))
 
     ipxe = 'http://unsecure.bootstrap.gig.tech/ipxe/{}/{}/console=ttyS1,115200%20development'.format(zos_version,
@@ -72,12 +74,17 @@ if __name__ == "__main__":
         file.write(packet_machine_zt_ip)
     print(colored(' [*] packet_machine_zt_ip = {}'.format(packet_machine_zt_ip), 'green'))
 
-    print(colored(' [*] Host join zt network', 'white'))
-    j.tools.prefab.local.network.zerotier.network_join(network_id=zt_network.id)
-    zt_machine_addr = j.tools.prefab.local.network.zerotier.get_zerotier_machine_address()
-    time.sleep(60)
-    host_member = zt_network.member_get(address=zt_machine_addr)
-    host_member.authorize()
-    host_ip = host_member.private_ip
-    print(colored(' [*] Host IP {}'.format(host_ip), 'green'))
+    # print(colored(' [*] Host join zt network', 'white'))
+    # print(colored(' [*] Install zerotier client', 'white'))
+    # try:
+    #     j.tools.prefab.local.network.zerotier.install()
+    # finally:
+    #     j.tools.prefab.local.network.zerotier.start()
+    # j.tools.prefab.local.network.zerotier.network_join(network_id=zt_network.id)
+    # zt_machine_addr = j.tools.prefab.local.network.zerotier.get_zerotier_machine_address()
+    # time.sleep(60)
+    # host_member = zt_network.member_get(address=zt_machine_addr)
+    # host_member.authorize()
+    # host_ip = host_member.private_ip
+    # print(colored(' [*] Host IP {}'.format(host_ip), 'green'))
 
