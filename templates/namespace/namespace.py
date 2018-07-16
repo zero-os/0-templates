@@ -13,6 +13,7 @@ class Namespace(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.add_delete_callback(self.uninstall)
         if not self.data.get('password'):
             self.data['password'] = j.data.idgenerator.generateXCharID(32)
         self.recurring_action('_monitor', 30)  # every 30 seconds

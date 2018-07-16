@@ -14,6 +14,7 @@ class Vdisk(TemplateBase):
 
     def __init__(self, name=None, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
+        self.add_delete_callback(self.uninstall)
         self.recurring_action('_monitor', 10)
         if not self.data.get('password'):
             self.data['password'] = j.data.idgenerator.generateXCharID(32)

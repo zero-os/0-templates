@@ -20,7 +20,7 @@ class Node(TemplateBase):
     def __init__(self, name, guid=None, data=None):
         super().__init__(name=name, guid=guid, data=data)
         self.recurring_action('_monitor', 30)  # every 30 seconds
-        self.recurring_action('_register', 3600 * 2)  # every 2hours
+        self.recurring_action('_register', 10 * 60)  # every 10 minutes
 
     def validate(self):
         self.state.delete('disks', 'mounted')
@@ -82,10 +82,14 @@ class Node(TemplateBase):
         """
         self.state.check('actions', 'install', 'ok')
         self.logger.info("register node capacity")
-        # TODO:
-        # implement TTL for the data registered, so if the node is not online anymore
-        # the capacity will not be visible anymore until the node is up again
+
         self.node_sal.capacity.register()
+        self.node_sal.capacity.update_reality()
+        self.node_sal.capacity.update_reserved(
+            vms=self.api.services.find(template_name='vm', template_account='zero-os'),
+            vdisks=self.api.services.find(template_name='vdisk', template_account='zero-os'),
+            gateways=self.api.services.find(template_name='gateway', template_account='zero-os'),
+        )
 
     def _rename_cache(self):
         """Rename old cache storage pool to new convention if needed"""
