@@ -22,15 +22,21 @@ echo "[+] Joining testing zerotier network"
 testing_zt_network=$(cat /tmp/testing_zt_network.txt)
 join_zerotier_network ${testing_zt_network} ${zerotier_token}
 
+echo "[+] Generate sshkey. "
+ssh-keygen -t rsa -N "" -f  /tmp/test
+eval `ssh-agent -s`
+ssh-add /tmp/test
+
+sshkey_pub=$(</tmp/test.pub)
 echo "[+] Copying testing framework ..."
 cd tests/integration_tests
 bash prepare.sh
 
 echo "[+] Connecting to 0-robot server ..."
 cpu_zt_ip=$(cat /tmp/ip.txt)
-sleep 400
+sleep 550
 zrobot robot connect main http://${cpu_zt_ip}:6600
 sleep 20
 
 echo "[+] Running tests ..."
-nosetests -v -s ${tests_path} --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip} --tc=main.secert:${itsyouonline_secert} --tc=main.app_id:${itsyouonline_app_id}
+nosetests -v -s ${tests_path} --tc-file=config.ini --tc=main.zt_token:${zerotier_token} --tc=main.zt_id:${testing_zt_network} --tc=main.redisaddr:${cpu_zt_ip} --tc=main.sshkey:${sshkey_pub} --tc=main.secert:${itsyouonline_secert} --tc=main.app_id:${itsyouonline_app_id}

@@ -50,7 +50,7 @@ if __name__ == "__main__":
     facility = get_available_facility(client=packet_client, plan=plan)
     device_data = packet_client.client.create_device(project_id=project_id, hostname=packet_machine_name, plan=plan,
                                                      facility=facility, operating_system="custom_ipxe",
-                                                     ipxe_script_url=ipxe, termination_time=10800)
+                                                     ipxe_script_url=ipxe, termination_time=300)
     print(colored(' [*] wait .. booting .. ', 'yellow'))
     for _ in range(300):
         try:

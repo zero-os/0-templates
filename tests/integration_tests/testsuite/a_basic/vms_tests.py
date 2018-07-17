@@ -4,8 +4,9 @@ from random import randint
 import time
 from nose_parameterized import parameterized
 from random import randint
-
-
+from testconfig import config
+from zerorobot.cli import utils
+from js9 import j
 class BasicTests(ZOS_BaseTest):
     def __init__(self, *args, **kwargs):
         super(BasicTests, self).__init__(*args, **kwargs)
@@ -75,7 +76,6 @@ class BasicTests(ZOS_BaseTest):
         self.assertEqual(res, "invalid input. Vm requires flist or ipxeUrl to be specifed.")
         self.log('%s ENDED' % self._testID)
 
-
 class VM_actions(ZOS_BaseTest):
     def __init__(self, *args, **kwargs):
         super(VM_actions, self).__init__(*args, **kwargs)
@@ -84,6 +84,8 @@ class VM_actions(ZOS_BaseTest):
     def setUpClass(cls):
         self = cls()
         super(VM_actions, cls).setUpClass()
+        cls.zt_service = self.random_string()
+        zt = self.robot.services.create('github.com/zero-os/0-templates/zerotier_client/0.0.1', cls.zt_service , {'token': self.zt_token})
 
         cls.temp_actions = {
                              'vm': {'actions': ['install']}
@@ -103,11 +105,13 @@ class VM_actions(ZOS_BaseTest):
     @classmethod
     def tearDownClass(cls):
         self = cls()
+        instance, _ = utils.get_instance()
+        self.zrobot_client = j.clients.zrobot.get(instance)
         temp_actions = {'vm': {'actions': ['uninstall']}}
-        # if self.check_if_service_exist(self.vm1_name):
-        #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-        #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['uninstall'])
-        # self.delete_services()
+        if self.check_if_service_exist(self.vm1_name):
+            res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+            self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['uninstall'])
+        self.delete_services()
 
     def test001_pause_and_resume_vm(self):
         """ ZRT-ZOS-005
@@ -202,6 +206,7 @@ class VM_actions(ZOS_BaseTest):
         self.log('%s STARTED' % self._testID)
         
         self.log('Enable vnc_port for [vm1], should succeed.')
+        import ipdb; ipdb.set_trace()
         temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
         res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
         self.assertEqual(type(res), type(dict()))
@@ -232,46 +237,30 @@ class VM_actions(ZOS_BaseTest):
         #. Check that [vm] has been rebooted/reset successfully.
         """
         self.log('%s STARTED' % self._testID)
-        
-        self.log("Create ssh container. ")
-        temp_actions = {'container': {'actions': ['install']}}
-        cont1_name = self.random_string()
-        containers = {cont1_name: {'hostname': cont1_name,
-                                   'flist': 'https://hub.gig.tech/ah-elsayed/ubuntu.flist',
-                                   'storage': self.cont_storage,
-                                   'nics': [{'type': 'default', 'name': self.random_string()}],
-                                   'hostNetworking': True}}
-        res = self.create_container(containers=containers, temp_actions=temp_actions)
-        self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(cont1_name, res[cont1_name]['install'])
+        vm_name = self.random_string()
+        data = {'flist': self.vm_flist,
+                'memory': 2048,
+                'nics': [{'type': 'zerotier', 'id': self.zt_id, 'name': self.random_string(), 'ztClient': self.zt_service}],
+                'configs': [{'path': '/root/.ssh/authorized_keys',
+                             'content': self.ssh_key,
+                             'name': 'sshkey'}]}
+        vm = self.robot.services.find_or_create('github.com/zero-os/0-templates/vm/0.0.1', service_name=vm_name,data=data)
+        install_result = vm.schedule_action("install").wait(die=True)
+        self.assertEqual(install_result.state, 'ok')
+        time.sleep(300)
+        vm_info = vm.schedule_action("info").wait(die=True).result
+        vm_ip = vm_info['nics'][0]['ip']
 
-        conts = self.zos_client.container.list()
-        (cont1_id, cont1) = [c for c in conts.items() if c[1]['container']['arguments']['name'] == cont1_name][0]
-        ssh_client = self.zos_client.container.client(cont1_id)
-
-        self.log('Enable vnc_port for [vm1], should succeed.')
-        temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
-        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-        self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])      
-
-        self.log("%s the vm, should suceeed."%action_type)
-        time.sleep(30)
-        temp_actions = {'vm': {'actions': [action_type], 'service': self.vm1_name}}
-        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-        self.assertEqual(type(res), type(dict()))
-        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name][action_type])
-        vm_ip = self.get_vm(self.vm1_name)[0]['default_ip']
-
+        self.log("%s the vm , should succeed"%action_type)
+        vm.schedule_action(action_type).wait(die=True).result
         self.log("Check that [vm] has been %s successfully."%action_type)
-        if action_type == 'reboot':        
-            time.sleep(15)
-        time.sleep(15)
-        self.enable_ssh_access(self.vm_ip_vncport)
-        response = self.execute_command_inside_vm(ssh_client, vm_ip, 'uptime')
-        x = response.stdout.strip()
 
-        self.log("############################## %s #########################"%x)
-        uptime = int(x[x.find('up')+2:x.find('min')])
-        self.assertEqual(response.state, 'SUCCESS')
-        self.assertAlmostEqual(uptime, 0, delta=1)
+        if action_type == 'reboot':        
+            time.sleep(30)
+        time.sleep(30)
+        result, error = self.execute_command(vm_ip, 'uptime')
+        result = str(result) 
+        uptime = int(result[result.find('up')+2:result.find('min')])
+
+        self.assertAlmostEqual(uptime, 0, delta=2)
+        vm_info = vm.schedule_action("uninstall").wait(die=True).result
