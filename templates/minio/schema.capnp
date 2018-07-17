@@ -14,5 +14,4 @@ struct Schema {
     resticPassword @9: Text="coucou01"; # rustic password
     privateKey @10: Text; # encryption private key
     metaPrivateKey @11: Text; # metadata encryption private key
-    namespaces @12: List(Text);
 }
