@@ -90,10 +90,10 @@ services:
             - source: 22
               target: 22
               name: 'ssh'
-       configs:
-         - path: '/root/.ssh/authorized_keys'
-           content: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1'
-           name: 'sshkey'
+        configs:
+          - path: '/root/.ssh/authorized_keys'
+            content: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC8tBgGU1'
+            name: 'sshkey'
 
 
 
