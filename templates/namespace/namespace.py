@@ -34,7 +34,7 @@ class Namespace(TemplateBase):
     def _monitor(self):
         self.logger.info('Monitor namespace %s' % self.name)
         self.state.check('actions', 'install', 'ok')
-        self.state.check('actions', 'start', 'ok')
+
         try:
             self._zerodb.state.check('status', 'running', 'ok')
             self.state.set('status', 'running', 'ok')
