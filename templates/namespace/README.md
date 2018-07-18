@@ -5,15 +5,30 @@ This template is responsible for managing a 0-db namespace
 
 ### Schema:
 
-- `zerodb`: the zerodb to create the namespace on
+- `zerodb`: the zerodb service where the namespace is deployed. This is set by the template.
 - `size`: the namespace size
-- `password`: The namespace password **optional**
+- `diskType`: disk type. Valid DiskType value.
+- `mode`: zero-db mode. Valid Mode value.
+- `public`: public mode. see https://github.com/rivine/0-db#nsset for detail about public mode
+- `password`: the namespace password **optional**
+- `nsName`: the namespace name. It will be generated if empty.
+
+DiskType enum: 
+- `hdd` 
+- `ssd`
+
+Mode enum: 
+- `user` 
+- `direct`
+- `seq`
 
 ### Actions
 - `install`: creates the namespace.
 - `info`: returns info about the namespace. 
 - `url`: return the public url of the namespace
 - `private_url`: return the private url of the namespace
+- `uninstall`: removes the namespace from the zerodb
+- `connection_info`: returns the connection info
 
 ### Usage example via the 0-robot DSL
 
@@ -23,7 +38,6 @@ from zerorobot.dsl import ZeroRobotAPI
 robot = j.clients.zrobot.robots['main']
 
 args = {
-    'zerodb': 'zerodb_one',
     'size': 10,
     'password': 'password',
 }
@@ -40,7 +54,6 @@ To create namespace `namespace_one`:
 ```yaml
 services:
     - github.com/zero-os/0-templates/namespace/0.0.1__namespace_one:
-          zerodb: 'zerodb_one'
           size: 10
           password: 'password'
           
