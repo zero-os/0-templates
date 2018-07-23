@@ -23,11 +23,11 @@ testing_zt_network=$(cat /tmp/testing_zt_network.txt)
 join_zerotier_network ${testing_zt_network} ${zerotier_token}
 
 echo "[+] Generate sshkey. "
-ssh-keygen -t rsa -N "" -f  /tmp/test
+ssh-keygen -t rsa -N "" -f  /tmp/id_rsa_test
 eval `ssh-agent -s`
-ssh-add /tmp/test
+ssh-add /tmp/id_rsa_test
 
-sshkey_pub=$(</tmp/test.pub)
+sshkey_pub="$(cat /tmp/test.pub)"
 echo "[+] Copying testing framework ..."
 cd tests/integration_tests
 bash prepare.sh
