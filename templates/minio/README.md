@@ -31,9 +31,7 @@ This template is responsible for managing [minio](https://minio.io/) server inst
 To create instance `erp` then register `node1`
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
+robot = robot = j.clients.zrobot.robots['main']
 
 args = {
     'node': '547c5d299411',
@@ -47,7 +45,7 @@ args = {
     'namespace': 'namespace',
     'privateKey': 'ab345678901234567890123456789012s',
 }
-minio = api.services.create('github.com/zero-os/0-templates/minio/0.0.1', 'minio', args)
+minio = robot.services.create('github.com/zero-os/0-templates/minio/0.0.1', 'minio', args)
 minio.schedule_action('install')
 minio.schedule_action('start')
 minio.schedule_action('stop')
