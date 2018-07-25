@@ -67,9 +67,7 @@ NicType enum:
 To install container `zerodbcontainer` on node `525400123456`:
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
+robot = j.clients.zrobot.robots['local']
 
 container_data = {
     'flist': 'https://hub.gig.tech/maxux/zero-db.flist',

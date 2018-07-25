@@ -23,8 +23,6 @@ This template is responsible for managing a vdisk
 ### Usage example via the 0-robot DSL
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-
 robot = j.clients.zrobot.robots['main']
 
 args = {
