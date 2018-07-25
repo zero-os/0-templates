@@ -27,9 +27,7 @@ HWCombo:
 To check if node `node1` has supported hardware specs
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
+robot = j.clients.zrobot.robots['local']
 
 args = {
     'supported':[{
@@ -42,7 +40,7 @@ args = {
     'botToken': 'thisisabottoken',
     'chatId': '1823737123',
 }
-hw_check= robot.api.services.create('github.com/zero-os/0-templates/hardware_check/0.0.1', 'hw_check', args)
+hw_check= robot.services.create('github.com/zero-os/0-templates/hardware_check/0.0.1', 'hw_check', args)
 hw_check.schedule_action('check', args={'node_name':'node1'})
 ```
 

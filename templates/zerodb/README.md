@@ -55,10 +55,7 @@ Namespace:
 ### Usage example via the 0-robot DSL
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
-
+robot = j.clients.zrobot.robots['local']
 args = {
     'sync': True,
     'mode': 'user',

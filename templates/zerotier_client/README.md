@@ -24,14 +24,12 @@ This template is responsible for configuring the zerotier client on jumpscale. I
 To create zerotier_client `client` and execute action `delete`:
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
+robot = j.clients.zrobot.robots['local']
 
 args = {
     'token': 'Ximdhaua',
 }
-zt = robot.api.services.create('github.com/zero-os/0-templates/zerotier_client/0.0.1', 'client', args)
+zt = robot.services.create('github.com/zero-os/0-templates/zerotier_client/0.0.1', 'client', args)
 zt.schedule_action('delete')
 ```
 

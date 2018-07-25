@@ -32,9 +32,7 @@ This template will start a 0-robot on a node inside a container.
 ### Usage example via the 0-robot DSL
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
+robot = j.clients.zrobot.robots['local']
 
 args = {
     'templates': ["https://github.com/zero-os/0-templates.git"],

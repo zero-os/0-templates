@@ -23,9 +23,7 @@ This template is responsible for registering a node in odoo if it wasn't already
 To create instance `erp` then register `node1`
 
 ```python
-from zerorobot.dsl import ZeroRobotAPI
-api = ZeroRobotAPI.ZeroRobotAPI()
-robot = api.robots['main']
+robot = j.clients.zrobot.robots['local']
 
 args = {
     'url': 'odoo_url',
@@ -35,7 +33,7 @@ args = {
     'botToken': 'XomAJANa',
     'chatId': '1823737123',
 }
-erp = api.services.create('github.com/zero-os/0-templates/erp_registeration/0.0.1', 'erp', args)
+erp = robot.services.create('github.com/zero-os/0-templates/erp_registeration/0.0.1', 'erp', args)
 erp.schedule_action('register', args={'node_id':'node1'})
 ```
 
