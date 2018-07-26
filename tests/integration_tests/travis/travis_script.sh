@@ -18,23 +18,25 @@ join_zerotier_network(){
     done
 }
 
-echo "[+] Joining router zerotier network"
-join_zerotier_network ${zerotier_network} ${zerotier_token}; sleep 10
-
-echo "[+] Setting up testing environment ..."
-python3 -u tests/integration_tests/travis/zboot_env_setup.py --router_address ${router_address} --router_username ${router_username} --router_password ${router_password} --zerotier_network ${zerotier_network} --zerotier_token ${zerotier_token} --rack_hostname ${rack_hostname} --rack_username ${rack_username} --rack_password ${rack_password} --rack_module_id ${rack_module_id} --cpu_hostname ${cpu_hostname} --cpu_rack_port ${cpu_rack_port} --core_0_branch ${core_0_branch}
-
 echo "[+] Joining testing zerotier network"
 testing_zt_network=$(cat /tmp/testing_zt_network.txt)
 join_zerotier_network ${testing_zt_network} ${zerotier_token}
 
+echo "[+] Generate sshkey. "
+ssh-keygen -t rsa -N "" -f  /tmp/id_rsa_test
+eval `ssh-agent -s`
+ssh-add /tmp/id_rsa_test
+
+sshkey_pub="$(cat /tmp/test.pub)"
 echo "[+] Copying testing framework ..."
 cd tests/integration_tests
 bash prepare.sh
 
 echo "[+] Connecting to 0-robot server ..."
-cpu_zt_ip=$(cat /tmp/cpu_zt_ip.txt)
-zrobot robot connect main http://${cpu_zt_ip}:6600; sleep 20
+cpu_zt_ip=$(cat /tmp/ip.txt)
+sleep 550
+zrobot robot connect main http://${cpu_zt_ip}:6600
+sleep 20
 
 echo "[+] Running tests ..."
-nosetests -v -s ${tests_path} --tc-file=config.ini --tc=main.redisaddr:${cpu_zt_ip}
+nosetests -v -s ${tests_path} --tc-file=config.ini --tc=main.zt_token:${zerotier_token} --tc=main.zt_id:${testing_zt_network} --tc=main.redisaddr:${cpu_zt_ip} --tc=main.sshkey:${sshkey_pub} --tc=main.secert:${itsyouonline_secert} --tc=main.app_id:${itsyouonline_app_id}

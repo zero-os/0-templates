@@ -6,15 +6,18 @@ matrix:
       python: 3.5
       if: type IN (api, cron)
       install:
-        - pip3 install argparse
-        - curl -s https://install.zerotier.com/ | sudo bash
         - pip3 install -r tests/integration_tests/requirements.txt
+        - curl -s https://install.zerotier.com/ | sudo bash
         - ./utils/jumspcale_install.sh ${js9_branch}
+        - python3 ./tests/integration_tests/travis/setup.py --action create --zos-version ${core_0_branch} --zt-token ${zerotier_token} --pckt_token ${packet_token}
         - ./utils/zrobot_install.sh ${zrobot_branch}
 
       script:
         - bash tests/integration_tests/travis/travis_script.sh
-        
+      after_script:
+        - python3 ./tests/integration_tests/travis/setup.py --action delete --zos-version ${core_0_branch} --zt-token ${zerotier_token} --pckt_token ${packet_token}
+
+
     - language: python
       sudo: required
       dist: trusty
