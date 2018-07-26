@@ -21,7 +21,6 @@ def main(options):
     """
 
     instance_name = 'test-{}'.format(random.randint(1, 1000))
-    
     # configure ssh client
     ssh_data = {
         'addr':options.router_address,
@@ -58,8 +57,7 @@ def main(options):
     print("[*] Set ipxe boot url")    
     networks = zboot.networks.get()
     host = networks.hosts.get(options.cpu_hostname)
-
-    ipxe_boot_url = 'http://unsecure.bootstrap.gig.tech/ipxe/{branch}/{zerotier}/development'.format(
+    ipxe_boot_url = 'http://unsecure.bootstrap.gig.tech/krn/{branch}/{zerotier}/development'.format(
         branch=options.core_0_branch,
         zerotier=testing_zt_network.id
     )
@@ -70,6 +68,7 @@ def main(options):
     zboot.port_power_cycle([options.cpu_rack_port], rack, options.rack_module_id)
 
     for _ in range(60):
+        
         members = testing_zt_network.members_list()
         if members:
             members[0].authorize()
