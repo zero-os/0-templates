@@ -7,6 +7,8 @@ from random import randint
 from testconfig import config
 from zerorobot.cli import utils
 from js9 import j
+from termcolor import colored
+
 class BasicTests(ZOS_BaseTest):
     def __init__(self, *args, **kwargs):
         super(BasicTests, self).__init__(*args, **kwargs)
@@ -113,118 +115,117 @@ class VM_actions(ZOS_BaseTest):
             self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['uninstall'])
         self.delete_services()
 
-    # def test001_pause_and_resume_vm(self):
-    #     """ ZRT-ZOS-005
-    #     *Test case for testing pause and resume vm*
+    def test001_pause_and_resume_vm(self):
+        """ ZRT-ZOS-005
+        *Test case for testing pause and resume vm*
 
-    #     **Test Scenario:**
+        **Test Scenario:**
 
-    #     #. Create a vm[vm1]  on node, should succeed.
-    #     #. Pause [vm1], should succeed.
-    #     #. Check that [vm1] has been paused successfully.
-    #     #. Resume [vm1], should succeed.
-    #     #. Check that [vm1] is runninng .
-    #     """
-    #     self.log('%s STARTED' % self._testID)
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Pause [vm1], should succeed.
+        #. Check that [vm1] has been paused successfully.
+        #. Resume [vm1], should succeed.
+        #. Check that [vm1] is runninng .
+        """
+        self.log('%s STARTED' % self._testID)
 
-    #     self.log('Pause [vm1], should succeed.')
-    #     temp_actions = {'vm': {'actions': ['pause'], 'service': self.vm1_name}}
-    #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-    #     self.assertEqual(type(res), type(dict()))
-    #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['pause'])        
+        self.log('Pause [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['pause'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['pause'])        
         
-    #     self.log("Check that [vm1] has been paused successfully..")
-    #     vms = self.zos_client.kvm.list()
-    #     vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-    #     self.assertEqual(vm1[0]['state'], "paused")
+        self.log("Check that [vm1] has been paused successfully..")
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1[0]['state'], "paused")
 
-    #     self.log("Resume [vm1], should succeed.")
-    #     temp_actions = {'vm': {'actions': ['resume'], 'service': self.vm1_name}}
-    #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-    #     self.assertEqual(type(res), type(dict()))
-    #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['resume'])        
+        self.log("Resume [vm1], should succeed.")
+        temp_actions = {'vm': {'actions': ['resume'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['resume'])        
          
-    #     self.log('Check that [vm1] is runninng ')
-    #     vms = self.zos_client.kvm.list()
-    #     vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-    #     self.assertEqual(vm1[0]['state'], "running")
+        self.log('Check that [vm1] is runninng ')
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1[0]['state'], "running")
 
-    #     self.log('%s ENDED' % self._testID)
+        self.log('%s ENDED' % self._testID)
 
-    # def test002_shutdown_and_start_vm(self):
-    #     """ ZRT-ZOS-006
-    #     *Test case for testing shutdown and reset vm*
+    def test002_shutdown_and_start_vm(self):
+        """ ZRT-ZOS-006
+        *Test case for testing shutdown and reset vm*
 
-    #     **Test Scenario:**
+        **Test Scenario:**
 
-    #     #. Create a vm[vm1]  on node, should succeed.
-    #     #. Shutdown [vm1], should succeed.
-    #     #. Check that [vm1] has been forced shutdown successfully.
-    #     #. Start [vm1], should succeed.
-    #     #. Check that [vm1] is running again.
-    #     """
-    #     self.log('%s STARTED' % self._testID)
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Shutdown [vm1], should succeed.
+        #. Check that [vm1] has been forced shutdown successfully.
+        #. Start [vm1], should succeed.
+        #. Check that [vm1] is running again.
+        """
+        self.log('%s STARTED' % self._testID)
         
-    #     self.log('Shutdown [vm1], should succeed.')
-    #     temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name, 'args': {'force':True}}}
-    #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-    #     self.assertEqual(type(res), type(dict()))
-    #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['shutdown'])        
+        self.log('Shutdown [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['shutdown'], 'service': self.vm1_name, 'args': {'force':True}}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['shutdown'])        
         
-    #     self.log("Check that [vm1] has been forced shutdown successfully..")
-    #     time.sleep(10)
-    #     vms = self.zos_client.kvm.list()
-    #     vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-    #     self.assertFalse(vm1)
+        self.log("Check that [vm1] has been forced shutdown successfully..")
+        time.sleep(10)
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertFalse(vm1)
 
-    #     self.log("Start [vm1], should succeed.")
-    #     temp_actions = {'vm': {'actions': ['start'], 'service': self.vm1_name}}
-    #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-    #     self.assertEqual(type(res), type(dict()))
-    #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['start'])        
+        self.log("Start [vm1], should succeed.")
+        temp_actions = {'vm': {'actions': ['start'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['start'])        
 
-    #     self.log("Check that [vm1] is running again.")
-    #     vms = self.zos_client.kvm.list()
-    #     vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
-    #     self.assertEqual(vm1[0]['state'], "running")
+        self.log("Check that [vm1] is running again.")
+        vms = self.zos_client.kvm.list()
+        vm1 = [vm for vm in vms if vm['name'] == self.vm1_name]
+        self.assertEqual(vm1[0]['state'], "running")
 
-    #     self.log('%s ENDED' % self._testID)
+        self.log('%s ENDED' % self._testID)
 
-    # @unittest.skip('https://github.com/zero-os/0-templates/issues/141')
-    # def test003_enable_and_disable_vm_vnc(self):
-    #     """ ZRT-ZOS-007
-    #     *Test case for testing reset vm*
+    @unittest.skip('https://github.com/zero-os/0-templates/issues/141')
+    def test003_enable_and_disable_vm_vnc(self):
+        """ ZRT-ZOS-007
+        *Test case for testing reset vm*
 
-    #     **Test Scenario:**
+        **Test Scenario:**
 
-    #     #. Create a vm[vm1]  on node, should succeed.
-    #     #. Enable vnc_port for [vm1], should succeed.
-    #     #. Check that vnc_port has been enabled successfully.
-    #     #. Disable vnc_port for [vm1], should succeed.
-    #     #. Check that vnc_port has been disabled successfully.
-    #     """
-    #     self.log('%s STARTED' % self._testID)
+        #. Create a vm[vm1]  on node, should succeed.
+        #. Enable vnc_port for [vm1], should succeed.
+        #. Check that vnc_port has been enabled successfully.
+        #. Disable vnc_port for [vm1], should succeed.
+        #. Check that vnc_port has been disabled successfully.
+        """
+        self.log('%s STARTED' % self._testID)
         
-    #     self.log('Enable vnc_port for [vm1], should succeed.')
-    #     import ipdb; ipdb.set_trace()
-    #     temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
-    #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-    #     self.assertEqual(type(res), type(dict()))
-    #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])        
+        self.log('Enable vnc_port for [vm1], should succeed.')
+        temp_actions = {'vm': {'actions': ['enable_vnc'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['enable_vnc'])        
 
-    #     self.log("Check that vnc_port has been enabled successfully.")
-    #     self.assertTrue(self.check_vnc_connection(self.vm_ip_vncport))
+        self.log("Check that vnc_port has been enabled successfully.")
+        self.assertTrue(self.check_vnc_connection(self.vm_ip_vncport))
 
-    #     self.log("Disable vnc_port for [vm1], should succeed.")
-    #     temp_actions = {'vm': {'actions': ['disable_vnc'], 'service': self.vm1_name}}
-    #     res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
-    #     self.assertEqual(type(res), type(dict()))
-    #     self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['disable_vnc'])        
+        self.log("Disable vnc_port for [vm1], should succeed.")
+        temp_actions = {'vm': {'actions': ['disable_vnc'], 'service': self.vm1_name}}
+        res = self.create_vm(vms=self.vms, temp_actions=temp_actions)
+        self.assertEqual(type(res), type(dict()))
+        self.wait_for_service_action_status(self.vm1_name, res[self.vm1_name]['disable_vnc'])        
 
-    #     self.log("Check that vnc_port has been disabled successfully.")
-    #     self.assertFalse(self.check_vnc_connection(self.vm_ip_vncport))
+        self.log("Check that vnc_port has been disabled successfully.")
+        self.assertFalse(self.check_vnc_connection(self.vm_ip_vncport))
 
-    @parameterized.expand(["reboot"])
+    @parameterized.expand(["reset", "reboot"])
     def test004_reset_and_reboot_vm(self, action_type):
         """ ZRT-ZOS-008
         *Test case for testing reset vm*
@@ -244,28 +245,26 @@ class VM_actions(ZOS_BaseTest):
                 'configs': [{'path': '/root/.ssh/authorized_keys',
                              'content': self.ssh_key,
                              'name': 'sshkey'}]}
-        print("########################%s###########"%self.ssh_key)
-
+                             
         vm = self.robot.services.find_or_create('github.com/zero-os/0-templates/vm/0.0.1', service_name=vm_name,data=data)
         install_result = vm.schedule_action("install").wait(die=True)
         self.assertEqual(install_result.state, 'ok')
-        time.sleep(300)
-        vm_info = vm.schedule_action("info").wait(die=True).result
-        vm_ip = vm_info['nics'][0]['ip']    
-        result, error = self.execute_command(vm_ip, 'uptime')
-        print("########################%s###########"%result)
-        print("########################%s###########"%error)
+        for _ in range(10):
+            vm_info = vm.schedule_action("info").wait(die=True).result
+            vm_nics = vm_info['nics']
+            if 'ip' not in vm_nics[0].keys():
+                time.sleep(30)
+            else:
+                vm_ip = vm_nics[0]['ip']
+                break
+        else:
+            RuntimeError(colored("vm didn't join the zerotier network", 'red'))
 
         self.log("%s the vm , should succeed"%action_type)
         vm.schedule_action(action_type).wait(die=True).result
         self.log("Check that [vm] has been %s successfully."%action_type)
 
-        if action_type == 'reboot':        
-            time.sleep(30)
-        time.sleep(50)
-        result, error = self.execute_command(vm_ip, 'uptime')
-        result = str(result) 
+        result = self.execute_command(vm_ip, 'uptime') 
         uptime = int(result[result.find('up')+2:result.find('min')])
-
-        self.assertAlmostEqual(uptime, 0, delta=2)
+        self.assertAlmostEqual(uptime, 0, delta=3)
         vm_info = vm.schedule_action("uninstall").wait(die=True).result
