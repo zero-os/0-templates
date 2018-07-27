@@ -198,9 +198,9 @@ class Node(TemplateBase):
             sp = storagepools[0]
             fs = sp.create(name, size * (1024 ** 3))
             mount_point = '/mnt/zdbs/{}'.format(name)
-            self.node.client.filesystem.mkdir(mount_point)
+            self._node_sal.client.filesystem.mkdir(mount_point)
             subvol = 'subvol={}'.format(fs.subvolume)
-            self.node.client.disk.mount(sp.devicename, mount_point, [subvol])
+            self._node_sal.client.disk.mount(sp.devicename, mount_point, [subvol])
             print("path, .........", mount_point)
             return mount_point, fs.name
 
