@@ -189,14 +189,14 @@ class Node(TemplateBase):
             return disks[0][1], disks[0][0].name
         else:
             disktypes = ['SSD', 'NVME']
-            storagepools = list(filter(lambda sp: self._node_sal.disks.get_device(sp.devices[0]).disk.type.value in disktypes and (sp.size - sp.total_quota() / 1024 ** 3) >= size,
+            storagepools = list(filter(lambda sp: self._node_sal.disks.get_device(sp.devices[0]).disk.type.value in disktypes and (sp.size - sp.total_quota() / (1024 ** 3)) >= size,
                                        self._node_sal.storagepools.list()))
             storagepools.sort(key=lambda sp: sp.size - sp.total_quota(), reverse=True)
             if not storagepools:
                 return '', ''
 
             sp = storagepools[0]
-            fs = sp.create(name, size ** 1024 ** 3)
+            fs = sp.create(name, size * (1024 ** 3))
             mount_point = '/mnt/zdbs/{}'.format(name)
             self.node.client.filesystem.mkdir(mount_point)
             subvol = 'subvol={}'.format(fs.subvolume)
