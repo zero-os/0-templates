@@ -253,7 +253,7 @@ class VM_actions(ZOS_BaseTest):
             vm_info = vm.schedule_action("info").wait(die=True).result
             vm_nics = vm_info['nics']
             if 'ip' not in vm_nics[0].keys():
-                time.sleep(30)
+                time.sleep(25)
             else:
                 vm_ip = vm_nics[0]['ip']
                 break
