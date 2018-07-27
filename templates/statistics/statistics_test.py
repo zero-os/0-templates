@@ -20,7 +20,7 @@ class TestStatisticsTemplate(ZrobotBaseTest):
     def setUp(self):
         self.client_get = patch('js9.j.clients', MagicMock()).start()
 
-    def test_start_with_database(self):
+    def test_install_with_database(self):
         """
         Test statistics start
         """
@@ -30,7 +30,7 @@ class TestStatisticsTemplate(ZrobotBaseTest):
         stat.install()
         assert stat.state.check('actions', 'running', 'ok')
     
-    def test_start_without_database(self):
+    def test_install_without_database(self):
         """
         Test statistics start
         """
@@ -41,7 +41,7 @@ class TestStatisticsTemplate(ZrobotBaseTest):
         stat.install()
         assert stat.state.check('actions', 'running', 'ok')
 
-    def test_stop(self):
+    def test_uninstall(self):
         """
         Test statistics stop
         """
