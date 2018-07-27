@@ -196,13 +196,7 @@ class Node(TemplateBase):
                 return '', ''
 
             sp = storagepools[0]
-            fs = sp.create(name, size * (1024 ** 3))
-            mount_point = '/mnt/zdbs/{}'.format(name)
-            self._node_sal.client.filesystem.mkdir(mount_point)
-            subvol = 'subvol={}'.format(fs.subvolume)
-            self._node_sal.client.disk.mount(sp.devicename, mount_point, [subvol])
-            print("path, .........", mount_point)
-            return mount_point, fs.name
+            return self._node_sal.zerodbs.create_and_mount_subvolume(sp, name, size)
 
     def _create_zdb(self, namespace_name, diskname, mountpoint, mode, password, public, ns_size, zdb_size, disktype):
         zdb_name = 'zdb_%s_%s' % (self.name, diskname)
