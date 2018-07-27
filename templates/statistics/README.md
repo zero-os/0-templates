@@ -3,8 +3,6 @@
 ### Description:
 This template is responsible for get statistics of node then add it in InfluxDB to Visualization in grafana
 
-### Schema:
-
 ### Actions
 - `install`: get the reporting every 5 minutes
 - `uninstall`: stops the reporting
