@@ -28,6 +28,10 @@ This template will start a 0-robot on a node inside a container.
 
 - `stop`: stop the 0-robot process
 
+- `upgrade`: upgrade the flist of the container (stops and starts the container, sets new flist if provided)
+
+    arguments:
+    - `flist`: if provided, it will set the flist to upgrade to.
 
 ### Usage example via the 0-robot DSL
 
