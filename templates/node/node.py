@@ -21,6 +21,7 @@ class Node(TemplateBase):
         super().__init__(name=name, guid=guid, data=data)
         self.recurring_action('_monitor', 30)  # every 30 seconds
         self.recurring_action('_register', 10 * 60)  # every 10 minutes
+        self.recurring_action('_send_heartbeat', 10)  # every 10 seconds
 
     def validate(self):
         self.state.delete('disks', 'mounted')
@@ -74,6 +75,15 @@ class Node(TemplateBase):
             self.state.delete('status', 'rebooting')
         except StateCheckError:
             pass
+
+    def _send_heartbeat(self):
+        """
+        send the node heartbeat
+        """
+        self.state.check('actions', 'install', 'ok')
+        self.logger.info("send node heartbeat")
+
+        self.node_sal.capacity.send_heartbeat()
 
     @retry(RuntimeError, tries=5, delay=5, backoff=2)
     def _register(self):
